@@ -9,7 +9,11 @@ alter table public.vendor_invoice_records
 
 alter table public.vendor_invoice_records
   add constraint vendor_invoice_reference_required
-  check (nullif(trim(coalesce(invoice_number, '')), '') is not null or nullif(trim(coalesce(supplier_order_number, '')), '') is not null) not valid;
+  check (
+    nullif(trim(coalesce(invoice_number, '')), '') is not null
+    or nullif(trim(coalesce(supplier_order_number, '')), '') is not null
+    or nullif(trim(coalesce(order_number, '')), '') is not null
+  ) not valid;
 
 create unique index if not exists vendor_accounts_org_tax_number_uidx
   on public.vendor_accounts (organization_id, lower(regexp_replace(coalesce(tax_number, ''), '[^a-zA-Z0-9]', '', 'g')))
