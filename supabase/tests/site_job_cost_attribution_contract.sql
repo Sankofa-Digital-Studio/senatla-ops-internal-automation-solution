@@ -46,8 +46,8 @@ insert into public.asset_work_orders(id,organization_id,asset_id,title,status,co
 values ('71000000-0000-4000-8000-000000000003','00000000-0000-4000-8000-000000000001','55000000-0000-4000-8000-000000000001','Completed test','completed',timestamptz '2026-08-12 22:30:00+00',500);
 insert into public.vendor_accounts(id,organization_id,name)
 values ('71000000-0000-4000-8000-000000000004','00000000-0000-4000-8000-000000000001','Attribution Vendor');
-insert into public.vendor_invoice_records(id,organization_id,vendor_id,invoice_date,order_number,items_purchased,total,responsible_person,requested_by,requested_by_name,site_allocations)
-values ('71000000-0000-4000-8000-000000000005','00000000-0000-4000-8000-000000000001','71000000-0000-4000-8000-000000000004',date '2026-08-13','ATTR-001','Test service',1000,'Office A','51000000-0000-4000-8000-000000000002','Office A','[{"siteId":"52000000-0000-4000-8000-000000000001","ratio":0.6},{"siteId":"52000000-0000-4000-8000-000000000002","ratio":0.4}]');
+insert into public.vendor_invoice_records(id,organization_id,vendor_id,invoice_date,supplier_order_number,internal_order_number,order_number,items_purchased,total,responsible_person,requested_by,requested_by_name,site_allocations)
+values ('71000000-0000-4000-8000-000000000005','00000000-0000-4000-8000-000000000001','71000000-0000-4000-8000-000000000004',date '2026-08-13','SUP-ATTR-001','INT-ATTR-001','ATTR-001','Test service',1000,'Office A','51000000-0000-4000-8000-000000000002','Office A','[{"siteId":"52000000-0000-4000-8000-000000000001","ratio":0.6},{"siteId":"52000000-0000-4000-8000-000000000002","ratio":0.4}]');
 
 select is((select attribution_site_id from public.ppe_issue_records where id='71000000-0000-4000-8000-000000000001'),'52000000-0000-4000-8000-000000000001'::uuid,'PPE snapshots employee site');
 select is((select job_number_snapshot from public.asset_fuel_entries where id='71000000-0000-4000-8000-000000000002'),'AUDIT-JOB-NORTH','fuel snapshots job number');
