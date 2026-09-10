@@ -30,7 +30,7 @@
         <a href="#capabilities">Capabilities</a>
         <a href="#assurance">Assurance</a>
         <a href="https://github.com/Sankofa-Digital-Studio/senatla-ops/releases/download/dev-latest/senatla-ops-dev.apk" download>Android APK</a>
-        <button type="button" (click)="showTestCredentials()">Test users</button>
+        <button type="button" *ngIf="isLocalMode()" (click)="showTestCredentials()">Test users</button>
         <a routerLink="/register" class="nav-register">Register</a>
         <a routerLink="/login" class="nav-login">Login</a>
       </nav>
@@ -41,7 +41,7 @@
           <a href="#capabilities">Capabilities</a>
           <a href="#assurance">Assurance</a>
           <a href="https://github.com/Sankofa-Digital-Studio/senatla-ops/releases/download/dev-latest/senatla-ops-dev.apk" download>Android APK</a>
-          <button type="button" (click)="showTestCredentials()">Test users</button>
+          <button type="button" *ngIf="isLocalMode()" (click)="showTestCredentials()">Test users</button>
           <a routerLink="/register">Register</a>
           <a routerLink="/login">Login</a>
         </nav>
