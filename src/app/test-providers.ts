@@ -6,6 +6,7 @@ import { SESSION_EXPIRY_SCHEDULER } from './core/auth/session-expiry.scheduler';
 import { AUTH_GATEWAY } from './core/gateways/auth.gateway';
 import { provideBackendGateways } from './core/gateways/backend.providers';
 import { AppRole, AuthSession } from './core/models/app.models';
+import { CostAttributionGateway, COST_ATTRIBUTION_GATEWAY } from './core/gateways/cost-attribution.gateway';
 
 class TestAuthGateway {
   private session: AuthSession | null = null;
@@ -77,11 +78,18 @@ class TestAuthGateway {
   }
 }
 
+
+class TestCostAttributionGateway implements CostAttributionGateway {
+  async reconcile(): Promise<unknown> {
+    return [];
+  }
+}
 export const TEST_APP_PROVIDERS = [
   provideRouter(routes),
   provideRuntimeConfig(DEFAULT_RUNTIME_CONFIG),
   ...provideBackendGateways(DEFAULT_RUNTIME_CONFIG),
   { provide: AUTH_GATEWAY, useClass: TestAuthGateway },
+  { provide: COST_ATTRIBUTION_GATEWAY, useClass: TestCostAttributionGateway },
   { provide: SESSION_EXPIRY_SCHEDULER, useValue: { schedule: () => () => undefined } },
 ];
 

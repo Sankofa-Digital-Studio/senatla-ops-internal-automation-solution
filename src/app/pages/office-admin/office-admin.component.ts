@@ -24,11 +24,15 @@ import {
 import { UserInviteInput } from '../../core/models/office-admin.models';
 import { AssignmentDecision, AssignmentReview } from '../../core/assignment/assignment-planning';
 import { OfficeAdminService } from '../../core/services/office-admin.service';
+import { CostAttributionService } from '../../core/services/cost-attribution.service';
 import { TimesheetRegisterService } from '../../core/services/timesheet-register.service';
 import { downloadTextFile } from '../../core/utils/browser-file.util';
 import { EmployeeImportRow, stageEmployeeCsv } from '../../core/import/employee-import';
 
-type AdminTab = 'overview' | 'users' | 'people' | 'workforce' | 'timesheets' | 'sites' | 'issues' | 'assets' | 'vendors' | 'approvals' | 'recovery' | 'activity' | 'settings' | 'account';
+type AdminTab = 'overview' | 'users' | 'people' | 'workforce' | 'timesheets' | 'sites' | 'issues' | 'assets' | 'vendors' | 'costs' | 'approvals' | 'recovery' | 'activity' | 'settings' | 'account';
+
+const COST_PERIOD_START = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
+const COST_PERIOD_END_EXCLUSIVE = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString().slice(0, 10);
 
 @Component({
   selector: 'app-office-admin',
@@ -39,6 +43,7 @@ type AdminTab = 'overview' | 'users' | 'people' | 'workforce' | 'timesheets' | '
 })
 export class OfficeAdminComponent {
   readonly service = inject(OfficeAdminService);
+  readonly costAttribution = inject(CostAttributionService);
   private readonly timesheetRegister = inject(TimesheetRegisterService);
 
   readonly tabs: { id: AdminTab; label: string; group: string }[] = [
@@ -51,6 +56,7 @@ export class OfficeAdminComponent {
     { id: 'assets', label: 'Assets', group: 'Operations' },
     { id: 'issues', label: 'Issues', group: 'Operations' },
     { id: 'vendors', label: 'Vendors', group: 'Finance' },
+    { id: 'costs', label: 'Cost Attribution', group: 'Finance' },
     { id: 'approvals', label: 'Approvals', group: 'Finance' },
     { id: 'recovery', label: 'Recovery', group: 'System' },
     { id: 'activity', label: 'Activity', group: 'System' },
@@ -60,6 +66,23 @@ export class OfficeAdminComponent {
   readonly activeTab = signal<AdminTab>('overview');
   readonly searchTerm = signal('');
   readonly selectedSiteId = signal('');
+  readonly costPeriodStart = signal(COST_PERIOD_START);
+  readonly costPeriodEndExclusive = signal(COST_PERIOD_END_EXCLUSIVE);
+  readonly costSiteId = signal('');
+  readonly costRows = computed(() => this.costAttribution.report()?.rows || []);
+  readonly costSourceTotal = computed(() => this.costRows().reduce((sum, row) => sum + (row.sourceAmount || 0), 0));
+  readonly costRecognizedTotal = computed(() => this.costRows().reduce((sum, row) => sum + row.recognizedAmount, 0));
+  readonly unattributedCosts = computed(() => this.costAttribution.report()?.unattributedRows || []);
+  readonly costUnattributedTotal = computed(() => this.unattributedCosts().reduce((sum, row) => sum + (row.sourceAmount || 0), 0));
+  readonly attributedSiteCosts = computed(() => {
+    const groups = new Map<string, { siteId: string; siteName: string; jobNumber: string; recognizedAmount: number; sourceCount: number }>();
+    for (const row of this.costRows().filter((entry) => !!entry.siteId && !!entry.jobNumber)) {
+      const key = `${row.siteId}:${row.jobNumber || ''}`;
+      const current = groups.get(key) || { siteId: row.siteId!, siteName: this.service.getSiteName(row.siteId!), jobNumber: row.jobNumber || 'Job number missing', recognizedAmount: 0, sourceCount: 0 };
+      current.recognizedAmount += row.recognizedAmount; current.sourceCount += 1; groups.set(key, current);
+    }
+    return [...groups.values()].sort((left, right) => left.siteName.localeCompare(right.siteName));
+  });
   readonly timesheetDate = signal(this.timesheetRegister.toDateKey(new Date()));
   readonly selectedEmployeeIds = signal<string[]>([]);
   readonly selectedEmployeeId = signal('');
@@ -588,8 +611,20 @@ export class OfficeAdminComponent {
   }
 
   selectTab(id: string) {
-    if (this.tabs.some((tab) => tab.id === id)) this.activeTab.set(id as AdminTab);
+    if (!this.tabs.some((tab) => tab.id === id)) return;
+    this.activeTab.set(id as AdminTab);
+    if (id === 'costs' && !this.costAttribution.report() && !this.costAttribution.isLoading()) void this.refreshCostAttribution();
   }
+
+  async refreshCostAttribution() {
+    try {
+      await this.costAttribution.loadCosts({ periodStart: this.costPeriodStart(), periodEndExclusive: this.costPeriodEndExclusive(), siteId: this.costSiteId() || undefined });
+    } catch {
+      // The service exposes the sanitized failure through its error signal.
+    }
+  }
+
+  costLabel(value: string) { return value.replace(/_/g, ' '); }
 
   getPayroll(employeeId: string) {
     return this.service.calculateMonthlyPayroll(employeeId, this.month(), this.year());

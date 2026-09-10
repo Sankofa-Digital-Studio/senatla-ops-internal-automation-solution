@@ -1,7 +1,8 @@
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { StaffDataService } from 'src/app/core/services/staff-data.service';
 import { OfficeAdminService } from 'src/app/core/services/office-admin.service';
+import { CostAttributionService } from 'src/app/core/services/cost-attribution.service';
 
 @Component({
   selector: 'app-director', templateUrl: './director.component.html', styleUrls: ['./director.component.scss'], standalone: true,
@@ -10,6 +11,7 @@ import { OfficeAdminService } from 'src/app/core/services/office-admin.service';
 export class DirectorComponent {
   readonly service = inject(StaffDataService);
   readonly office = inject(OfficeAdminService);
+  readonly costAttribution = inject(CostAttributionService);
   readonly viewMode = signal<'day' | 'month' | 'year'>('day');
   readonly staff = computed(() => this.office.employees());
   readonly sites = computed(() => this.office.sites());
@@ -25,9 +27,25 @@ export class DirectorComponent {
     const attention = assets.filter((asset) => this.assetState(asset) === 'attention').length;
     return { total: assets.length, ready: Math.max(0, assets.length - blocked - attention), attention, blocked };
   });
+  readonly costRows = computed(() => this.costAttribution.report()?.rows || []);
+  readonly ppeExpense = computed(() => this.costForCategory('ppe'));
+  readonly fuelExpense = computed(() => this.costForCategory('fuel'));
+  readonly workOrderExpense = computed(() => this.costForCategory('asset_work_order'));
+  readonly vendorInvoiceExpense = computed(() => this.costForCategory('vendor_invoice'));
+  readonly operatingExpense = computed(() => this.costRows().reduce((sum, row) => sum + row.recognizedAmount, 0));
+  readonly unattributedExpense = computed(() => (this.costAttribution.report()?.unattributedRows || []).reduce((sum, row) => sum + (row.sourceAmount || 0), 0));
+  readonly provisionalLabourSources = computed(() => this.costRows().filter((row) => row.sourceType === 'labour_provisional').length);
   readonly siteStats = computed(() => this.sites().filter((site) => site.isActive).map((site) => {
     const people = this.staff().filter((employee) => employee.siteId === site.id);
-    return { name: site.name, location: site.location, staffCount: people.length, present: people.filter((employee) => employee.logs[this.today()]?.status === 'present').length };
+    const recognizedCost = this.costRows().filter((row) => row.siteId === site.id && !!row.jobNumber).reduce((sum, row) => sum + row.recognizedAmount, 0);
+    return {
+      name: site.name,
+      location: site.location,
+      jobNumber: site.jobNumber || 'Job number missing',
+      staffCount: people.length,
+      present: people.filter((employee) => employee.logs[this.today()]?.status === 'present').length,
+      recognizedCost,
+    };
   }));
   readonly risks = computed(() => [
     ...this.office.assets().filter((asset) => this.assetState(asset) !== 'ready').map((asset) => ({ label: `${asset.make} ${asset.model}`, detail: this.assetState(asset) === 'blocked' ? 'Out of service' : 'Needs attention', severity: this.assetState(asset) })),
@@ -38,6 +56,23 @@ export class DirectorComponent {
       .filter((date) => !Number.isNaN(date.getTime()));
     return new Date(Math.max(...dates.map((date) => date.getTime())));
   });
+  constructor() {
+    effect(() => {
+      const bounds = this.costPeriodBounds(this.service.currentTime(), this.viewMode());
+      void this.costAttribution.loadCosts({ periodStart: bounds.start, periodEndExclusive: bounds.endExclusive }).catch(() => undefined);
+    });
+  }
+
+  private costForCategory(category: string) {
+    return this.costRows().filter((row) => row.sourceType === category).reduce((sum, row) => sum + row.recognizedAmount, 0);
+  }
+
+  private costPeriodBounds(now: Date, mode: 'day' | 'month' | 'year') {
+    const start = mode === 'day' ? new Date(now.getFullYear(), now.getMonth(), now.getDate()) : mode === 'month' ? new Date(now.getFullYear(), now.getMonth(), 1) : new Date(now.getFullYear(), 0, 1);
+    const end = mode === 'day' ? new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1) : mode === 'month' ? new Date(now.getFullYear(), now.getMonth() + 1, 1) : new Date(now.getFullYear() + 1, 0, 1);
+    const key = (value: Date) => `${value.getFullYear()}-${`${value.getMonth() + 1}`.padStart(2, '0')}-${`${value.getDate()}`.padStart(2, '0')}`;
+    return { start: key(start), endExclusive: key(end) };
+  }
   vendorName(vendorId: string) { return this.office.vendorAccounts().find((vendor) => vendor.id === vendorId)?.name || 'Unknown vendor'; }
   private attendance(status: 'present' | 'absent') { return this.staff().filter((employee) => employee.logs[this.today()]?.status === status).length; }
   private assetState(asset: { id: string; status: string; lifecycleState?: string; licenseExpiry: string }) {

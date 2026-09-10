@@ -41,18 +41,23 @@
   gap: .4rem;
 }
 
-.desktop-menu a {
+.desktop-menu a,
+.desktop-menu button {
   border-radius: 999px;
   padding: .7rem 1rem;
+  border: 0;
+  background: transparent;
   color: rgba(255,255,255,.72);
   font-size: .75rem;
   font-weight: 800;
   letter-spacing: .12em;
   text-transform: uppercase;
   transition: .2s ease;
+  cursor: pointer;
 }
 
-.desktop-menu a:hover {
+.desktop-menu a:hover,
+.desktop-menu button:hover {
   color: #d9f99d;
   background: rgba(255,255,255,.06);
 }
@@ -112,19 +117,126 @@
   box-shadow: 0 1.5rem 4rem rgba(0,0,0,.45);
 }
 
-.mobile-menu nav a {
+.mobile-menu nav a,
+.mobile-menu nav button {
   border-radius: .75rem;
   padding: .8rem 1rem;
+  border: 0;
+  background: transparent;
   color: rgba(255,255,255,.78);
   font-size: .8rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: .12em;
+  text-align: left;
+  cursor: pointer;
 }
 
-.mobile-menu nav a:hover {
+.mobile-menu nav a:hover,
+.mobile-menu nav button:hover {
   background: rgba(190,242,100,.12);
   color: #d9f99d;
+}
+
+.credential-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.credential-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(2,6,23,.74);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+}
+
+.credential-modal__panel {
+  position: relative;
+  width: min(46rem, 100%);
+  max-height: min(42rem, calc(100vh - 2rem));
+  overflow: auto;
+  border: 1px solid rgba(190,242,100,.24);
+  border-radius: 1.25rem;
+  background: #07110b;
+  padding: 1.25rem;
+  box-shadow: 0 2rem 5rem rgba(0,0,0,.55);
+}
+
+.credential-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.credential-modal__header h2 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+  line-height: 1;
+}
+
+.credential-modal__close {
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 999px;
+  background: rgba(255,255,255,.06);
+  padding: .65rem .9rem;
+  color: rgba(255,255,255,.82);
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.credential-modal__note {
+  margin: 1rem 0;
+  color: rgba(255,255,255,.68);
+  font-size: .88rem;
+  line-height: 1.45;
+}
+
+.credential-table {
+  display: grid;
+  gap: .5rem;
+}
+
+.credential-table__row {
+  display: grid;
+  grid-template-columns: minmax(7rem, .9fr) minmax(12rem, 1.3fr) minmax(8rem, .9fr) minmax(7rem, .8fr);
+  gap: .75rem;
+  align-items: center;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: .85rem;
+  background: rgba(255,255,255,.04);
+  padding: .8rem;
+}
+
+.credential-table__row--head {
+  background: rgba(190,242,100,.12);
+  color: #d9f99d;
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.credential-table strong {
+  color: #fff;
+}
+
+.credential-table code {
+  border-radius: .5rem;
+  background: rgba(2,6,23,.5);
+  padding: .25rem .4rem;
+  color: #e2e8f0;
+  overflow-wrap: anywhere;
 }
 
 .feature-card {
@@ -185,6 +297,14 @@
 
   .hero-title {
     overflow-wrap: anywhere;
+  }
+
+  .credential-table__row {
+    grid-template-columns: 1fr;
+  }
+
+  .credential-table__row--head {
+    display: none;
   }
 }
 
