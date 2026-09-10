@@ -374,6 +374,10 @@ export class OfficeAdminComponent {
     });
   }
 
+  showPlannedFeature(feature: string) {
+    this.feedback.set(`${feature} is planned for the post-demo upgrade. No source data has been supplied, so no placeholder records are shown.`);
+  }
+
   async submitVendorAccount() {
     await this.runAction(async () => {
       const vendor = await this.service.saveVendorAccount(this.vendorForm);

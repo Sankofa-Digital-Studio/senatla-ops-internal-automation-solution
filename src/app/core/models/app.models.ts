@@ -399,6 +399,8 @@ export interface VendorAccount {
   organizationId: string;
   name: string;
   description: string;
+  taxNumber?: string;
+  isActive?: boolean;
   totalOwingAmount: number;
   createdAt: string;
   updatedAt: string;
@@ -412,6 +414,9 @@ export interface VendorInvoiceRecord {
   vendorId: string;
   invoiceDate: string;
   orderNumber: string;
+  invoiceNumber?: string;
+  supplierOrderNumber?: string;
+  internalOrderNumber?: string;
   itemsPurchased: string;
   total: number;
   responsiblePerson: string;

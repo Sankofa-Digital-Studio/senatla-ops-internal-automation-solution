@@ -71,10 +71,10 @@ jobs:
 
             sleep $((attempt * 15))
           done
-            - name: Run database tests
-      -  run: npx --yes supabase@2.107.0 test db
+      - name: Run database tests
+        run: npx --yes supabase@2.107.0 test db
       - name: Report test status
-        if: always()
+        if: success()
         run: echo "✓ Database tests and migrations passed"
       - if: always()
         run: npx --yes supabase@2.107.0 stop --no-backup

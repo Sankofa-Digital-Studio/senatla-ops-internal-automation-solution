@@ -152,6 +152,19 @@ describe('OfficeAdminComponent', () => {
     expect(component.service.activity()[0].details?.['importedCount']).toBe(1);
   });
 
+  it('labels unavailable planned work without creating placeholder records', () => {
+    component.showPlannedFeature('Purchase-order workspace');
+    expect(component.feedback()).toContain('post-demo upgrade');
+    expect(component.feedback()).toContain('No source data');
+  });
+
+  it('retains structured invoice references for Director review', async () => {
+    await TestBed.inject(AuthService).login('office.admin@test.invalid', 'test-password');
+    const vendor = await component.service.saveVendorAccount({ name: 'Demo supplier', description: '', taxNumber: 'VAT-001', totalOwingAmount: 0 });
+    const invoice = await component.service.submitVendorInvoice({ vendorId: vendor.id, invoiceDate: '2026-09-01', orderNumber: 'SUP-44', supplierOrderNumber: 'SUP-44', internalOrderNumber: 'INT-44', invoiceNumber: 'INV-44', itemsPurchased: 'Safety equipment', total: 100, responsiblePerson: 'Office requester' });
+    expect(invoice.internalOrderNumber).toBe('INT-44');
+    expect(invoice.invoiceNumber).toBe('INV-44');
+  });
 });
 
 function outbox(status: 'pending' | 'processing' | 'completed' | 'failed', hour: number) {

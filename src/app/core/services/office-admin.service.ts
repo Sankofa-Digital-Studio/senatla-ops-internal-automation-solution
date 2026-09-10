@@ -210,8 +210,8 @@ type PpeIssueRow = { id: string; organization_id: string; employee_id: string; i
 type AssetFuelRow = { id: string; organization_id: string; asset_id: string; fuel_date: string; litres: number; unit_cost: number; total_cost: number; odometer_km: number | null; engine_hours: number | null; supplier: string | null; reference_number: string | null; recorded_by: string; created_at: string };
 type AttendanceQueueRow = { id: string; organization_id: string; submitted_by: string; site_id: string; work_date: string; status: AttendanceQueueSubmission['status']; outcome: AttendanceQueueSubmission['outcome']; attempts: number; idempotency_key: string; last_error: string | null; diagnostic_context: Record<string, unknown> | null; created_at: string; processed_at: string | null };
 type OutboxRow = { id: string; organization_id: string; event_type: string; aggregate_type: string; aggregate_id: string; payload: Record<string, unknown>; status: IntegrationOutboxEvent['status']; idempotency_key: string; attempts: number; last_error: string | null; created_at: string; processed_at: string | null };
-type VendorAccountRow = { id: string; organization_id: string; name: string; description: string; total_owing_amount: number; created_at: string; updated_at: string };
-type VendorInvoiceRow = { id: string; organization_id: string; vendor_id: string; invoice_date: string; order_number: string; items_purchased: string; total: number; responsible_person: string; status: VendorInvoiceRecord['status']; requested_by: string; requested_by_name: string; director_reviewed_by: string | null; director_reviewed_at: string | null; created_at: string; updated_at: string };
+type VendorAccountRow = { id: string; organization_id: string; name: string; description: string; tax_number: string | null; is_active: boolean; total_owing_amount: number; created_at: string; updated_at: string };
+type VendorInvoiceRow = { id: string; organization_id: string; vendor_id: string; invoice_date: string; order_number: string; invoice_number: string | null; supplier_order_number: string | null; internal_order_number: string | null; items_purchased: string; total: number; responsible_person: string; status: VendorInvoiceRecord['status']; requested_by: string; requested_by_name: string; director_reviewed_by: string | null; director_reviewed_at: string | null; created_at: string; updated_at: string };
 
 const LOCAL_STORAGE_KEY = 'senatla_office_workspace_v1';
 const SENATLA_TRADING_ORGANIZATION: Organization = {
@@ -848,6 +848,8 @@ export class OfficeAdminService {
       organizationId: SENATLA_TRADING_ORGANIZATION_ID,
       name: record.name.trim(),
       description: record.description.trim(),
+      taxNumber: record.taxNumber?.trim() || undefined,
+      isActive: record.isActive !== false,
       totalOwingAmount: Math.max(0, Number(record.totalOwingAmount) || 0),
       createdAt: this.vendorAccounts().find((vendor) => vendor.id === record.id)?.createdAt || now,
       updatedAt: now,
@@ -860,6 +862,8 @@ export class OfficeAdminService {
         organization_id: normalized.organizationId,
         name: normalized.name,
         description: normalized.description,
+        tax_number: normalized.taxNumber || null,
+        is_active: normalized.isActive !== false,
         total_owing_amount: normalized.totalOwingAmount,
       });
       if (error) throw error;
@@ -883,7 +887,10 @@ export class OfficeAdminService {
       organizationId: SENATLA_TRADING_ORGANIZATION_ID,
       vendorId: record.vendorId,
       invoiceDate: record.invoiceDate,
-      orderNumber: record.orderNumber.trim(),
+      orderNumber: (record.supplierOrderNumber || record.invoiceNumber || record.orderNumber).trim(),
+      invoiceNumber: record.invoiceNumber?.trim() || undefined,
+      supplierOrderNumber: record.supplierOrderNumber?.trim() || undefined,
+      internalOrderNumber: record.internalOrderNumber?.trim() || undefined,
       itemsPurchased: record.itemsPurchased.trim(),
       total,
       responsiblePerson: record.responsiblePerson.trim(),
@@ -895,8 +902,8 @@ export class OfficeAdminService {
       createdAt: now,
       updatedAt: now,
     };
-    if (!normalized.invoiceDate || !normalized.orderNumber || !normalized.itemsPurchased || !normalized.responsiblePerson || total <= 0) {
-      throw new Error('Invoice date, order number, items, responsible person, and total are required.');
+    if (!normalized.invoiceDate || !normalized.internalOrderNumber || !(normalized.invoiceNumber || normalized.supplierOrderNumber) || !normalized.itemsPurchased || !normalized.responsiblePerson || total <= 0) {
+      throw new Error('Invoice date, internal order number, supplier invoice or order reference, items, requester, and total are required.');
     }
 
     if (this.supabase) {
@@ -906,6 +913,9 @@ export class OfficeAdminService {
         vendor_id: normalized.vendorId,
         invoice_date: normalized.invoiceDate,
         order_number: normalized.orderNumber,
+        invoice_number: normalized.invoiceNumber || null,
+        supplier_order_number: normalized.supplierOrderNumber || null,
+        internal_order_number: normalized.internalOrderNumber || null,
         items_purchased: normalized.itemsPurchased,
         total: normalized.total,
         responsible_person: normalized.responsiblePerson,
@@ -1483,8 +1493,8 @@ export class OfficeAdminService {
       this.supabase!.from('asset_work_orders').select('id, organization_id, asset_id, title, description, status, priority, due_at, completed_at, cost').order('due_at'),
       this.supabase!.from('asset_maintenance_plans').select('id, organization_id, asset_id, name, interval_days, interval_meter, meter_type, next_due_at, next_due_meter, is_active').order('name'),
       this.supabase!.from('asset_fuel_entries').select('id, organization_id, asset_id, fuel_date, litres, unit_cost, total_cost, odometer_km, engine_hours, supplier, reference_number, recorded_by, created_at').order('fuel_date', { ascending: false }),
-      this.supabase!.from('vendor_accounts').select('id, organization_id, name, description, total_owing_amount, created_at, updated_at').order('name'),
-      this.supabase!.from('vendor_invoice_records').select('id, organization_id, vendor_id, invoice_date, order_number, items_purchased, total, responsible_person, status, requested_by, requested_by_name, director_reviewed_by, director_reviewed_at, created_at, updated_at').order('created_at', { ascending: false }),
+      this.supabase!.from('vendor_accounts').select('id, organization_id, name, description, tax_number, is_active, total_owing_amount, created_at, updated_at').order('name'),
+      this.supabase!.from('vendor_invoice_records').select('id, organization_id, vendor_id, invoice_date, order_number, invoice_number, supplier_order_number, internal_order_number, items_purchased, total, responsible_person, status, requested_by, requested_by_name, director_reviewed_by, director_reviewed_at, created_at, updated_at').order('created_at', { ascending: false }),
       this.supabase!.from('integration_outbox').select('id, organization_id, event_type, aggregate_type, aggregate_id, payload, status, idempotency_key, attempts, last_error, created_at, processed_at').order('created_at', { ascending: false }).limit(100),
       this.supabase!.from('queued_sync_submissions').select('id, organization_id, submitted_by, site_id, work_date, status, outcome, attempts, idempotency_key, last_error, diagnostic_context, created_at, processed_at').order('created_at', { ascending: false }).limit(100),
     ]);
@@ -1969,11 +1979,11 @@ export class OfficeAdminService {
     return { id: row.id, organizationId: row.organization_id, submittedBy: row.submitted_by, siteId: row.site_id, workDate: row.work_date, status: row.status, outcome: row.outcome, attempts: row.attempts, idempotencyKey: row.idempotency_key, lastError: row.last_error, diagnosticContext: row.diagnostic_context, createdAt: row.created_at, processedAt: row.processed_at };
    }
   private mapVendorAccount(row: VendorAccountRow): VendorAccount {
-    return { id: row.id, organizationId: row.organization_id, name: row.name, description: row.description || '', totalOwingAmount: Number(row.total_owing_amount || 0), createdAt: row.created_at, updatedAt: row.updated_at };
+    return { id: row.id, organizationId: row.organization_id, name: row.name, description: row.description || '', taxNumber: row.tax_number || undefined, isActive: row.is_active, totalOwingAmount: Number(row.total_owing_amount || 0), createdAt: row.created_at, updatedAt: row.updated_at };
   }
   
    private mapVendorInvoice(row: VendorInvoiceRow): VendorInvoiceRecord {
-    return { id: row.id, organizationId: row.organization_id, vendorId: row.vendor_id, invoiceDate: row.invoice_date, orderNumber: row.order_number, itemsPurchased: row.items_purchased, total: Number(row.total || 0), responsiblePerson: row.responsible_person, status: row.status, requestedBy: row.requested_by, requestedByName: row.requested_by_name, directorReviewedBy: row.director_reviewed_by, directorReviewedAt: row.director_reviewed_at, createdAt: row.created_at, updatedAt: row.updated_at };
+    return { id: row.id, organizationId: row.organization_id, vendorId: row.vendor_id, invoiceDate: row.invoice_date, orderNumber: row.order_number, invoiceNumber: row.invoice_number || undefined, supplierOrderNumber: row.supplier_order_number || undefined, internalOrderNumber: row.internal_order_number || undefined, itemsPurchased: row.items_purchased, total: Number(row.total || 0), responsiblePerson: row.responsible_person, status: row.status, requestedBy: row.requested_by, requestedByName: row.requested_by_name, directorReviewedBy: row.director_reviewed_by, directorReviewedAt: row.director_reviewed_at, createdAt: row.created_at, updatedAt: row.updated_at };
   }
   private mapOutbox(row: OutboxRow): IntegrationOutboxEvent {
     return { id: row.id, organizationId: row.organization_id, eventType: row.event_type, aggregateType: row.aggregate_type, aggregateId: row.aggregate_id, payload: row.payload || {}, status: row.status, idempotencyKey: row.idempotency_key, attempts: row.attempts, lastError: row.last_error, createdAt: row.created_at, processedAt: row.processed_at };
