@@ -195,6 +195,11 @@
   cursor: pointer;
 }
 
+.credential-modal__close:focus {
+  outline: 2px solid #bef264;
+  outline-offset: 2px;
+}
+
 .credential-modal__note {
   margin: 1rem 0;
   color: rgba(255,255,255,.68);

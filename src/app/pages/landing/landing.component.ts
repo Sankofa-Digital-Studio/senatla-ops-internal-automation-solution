@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, computed, inject, signal, HostListener } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { RUNTIME_CONFIG } from '../../core/config/runtime-config';
@@ -23,6 +23,11 @@ export class LandingComponent implements OnInit {
     { role: 'Director', email: 'director.exec@test.invalid', passwordHint: 'Shared UAT password', path: '/director' },
   ];
 
+  @ViewChild('testCredentialsModal') modalRef?: ElementRef<HTMLDivElement>;
+  @ViewChild('testCredentialsCloseBtn') closeBtnRef?: ElementRef<HTMLButtonElement>;
+
+  private triggerElement: HTMLElement | null = null;
+
   async ngOnInit() {
     const startedAt = Date.now();
     await this.auth.ensureReady();
@@ -30,11 +35,38 @@ export class LandingComponent implements OnInit {
     setTimeout(() => this.landingReady.set(true), remaining);
   }
 
-  showTestCredentials() {
+  showTestCredentials(event: Event) {
+    this.triggerElement = event.target as HTMLElement;
     this.testCredentialsVisible.set(true);
+    setTimeout(() => this.moveFocusToModal(), 0);
   }
 
   hideTestCredentials() {
     this.testCredentialsVisible.set(false);
+    this.restoreFocus();
+  }
+
+  @HostListener('document:keydown.escape', ['$event'])
+  handleEscapeKey(event: KeyboardEvent) {
+    if (this.testCredentialsVisible()) {
+      event.preventDefault();
+      this.hideTestCredentials();
+    }
+  }
+
+  private moveFocusToModal() {
+    const closeBtn = this.closeBtnRef?.nativeElement;
+    if (closeBtn) {
+      closeBtn.focus();
+    } else if (this.modalRef?.nativeElement) {
+      this.modalRef.nativeElement.focus();
+    }
+  }
+
+  private restoreFocus() {
+    if (this.triggerElement) {
+      this.triggerElement.focus();
+      this.triggerElement = null;
+    }
   }
 }
