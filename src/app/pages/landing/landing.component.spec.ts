@@ -34,7 +34,7 @@ describe('LandingComponent', () => {
 
   it('links both navigation menus to the current unsigned dev APK', () => {
     const page = fixture.nativeElement as HTMLElement;
-    const href = 'https://github.com/Sankofa-Digital-Studio/senatla-ops/releases/download/dev-latest/senatla-ops-dev.apk';
+    const href = 'https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/download/dev-latest/senatla-ops-dev.apk';
     expect(page.querySelectorAll('a[href="' + href + '"]').length).toBe(2);
   });
 

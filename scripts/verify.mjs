@@ -3,6 +3,8 @@ import { spawn } from 'node:child_process';
 const isWindows = process.platform === 'win32';
 
 const steps = [
+  { name: 'uat-runtime-contract', script: 'node --test scripts/validate-uat-runtime.test.mjs', timeoutMs: 120_000 },
+  { name: 'dependency-audit', script: 'npm audit --audit-level=high', timeoutMs: 180_000 },
   { name: 'runtime-config', script: 'npm run test:runtime-config', timeoutMs: 120_000 },
   { name: 'ocr-device-uat-contract', script: 'npm run test:ocr-device-uat-contract', timeoutMs: 120_000 },
   { name: 'lint', script: 'npm run lint', timeoutMs: 360_000 },
