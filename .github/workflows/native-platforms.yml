@@ -67,6 +67,22 @@ jobs:
       - name: Build unsigned Android debug package
         working-directory: android
         run: ./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
+      - name: Build connected UAT APK
+        if: github.event_name != 'pull_request'
+        env:
+          SENATLA_API_MODE: supabase
+          SENATLA_API_BASE_URL: ${{ vars.SENATLA_UAT_API_BASE_URL }}
+          SENATLA_SUPABASE_URL: ${{ vars.SENATLA_UAT_SUPABASE_URL }}
+          SENATLA_SUPABASE_ANON_KEY: ${{ secrets.SENATLA_UAT_SUPABASE_ANON_KEY }}
+        run: |
+          npm run build
+          node scripts/validate-uat-runtime.mjs
+          npm run native:sync:android
+          node scripts/validate-uat-runtime.mjs android/app/src/main/assets/public/assets/runtime-config.json
+          cd android
+          ./gradlew :app:assembleDebug --stacktrace
+          unzip -p app/build/outputs/apk/debug/app-debug.apk assets/public/assets/runtime-config.json > /tmp/senatla-apk-runtime.json
+          node ../scripts/validate-uat-runtime.mjs /tmp/senatla-apk-runtime.json
       - name: Prepare dev APK artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         run: cp android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/senatla-ops-dev.apk
