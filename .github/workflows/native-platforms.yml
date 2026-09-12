@@ -64,8 +64,29 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm run native:sync:android
-      - name: Build unsigned Android debug package
+      - name: Prepare stable dev signing material
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+        env:
+          KEYSTORE_B64: ${{ secrets.SENATLA_UAT_KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.SENATLA_UAT_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.SENATLA_UAT_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.SENATLA_UAT_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_B64" || { echo "SENATLA_UAT_KEYSTORE_B64 is required for upgradeable dev APKs." >&2; exit 1; }
+          test -n "$STORE_PASSWORD" || { echo "SENATLA_UAT_STORE_PASSWORD is required." >&2; exit 1; }
+          test -n "$KEY_ALIAS" || { echo "SENATLA_UAT_KEY_ALIAS is required." >&2; exit 1; }
+          test -n "$KEY_PASSWORD" || { echo "SENATLA_UAT_KEY_PASSWORD is required." >&2; exit 1; }
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/senatla-uat.jks"
+          chmod 600 "$RUNNER_TEMP/senatla-uat.jks"
+      - name: Build Android debug package
         working-directory: android
+        env:
+          SENATLA_VERSION_CODE: ${{ github.run_number }}
+          SENATLA_UAT_STORE_FILE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/dev' && format('{0}/senatla-uat.jks', runner.temp) || '' }}
+          SENATLA_UAT_STORE_PASSWORD: ${{ secrets.SENATLA_UAT_STORE_PASSWORD }}
+          SENATLA_UAT_KEY_ALIAS: ${{ secrets.SENATLA_UAT_KEY_ALIAS }}
+          SENATLA_UAT_KEY_PASSWORD: ${{ secrets.SENATLA_UAT_KEY_PASSWORD }}
         run: ./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
       - name: Prepare dev APK artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
@@ -97,7 +118,7 @@ jobs:
           name: Senatla Ops dev APK
           prerelease: true
           make_latest: false
-          body: Unsigned Android debug build for the current dev deployment. Install only for UAT testing.
+          body: Stable-signed Android dev build for UAT. Future dev APKs use the same signing identity and a monotonically increasing version code so testers can upgrade in place.
           files: artifacts/senatla-ops-dev.apk
   ios-simulator:
     runs-on: macos-latest
