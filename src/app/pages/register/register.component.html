@@ -19,23 +19,37 @@
         <h2 class="text-2xl font-black">Create your account</h2>
         <p class="mt-2 text-sm text-white/55">Use your work details. Access remains restricted until assignment.</p>
       </div>
-      <form (ngSubmit)="handleRegistration()" class="grid gap-4">
-        <label><span>Full name</span><input [(ngModel)]="displayName" name="displayName" autocomplete="name" placeholder="Your full name"></label>
-        <label><span>Work email</span><input [(ngModel)]="email" name="email" type="email" autocomplete="email" placeholder="name@company.com"></label>
+      <form (ngSubmit)="handleRegistration()" class="grid gap-4" novalidate>
+        <label>
+          <span>Full name</span>
+          <input [(ngModel)]="displayName" name="displayName" autocomplete="name" placeholder="Your full name" required>
+        </label>
+        <label>
+          <span>Work email</span>
+          <input [(ngModel)]="email" name="email" type="email" autocomplete="email" placeholder="name@company.com" required>
+        </label>
         <div class="grid gap-4 sm:grid-cols-2">
-          <label><span>Password</span><input [(ngModel)]="password" name="password" [type]="showPassword ? 'text' : 'password'" autocomplete="new-password" placeholder="12+ characters"></label>
-          <label><span>Confirm password</span><input [(ngModel)]="confirmPassword" name="confirmPassword" [type]="showPassword ? 'text' : 'password'" autocomplete="new-password" placeholder="Repeat password"></label>
+          <label>
+            <span>Password</span>
+            <input [(ngModel)]="password" name="password" [type]="showPassword ? 'text' : 'password'" autocomplete="new-password" placeholder="12+ characters" minlength="12" required>
+          </label>
+          <label>
+            <span>Confirm password</span>
+            <input [(ngModel)]="confirmPassword" name="confirmPassword" [type]="showPassword ? 'text' : 'password'" autocomplete="new-password" placeholder="Repeat password" minlength="12" required>
+          </label>
         </div>
+        <p class="-mt-2 text-xs text-white/50" aria-live="polite">{{ passwordGuidance }}</p>
         <label class="toggle-row"><input type="checkbox" [(ngModel)]="showPassword" name="showPassword"> <span>Show passwords</span></label>
 
         <div class="rounded-2xl border border-white/10 bg-white/[.04] p-4">
           <label class="toggle-row"><input type="checkbox" [(ngModel)]="showAdminCode" name="showAdminCode"> <span>I have an administrator invitation code</span></label>
-          <label *ngIf="showAdminCode" class="mt-4"><span>Invitation code</span><input [(ngModel)]="adminCode" name="adminCode" type="password" autocomplete="off" placeholder="Enter the issued one-time code"></label>
+          <label *ngIf="showAdminCode" class="mt-4"><span>Invitation code</span><input [(ngModel)]="adminCode" name="adminCode" type="password" autocomplete="off" placeholder="Enter the issued one-time code" minlength="12" required></label>
           <p *ngIf="showAdminCode" class="mt-3 text-xs leading-5 text-amber-100/70">The code is checked only after authentication. If email confirmation is required, it is not stored—confirm your email, sign in, and redeem it again.</p>
         </div>
 
-        <div *ngIf="message" class="rounded-xl border p-3 text-sm" [class.border-lime-300\/30]="isSuccess" [class.bg-lime-300\/10]="isSuccess" [class.text-lime-100]="isSuccess" [class.border-red-400\/30]="!isSuccess" [class.bg-red-400\/10]="!isSuccess" [class.text-red-100]="!isSuccess">{{ message }}</div>
-        <button type="submit" [disabled]="isSubmitting" class="rounded-full bg-lime-300 px-6 py-4 text-sm font-black uppercase tracking-[.16em] text-slate-950 transition hover:bg-lime-200 disabled:cursor-wait disabled:opacity-60">{{ isSubmitting ? 'Creating secure profile…' : 'Register' }}</button>
+        <div *ngIf="message" role="status" aria-live="polite" class="rounded-xl border p-3 text-sm" [class.border-lime-300\/30]="isSuccess" [class.bg-lime-300\/10]="isSuccess" [class.text-lime-100]="isSuccess" [class.border-red-400\/30]="!isSuccess" [class.bg-red-400\/10]="!isSuccess" [class.text-red-100]="!isSuccess">{{ message }}</div>
+        <button type="submit" [disabled]="!isRegistrationReady" class="rounded-full bg-lime-300 px-6 py-4 text-sm font-black uppercase tracking-[.16em] text-slate-950 transition hover:bg-lime-200 disabled:cursor-not-allowed disabled:opacity-45">{{ isSubmitting ? 'Creating secure profile…' : 'Register' }}</button>
+        <p *ngIf="!isRegistrationReady && !isSubmitting" class="text-center text-xs text-white/40">Complete the required fields to enable registration.</p>
         <p class="text-center text-xs text-white/45">Already registered? <a routerLink="/login" class="font-bold text-lime-200 hover:text-lime-100">Sign in</a></p>
       </form>
     </div>
