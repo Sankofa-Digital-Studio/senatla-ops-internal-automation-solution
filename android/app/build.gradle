@@ -1,5 +1,12 @@
 apply plugin: 'com.android.application'
 
+def senatlaVersionCode = System.getenv('SENATLA_VERSION_CODE')
+def uatStoreFile = System.getenv('SENATLA_UAT_STORE_FILE')
+def uatStorePassword = System.getenv('SENATLA_UAT_STORE_PASSWORD')
+def uatKeyAlias = System.getenv('SENATLA_UAT_KEY_ALIAS')
+def uatKeyPassword = System.getenv('SENATLA_UAT_KEY_PASSWORD')
+def hasUatSigning = uatStoreFile && uatStorePassword && uatKeyAlias && uatKeyPassword
+
 android {
     namespace = "za.co.senatlatrading.ops"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,7 +14,7 @@ android {
         applicationId "za.co.senatlatrading.ops"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        versionCode senatlaVersionCode ? senatlaVersionCode.toInteger() : 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
@@ -16,7 +23,22 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        uat {
+            if (hasUatSigning) {
+                storeFile file(uatStoreFile)
+                storePassword uatStorePassword
+                keyAlias uatKeyAlias
+                keyPassword uatKeyPassword
+            }
+        }
+    }
     buildTypes {
+        debug {
+            if (hasUatSigning) {
+                signingConfig signingConfigs.uat
+            }
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'

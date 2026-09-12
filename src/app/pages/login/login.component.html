@@ -14,46 +14,27 @@
         <h1 class="mt-3 text-3xl font-black tracking-tight md:text-4xl">Welcome, {{ auth.displayName() }}</h1>
         <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-400">Review the features available to your role. Finish once, and this wizard stays disabled until you reopen it from Profile Settings.</p>
       </div>
-      <div class="rounded-full border border-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-300">
-        {{ activeStep + 1 }} / {{ wizardFeatures.length }}
-      </div>
+      <div class="rounded-full border border-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-300">{{ activeStep + 1 }} / {{ wizardFeatures.length }}</div>
     </div>
 
     <div class="mt-8 grid gap-5 md:grid-cols-[0.8fr_1.2fr]">
       <div class="space-y-3">
-        <button
-          *ngFor="let feature of wizardFeatures; let index = index"
-          type="button"
-          (click)="activeStep = index"
-          class="w-full rounded-2xl border p-4 text-left transition"
-          [class.border-lime-300]="index === activeStep"
-          [class.bg-lime-300]="index === activeStep"
-          [class.text-slate-950]="index === activeStep"
-          [class.border-white\/10]="index !== activeStep"
-          [class.bg-white\/5]="index !== activeStep"
-        >
+        <button *ngFor="let feature of wizardFeatures; let index = index" type="button" (click)="activeStep = index" class="w-full rounded-2xl border p-4 text-left transition" [class.border-lime-300]="index === activeStep" [class.bg-lime-300]="index === activeStep" [class.text-slate-950]="index === activeStep" [class.border-white\/10]="index !== activeStep" [class.bg-white\/5]="index !== activeStep">
           <span class="text-xs font-black uppercase tracking-[0.18em]">Step {{ index + 1 }}</span>
           <span class="mt-2 block text-sm font-bold">{{ feature.title }}</span>
         </button>
       </div>
-
       <article *ngIf="currentWizardFeature as feature" class="rounded-3xl border border-white/10 bg-slate-950/70 p-6">
         <p class="text-xs font-bold uppercase tracking-[0.2em] text-lime-200">Feature focus</p>
         <h2 class="mt-4 text-2xl font-black">{{ feature.title }}</h2>
         <p class="mt-4 text-sm leading-7 text-slate-300">{{ feature.summary }}</p>
-        <div class="mt-6 rounded-2xl border border-lime-300/20 bg-lime-300/10 p-4 text-sm leading-6 text-lime-100">
-          {{ feature.action }}
-        </div>
+        <div class="mt-6 rounded-2xl border border-lime-300/20 bg-lime-300/10 p-4 text-sm leading-6 text-lime-100">{{ feature.action }}</div>
       </article>
     </div>
 
     <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-between">
-      <button type="button" (click)="previousWizardStep()" [disabled]="activeStep === 0" class="rounded-full border border-white/15 px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-300 transition hover:border-white/40 disabled:cursor-not-allowed disabled:opacity-40">
-        Back
-      </button>
-      <button type="button" (click)="nextWizardStep()" class="rounded-full bg-lime-300 px-6 py-3 text-xs font-black uppercase tracking-[0.18em] text-slate-950 transition hover:bg-lime-200">
-        {{ isLastWizardStep ? 'Enter workspace' : 'Next feature' }}
-      </button>
+      <button type="button" (click)="previousWizardStep()" [disabled]="activeStep === 0" class="rounded-full border border-white/15 px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-300 transition hover:border-white/40 disabled:cursor-not-allowed disabled:opacity-40">Back</button>
+      <button type="button" (click)="nextWizardStep()" class="rounded-full bg-lime-300 px-6 py-3 text-xs font-black uppercase tracking-[0.18em] text-slate-950 transition hover:bg-lime-200">{{ isLastWizardStep ? 'Enter workspace' : 'Next feature' }}</button>
     </div>
   </section>
 
@@ -61,61 +42,28 @@
     <div class="mb-8 text-center">
       <div class="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-3xl bg-lime-300 text-2xl font-black text-slate-950 shadow-lg shadow-lime-950/30">S</div>
       <h1 class="text-3xl font-black tracking-tight">Senatla Ops</h1>
-      <p class="mt-2 text-sm text-slate-400">
-        {{ requestedRole ? ('Role-gated login for ' + requestedRole) : modeHint }}
-      </p>
+      <p class="mt-2 text-sm text-slate-400">{{ requestedRole ? ('Role-gated login for ' + requestedRole) : modeHint }}</p>
     </div>
 
     <div class="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-2xl">
-      <form (ngSubmit)="handleLogin()" class="space-y-4">
-        <div *ngIf="recoveryMode" class="rounded border border-lime-500/20 bg-lime-500/10 p-3 text-xs text-lime-100">
-          Create a new password for your operational account. The recovery link is single-use.
-        </div>
+      <form (ngSubmit)="handleLogin()" class="space-y-4" novalidate>
+        <div *ngIf="recoveryMode" class="rounded border border-lime-500/20 bg-lime-500/10 p-3 text-xs text-lime-100">Create a new password for your operational account. The recovery link is single-use.</div>
         <div>
           <label class="mb-1 block text-xs font-bold uppercase text-slate-500">{{ usernameLabel }}</label>
-          <input
-            type="text"
-            [(ngModel)]="username"
-            name="username"
-            [readonly]="recoveryMode && !!recoveryUsernameHint"
-            [attr.autocomplete]="rememberLogin ? 'username' : 'off'"
-            class="w-full rounded border border-slate-700 bg-slate-950 p-3 text-sm transition-colors focus:border-lime-300 focus:outline-none"
-            [placeholder]="usernamePlaceholder"
-          >
+          <input type="email" [(ngModel)]="username" name="username" [readonly]="recoveryMode && !!recoveryUsernameHint" [attr.autocomplete]="rememberLogin ? 'username' : 'off'" class="w-full rounded border border-slate-700 bg-slate-950 p-3 text-sm transition-colors focus:border-lime-300 focus:outline-none" [placeholder]="usernamePlaceholder" required>
         </div>
         <div *ngIf="!recoveryMode">
           <label class="mb-1 block text-xs font-bold uppercase text-slate-500">Password</label>
-          <input
-            [type]="showPassword ? 'text' : 'password'"
-            [(ngModel)]="password"
-            name="password"
-            [attr.autocomplete]="rememberLogin ? 'current-password' : 'new-password'"
-            class="w-full rounded border border-slate-700 bg-slate-950 p-3 text-sm transition-colors focus:border-lime-300 focus:outline-none"
-            [placeholder]="passwordPlaceholder"
-          >
+          <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="password" name="password" [attr.autocomplete]="rememberLogin ? 'current-password' : 'new-password'" class="w-full rounded border border-slate-700 bg-slate-950 p-3 text-sm transition-colors focus:border-lime-300 focus:outline-none" [placeholder]="passwordPlaceholder" required>
         </div>
         <div *ngIf="recoveryMode" class="grid gap-3">
           <div>
             <label class="mb-1 block text-xs font-bold uppercase text-slate-500">New password</label>
-            <input
-              [type]="showRecoveryPassword ? 'text' : 'password'"
-              [(ngModel)]="recoveryPassword"
-              name="recoveryPassword"
-              autocomplete="new-password"
-              class="w-full rounded border border-slate-700 bg-slate-950 p-3 text-sm transition-colors focus:border-lime-300 focus:outline-none"
-              placeholder="Choose a new password"
-            >
+            <input [type]="showRecoveryPassword ? 'text' : 'password'" [(ngModel)]="recoveryPassword" name="recoveryPassword" autocomplete="new-password" class="w-full rounded border border-slate-700 bg-slate-950 p-3 text-sm transition-colors focus:border-lime-300 focus:outline-none" placeholder="Choose a new password">
           </div>
           <div>
             <label class="mb-1 block text-xs font-bold uppercase text-slate-500">Confirm password</label>
-            <input
-              [type]="showRecoveryPassword ? 'text' : 'password'"
-              [(ngModel)]="confirmRecoveryPassword"
-              name="confirmRecoveryPassword"
-              autocomplete="new-password"
-              class="w-full rounded border border-slate-700 bg-slate-950 p-3 text-sm transition-colors focus:border-lime-300 focus:outline-none"
-              placeholder="Repeat the new password"
-            >
+            <input [type]="showRecoveryPassword ? 'text' : 'password'" [(ngModel)]="confirmRecoveryPassword" name="confirmRecoveryPassword" autocomplete="new-password" class="w-full rounded border border-slate-700 bg-slate-950 p-3 text-sm transition-colors focus:border-lime-300 focus:outline-none" placeholder="Repeat the new password">
           </div>
         </div>
         <div class="grid gap-2 rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-xs text-slate-300">
@@ -123,22 +71,15 @@
           <label *ngIf="recoveryMode" class="flex items-center gap-2"><input type="checkbox" [(ngModel)]="showRecoveryPassword" name="showRecoveryPassword" class="accent-lime-300"> Show recovery password</label>
           <label class="flex items-start gap-2"><input type="checkbox" [(ngModel)]="rememberLogin" name="rememberLogin" class="mt-0.5 accent-lime-300"> <span>Save username on this device. Password saving stays with the browser or OS password manager; if unchecked, saved login autofill is cleared.</span></label>
         </div>
-        <div *ngIf="errorMsg" class="rounded border border-red-500/20 bg-red-500/10 p-2 text-xs text-red-300">
-          {{ errorMsg }}
-        </div>
-        <div *ngIf="recoveryMsg" class="rounded border border-lime-500/20 bg-lime-500/10 p-2 text-xs text-lime-100 break-words">
-          {{ recoveryMsg }}
-        </div>
-        <button type="submit" [disabled]="isSubmitting" class="mt-4 w-full rounded bg-lime-300 py-3 font-black text-slate-950 shadow-lg transition-colors hover:bg-lime-200 disabled:cursor-wait disabled:opacity-60">
-          {{ recoveryMode ? (isRecoveringPassword ? 'Updating password...' : 'Save new password') : (isSubmitting ? 'Checking access...' : 'Continue') }}
-        </button>
+        <div *ngIf="errorMsg" role="alert" aria-live="assertive" class="rounded border border-red-500/20 bg-red-500/10 p-2 text-xs text-red-300">{{ errorMsg }}</div>
+        <div *ngIf="recoveryMsg" role="status" aria-live="polite" class="rounded border border-lime-500/20 bg-lime-500/10 p-2 text-xs text-lime-100 break-words">{{ recoveryMsg }}</div>
+        <button type="submit" [disabled]="recoveryMode ? isSubmitting : !isLoginReady" class="mt-4 w-full rounded bg-lime-300 py-3 font-black text-slate-950 shadow-lg transition-colors hover:bg-lime-200 disabled:cursor-not-allowed disabled:opacity-45">{{ recoveryMode ? (isRecoveringPassword ? 'Updating password...' : 'Save new password') : (isSubmitting ? 'Checking access...' : 'Continue') }}</button>
+        <p *ngIf="!recoveryMode && !isLoginReady && !isSubmitting" class="text-center text-[11px] text-slate-500">Enter your work email and password to continue.</p>
       </form>
 
       <div class="mt-6 border-t border-slate-800 pt-6 text-center">
         <button *ngIf="!recoveryMode" type="button" (click)="requestPasswordReset()" [disabled]="isSubmitting" class="text-xs text-lime-200 hover:text-lime-100">Forgot password?</button>
-        <p class="text-[11px] text-slate-500">
-          Use the work email and password provisioned in Supabase Auth. The selected route still determines the required role.
-        </p>
+        <p class="text-[11px] text-slate-500">Use the work email and password provisioned in Supabase Auth. The selected route still determines the required role.</p>
         <a routerLink="/landing" class="mt-4 inline-block text-xs text-slate-500 hover:text-slate-300">Back to landing</a>
       </div>
     </div>

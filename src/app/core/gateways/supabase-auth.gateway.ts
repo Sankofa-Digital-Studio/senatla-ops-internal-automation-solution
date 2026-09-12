@@ -35,7 +35,10 @@ export class SupabaseAuthGateway implements AuthGateway {
   async login(username: string, password: string): Promise<AuthSession | null> {
     const email = username.trim().toLowerCase();
     const { data, error } = await this.supabase.auth.signInWithPassword({ email, password: password.trim() });
-    if (error || !data.user || !data.session) return null;
+    if (error) {
+      throw new Error(this.loginErrorMessage(error.message));
+    }
+    if (!data.user || !data.session) return null;
 
     const session = await this.buildSession(data.user.id, data.user.email ?? email, data.session);
     if (!session) return null;
@@ -50,7 +53,18 @@ export class SupabaseAuthGateway implements AuthGateway {
       password: request.password,
       options: { data: { display_name: request.displayName.trim() } },
     });
-    if (error || !data.user) return { success: false, confirmationRequired: false, adminGranted: false, message: 'Registration could not be completed.' };
+    if (error) {
+      return {
+        success: false,
+        confirmationRequired: false,
+        adminGranted: false,
+        message: this.registrationErrorMessage(error.message),
+      };
+    }
+    if (!data.user) {
+      return { success: false, confirmationRequired: false, adminGranted: false, message: 'Registration did not create an account. Try again.' };
+    }
+
     const adminGranted = data.session && request.adminCode ? await this.redeemAdminCode(request.adminCode) : false;
     return {
       success: true,
@@ -67,24 +81,15 @@ export class SupabaseAuthGateway implements AuthGateway {
 
   async requestPasswordReset(email: string, redirectTo?: string): Promise<PasswordResetRequestResult> {
     const normalizedEmail = email.trim().toLowerCase();
-    if (!normalizedEmail) {
-      throw new Error('Work email is required.');
-    }
-    const { error } = await this.supabase.auth.resetPasswordForEmail(
-      normalizedEmail,
-      redirectTo ? { redirectTo } : undefined,
-    );
-    if (error) {
-      throw error;
-    }
+    if (!normalizedEmail) throw new Error('Work email is required.');
+    const { error } = await this.supabase.auth.resetPasswordForEmail(normalizedEmail, redirectTo ? { redirectTo } : undefined);
+    if (error) throw new Error(this.recoveryErrorMessage(error.message));
     return { message: `Password recovery email requested for ${normalizedEmail}.` };
   }
 
   async updatePassword(nextPassword: string): Promise<void> {
     const { error } = await this.supabase.auth.updateUser({ password: nextPassword });
-    if (error) {
-      throw error;
-    }
+    if (error) throw new Error(this.recoveryErrorMessage(error.message));
   }
 
   async logout(): Promise<void> {
@@ -161,6 +166,30 @@ export class SupabaseAuthGateway implements AuthGateway {
       details: {},
     });
     if (error) throw error;
+  }
+
+  private loginErrorMessage(message: string) {
+    const normalized = message.toLowerCase();
+    if (normalized.includes('invalid login credentials')) return 'Email or password is incorrect.';
+    if (normalized.includes('email not confirmed')) return 'Confirm your email before signing in.';
+    if (normalized.includes('rate limit') || normalized.includes('too many')) return 'Too many sign-in attempts. Wait a moment and try again.';
+    return 'Sign-in service is unavailable right now. Check your connection and try again.';
+  }
+
+  private registrationErrorMessage(message: string) {
+    const normalized = message.toLowerCase();
+    if (normalized.includes('already registered') || normalized.includes('already been registered')) return 'An account already exists for this email. Sign in or use password recovery.';
+    if (normalized.includes('password') && (normalized.includes('weak') || normalized.includes('short') || normalized.includes('characters'))) return 'The password does not meet the secure account policy. Use a longer passphrase and try again.';
+    if (normalized.includes('email') && normalized.includes('invalid')) return 'Enter a valid work email address.';
+    if (normalized.includes('rate limit') || normalized.includes('too many')) return 'Too many registration attempts. Wait a moment and try again.';
+    return 'Registration service is unavailable right now. Check your connection and try again.';
+  }
+
+  private recoveryErrorMessage(message: string) {
+    const normalized = message.toLowerCase();
+    if (normalized.includes('rate limit') || normalized.includes('too many')) return 'Too many recovery attempts. Wait a moment and try again.';
+    if (normalized.includes('password') && normalized.includes('same')) return 'Choose a password different from the current password.';
+    return 'Password recovery could not be completed. Check the details and try again.';
   }
 
   private emit(session: AuthSession | null) {

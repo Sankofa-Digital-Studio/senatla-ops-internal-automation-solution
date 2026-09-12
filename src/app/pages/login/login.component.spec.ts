@@ -22,6 +22,13 @@ describe('LoginComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('keeps sign-in disabled until email and password are present', () => {
+    expect(component.isLoginReady).toBeFalse();
+    component.username = 'office.admin@test.invalid';
+    component.password = 'test-password';
+    expect(component.isLoginReady).toBeTrue();
+  });
+
   it('rejects a valid account when the selected role is wrong', async () => {
     component.requestedRole = 'office';
     component.username = 'director.exec@test.invalid';
@@ -29,7 +36,7 @@ describe('LoginComponent', () => {
 
     await component.handleLogin();
 
-    expect(component.errorMsg).toBe('Invalid credentials for the selected role.');
+    expect(component.errorMsg).toBe('Sign-in failed. Check the email, password, and selected role.');
   });
 
   it('uses the production login hint', () => {
