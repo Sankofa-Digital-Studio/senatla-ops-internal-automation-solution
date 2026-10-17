@@ -33,7 +33,7 @@ Quality commands:
 npm run verify
 ```
 
-`npm run verify` is the deterministic application release gate. It runs lint, application/spec type-checking, production build and headless unit tests through one entrypoint with per-step pass/fail evidence. The gate sanitizes inherited npm lifecycle context before each subcommand, and the Karma step has timeout evidence so Chrome cleanup cannot hang indefinitely. Do not treat compilation as proof that the browser, Karma or Supabase contracts pass. See the current [release-readiness audit](docs/release-readiness-audit-2026-06-24.md).
+`npm run verify` is the deterministic application release gate. It runs runtime-config, admin-account and auth-provisioning contract tests, lint, application/spec type-checking, production build and headless unit tests through one entrypoint with per-step pass/fail evidence. The gate sanitizes inherited npm lifecycle context before each subcommand, and the Karma step has timeout evidence so Chrome cleanup cannot hang indefinitely. Do not treat compilation as proof that the browser, Karma or Supabase contracts pass. See the current [release-readiness audit](docs/release-readiness-audit-2026-06-24.md).
 
 ## Documentation
 

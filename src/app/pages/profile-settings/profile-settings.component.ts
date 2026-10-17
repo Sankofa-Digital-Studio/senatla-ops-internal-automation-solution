@@ -34,6 +34,7 @@ export class ProfileSettingsComponent {
   private rolePath(role: string) {
     if (role === 'site') return '/site-manager';
     if (role === 'office') return '/office-admin';
+    if (role === 'readonly') return '/read-only';
     return '/director';
   }
 }

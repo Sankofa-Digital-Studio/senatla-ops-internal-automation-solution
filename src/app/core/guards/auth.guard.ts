@@ -34,6 +34,9 @@ async function hasAccess(expectedRole?: RoleRequirement, requestedUrl: string = 
   await auth.ensureReady();
 
   if (!auth.canAccess()) {
+    if (auth.currentSession()?.mustChangePassword) {
+      return router.createUrlTree(['/login/recovery']);
+    }
     return getLoginTree(router, expectedRole, requestedUrl, preferredLoginRole);
   }
 

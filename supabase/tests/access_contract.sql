@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(30);
+select plan(38);
 
 set local session_replication_role = replica;
 insert into public.profiles (id, username, display_name, role, is_active, organization_id)
@@ -8,7 +8,8 @@ values
   ('10000000-0000-4000-8000-000000000001', 'office.test', 'Office Test', 'office', true, '00000000-0000-4000-8000-000000000001'),
   ('10000000-0000-4000-8000-000000000002', 'director.test', 'Director Test', 'director', true, '00000000-0000-4000-8000-000000000001'),
   ('10000000-0000-4000-8000-000000000003', 'site.test', 'Site Test', 'site', true, '00000000-0000-4000-8000-000000000001'),
-  ('10000000-0000-4000-8000-000000000004', 'inactive.test', 'Inactive Test', 'office', false, '00000000-0000-4000-8000-000000000001');
+  ('10000000-0000-4000-8000-000000000004', 'inactive.test', 'Inactive Test', 'office', false, '00000000-0000-4000-8000-000000000001'),
+  ('10000000-0000-4000-8000-000000000005', 'readonly.test', 'Read-only Test', 'readonly', true, '00000000-0000-4000-8000-000000000001');
 
 insert into public.sites (id, name, location, manager_profile_id, is_active, organization_id)
 values
@@ -16,7 +17,9 @@ values
   ('11000000-0000-4000-8000-000000000002', 'Other Site', 'South', null, true, '00000000-0000-4000-8000-000000000001');
 
 insert into public.profile_site_access (profile_id, site_id, organization_id)
-values ('10000000-0000-4000-8000-000000000003', '11000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000001');
+values
+  ('10000000-0000-4000-8000-000000000003', '11000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000001'),
+  ('10000000-0000-4000-8000-000000000005', '11000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000001');
 
 insert into public.employees (id, first_name, surname, id_number, role, site_id, start_date, organization_id)
 values
@@ -93,6 +96,21 @@ select lives_ok(
 select lives_ok(
   $$ insert into public.approval_requests (request_type, status, requested_by, requested_by_name, payload, organization_id) values ('asset_return_to_service', 'pending', '10000000-0000-4000-8000-000000000003', 'Site Test', '{"assetId":"13000000-0000-4000-8000-000000000001"}'::jsonb, '00000000-0000-4000-8000-000000000001') $$,
   'site role can request return-to-service approval for an assigned asset'
+);
+
+set local "request.jwt.claims" = '{"sub":"10000000-0000-4000-8000-000000000005","role":"authenticated","exp":4102444800,"app_metadata":{"must_change_password":true}}';
+select ok(not private.auth_session_is_current(), 'temporary-password session is not an active application session');
+select is((select role::text from public.profiles where id = auth.uid()), 'readonly', 'temporary-password user can read their own profile for password setup');
+select is((select count(*) from public.assets), 0::bigint, 'temporary-password user cannot read operational data');
+
+set local "request.jwt.claims" = '{"sub":"10000000-0000-4000-8000-000000000005","role":"authenticated","exp":4102444800,"app_metadata":{"must_change_password":false}}';
+select is(private.current_app_role()::text, 'readonly', 'read-only role resolves after password setup');
+select ok(not public.can_read_admin_workspace(), 'read-only role does not receive organization-wide admin access');
+select is((select count(*) from public.employees where site_id = '11000000-0000-4000-8000-000000000001'), 1::bigint, 'read-only user can read employees at assigned site');
+select is((select count(*) from public.employees where site_id = '11000000-0000-4000-8000-000000000002'), 0::bigint, 'read-only user cannot read employees at another site');
+select throws_ok(
+  $$ insert into public.assets (registration_number, make, model, type, license_expiry, status, assigned_site_id, organization_id) values ('READONLY BLOCK', 'Read-only', 'Blocked', 'Light Vehicle', current_date, 'Active', '11000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000001') $$,
+  '42501', null, 'read-only user cannot insert operational records'
 );
 
 set local "request.jwt.claims" = '{"sub":"10000000-0000-4000-8000-000000000004","role":"authenticated","exp":4102444800}';

@@ -1,4 +1,4 @@
-export type AppRole = 'site' | 'office' | 'director';
+export type AppRole = 'site' | 'office' | 'director' | 'readonly';
 
 export const SENATLA_TRADING_ORGANIZATION_ID = '00000000-0000-4000-8000-000000000001';
 
@@ -145,6 +145,8 @@ export interface AuthSession {
   permittedSiteIds: string[];
   issuedAt: string;
   expiresAt: string;
+  // When true the user must set a new permanent password before proceeding.
+  mustChangePassword?: boolean;
 }
 
 export interface Issue {

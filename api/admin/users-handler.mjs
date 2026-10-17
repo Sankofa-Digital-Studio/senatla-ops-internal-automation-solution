@@ -1,3 +1,5 @@
+import { randomBytes } from 'node:crypto';
+
 export function buildAdminUsersHandler({ createAdminClient }) {
   return async function handler(req, res) {
     if (req.method !== 'POST' && req.method !== 'PATCH') {
@@ -43,34 +45,135 @@ export function buildAdminUsersHandler({ createAdminClient }) {
       const payload = req.body || {};
       const email = normalizeEmail(payload.email);
       const displayName = `${payload.displayName || ''}`.trim();
-      const role = 'site';
+      const role = 'readonly';
+      const siteId = `${payload.siteId || ''}`.trim();
 
-      if (!email || !displayName) {
-        res.status(400).json({ error: 'Email and display name are required.' });
+      if (!email || !displayName || !isUuid(siteId)) {
+        res.status(400).json({ error: 'Email, display name, and a valid permitted site are required.' });
+        return;
+      }
+      const { data: site, error: siteError } = await adminClient
+        .from('sites')
+        .select('id')
+        .eq('id', siteId)
+        .eq('organization_id', profile.organization_id)
+        .eq('is_active', true)
+        .maybeSingle();
+      if (siteError || !site) {
+        res.status(400).json({ error: 'Select an active site in your organization.' });
         return;
       }
 
-      const { data: invitedUserData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email);
-      if (inviteError || !invitedUserData.user?.id) {
-        res.status(400).json({ error: inviteError?.message || 'Unable to invite user.' });
+      const mailApiKey = process.env.RESEND_API_KEY;
+      const sender = process.env.SENATLA_EMAIL_FROM;
+      const appUrl = process.env.SENATLA_APP_URL || process.env.SENATLA_PUBLIC_APP_URL;
+      if (!mailApiKey || !sender || !appUrl) {
+        res.status(500).json({ error: 'Invitation email configuration is missing.' });
+        return;
+      }
+      let loginUrl;
+      try {
+        const parsedAppUrl = new URL(appUrl);
+        if (!['http:', 'https:'].includes(parsedAppUrl.protocol)) throw new Error('Unsupported URL protocol');
+        loginUrl = new URL('/login', parsedAppUrl.origin).toString();
+      } catch {
+        res.status(500).json({ error: 'Invitation email application URL is invalid.' });
+        return;
+      }
+
+      const tempPassword = `T!mp-9-${randomBytes(32).toString('base64url')}`;
+
+      const { data: createdUserData, error: createError } = await adminClient.auth.admin.createUser({
+        email,
+        password: tempPassword,
+        email_confirm: true,
+        app_metadata: { must_change_password: true },
+      });
+
+      if (createError || !createdUserData.user?.id) {
+        res.status(400).json({ error: createError?.message || 'Unable to create user.' });
         return;
       }
 
       const newProfile = {
-        id: invitedUserData.user.id,
+        id: createdUserData.user.id,
         username: email,
         display_name: displayName,
         role,
         is_active: true,
         organization_id: profile.organization_id,
       };
+
       const { error: upsertError } = await adminClient.from('profiles').upsert(newProfile);
       if (upsertError) {
-        res.status(400).json({ error: upsertError.message });
+        const rolledBack = await rollbackCreatedUser(adminClient, createdUserData.user.id);
+        res.status(rolledBack ? 400 : 500).json({
+          error: rolledBack
+            ? upsertError.message
+            : 'Profile creation failed and account cleanup also failed; contact an administrator.',
+        });
+        return;
+      }
+      const { error: siteAccessError } = await adminClient.from('profile_site_access').upsert({
+        profile_id: createdUserData.user.id,
+        site_id: siteId,
+        organization_id: profile.organization_id,
+      });
+      if (siteAccessError) {
+        const rolledBack = await rollbackCreatedUser(adminClient, createdUserData.user.id);
+        res.status(rolledBack ? 400 : 500).json({
+          error: rolledBack
+            ? siteAccessError.message
+            : 'Site access assignment failed and account cleanup also failed; contact an administrator.',
+        });
         return;
       }
 
-      await recordAuthEvent(adminClient, profile, actorId, invitedUserData.user.id, 'user_invited', { role });
+      let emailResponse;
+      try {
+        emailResponse = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${mailApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: sender,
+            to: [email],
+            subject: 'Your Senatla Ops account',
+            text: [
+              `Hello ${displayName},`,
+              '',
+              'Your read-only Senatla Ops account is ready.',
+              `Username: ${email}`,
+              `Temporary password: ${tempPassword}`,
+              '',
+              `Sign in at: ${loginUrl}`,
+              'You will be required to choose and confirm a new password before you can access the workspace.',
+              'Please do not share this email or temporary password.',
+            ].join('\n'),
+          }),
+        });
+      } catch {
+        const rolledBack = await rollbackCreatedUser(adminClient, createdUserData.user.id);
+        res.status(502).json({
+          error: rolledBack
+            ? 'Invitation email could not be sent; the account was not created.'
+            : 'Invitation email failed and account cleanup also failed; contact an administrator.',
+        });
+        return;
+      }
+      if (!emailResponse.ok) {
+        const rolledBack = await rollbackCreatedUser(adminClient, createdUserData.user.id);
+        res.status(502).json({
+          error: rolledBack
+            ? 'Invitation email could not be sent; the account was not created.'
+            : 'Invitation email failed and account cleanup also failed; contact an administrator.',
+        });
+        return;
+      }
+
+      await recordAuthEvent(adminClient, profile, actorId, createdUserData.user.id, 'user_invited', { role, siteId });
       res.status(200).json({
         user: {
           id: newProfile.id,
@@ -78,8 +181,9 @@ export function buildAdminUsersHandler({ createAdminClient }) {
           displayName,
           role,
           isActive: true,
-          createdAt: invitedUserData.user.created_at,
+          createdAt: createdUserData.user.created_at,
         },
+        message: 'User created and temporary credentials were sent by email.',
       });
       return;
     }
@@ -215,7 +319,11 @@ export function normalizeEmail(value) {
 }
 
 export function isAppRole(role) {
-  return role === 'site' || role === 'office' || role === 'director';
+  return role === 'site' || role === 'office' || role === 'director' || role === 'readonly';
+}
+
+function isUuid(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
 export function normalizeResetRedirect(value) {
@@ -267,4 +375,13 @@ async function recordAuthEvent(client, actor, actorId, targetProfileId, eventTyp
     details,
   });
   if (error) throw error;
+}
+
+async function rollbackCreatedUser(client, userId) {
+  try {
+    const { error } = await client.auth.admin.deleteUser(userId);
+    return !error;
+  } catch {
+    return false;
+  }
 }
