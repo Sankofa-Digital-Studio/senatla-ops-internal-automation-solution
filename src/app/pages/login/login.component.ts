@@ -90,6 +90,7 @@ export class LoginComponent implements OnInit, OnDestroy {
       if (query.get('onboarding') === '1') {
         void this.openAuthenticatedWizard();
       }
+      void this.forcePasswordChangeIfRequired();
     });
   }
 
@@ -121,6 +122,16 @@ export class LoginComponent implements OnInit, OnDestroy {
       if (!session || session.role !== role) {
         await this.auth.logout();
         this.errorMsg = 'Invalid credentials for the selected role.';
+        return;
+      }
+
+      // If the backend marked the account as requiring a password change, route to recovery flow.
+      if (session.mustChangePassword) {
+        this.recoveryMode = true;
+        this.recoveryUsernameHint = session.username;
+        this.recoveryMsg = 'A password reset is required for this account. Choose a new password.';
+        // Clear any sensitive fields and stop further navigation.
+        this.password = '';
         return;
       }
 
@@ -227,6 +238,17 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.startWizardOrNavigate(session, this.redirectUrl || this.getRolePath(session.role), true);
   }
 
+  private async forcePasswordChangeIfRequired() {
+    await this.auth.ensureReady();
+    const session = this.auth.currentSession();
+    if (!session?.mustChangePassword) return;
+    this.recoveryMode = true;
+    this.recoveryUsernameHint = session.username;
+    this.username = session.username;
+    this.password = '';
+    this.recoveryMsg = 'Your temporary password must be replaced before you can continue.';
+  }
+
   private async fetchRoleResources(_session: AuthSession) {
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
@@ -246,7 +268,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   private normalizeRole(input: string): AppRole | null {
-    if (input === 'site' || input === 'office' || input === 'director') {
+    if (input === 'site' || input === 'office' || input === 'director' || input === 'readonly') {
       return input;
     }
     return null;
@@ -254,6 +276,7 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   private getRolePath(role: AppRole) {
     if (role === 'site') return '/site-manager';
+    if (role === 'readonly') return '/read-only';
     if (role === 'office') return '/office-admin';
     return '/director';
   }

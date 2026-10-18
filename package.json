@@ -19,6 +19,7 @@
     "test:runtime-config": "node --test scripts/write-runtime-config.test.mjs",
     "test:ocr-device-uat-contract": "node --test scripts/ocr-device-uat-contract.test.mjs",
     "test:admin-users-reset-contract": "node --test scripts/admin-users-reset-contract.test.mjs",
+    "test:auth-provisioning-contract": "node --test scripts/auth-provisioning-contract.test.mjs",
     "validate:ocr-device-uat": "node scripts/validate-ocr-device-uat.mjs",
     "docker:ensure": "node scripts/ensure-docker.mjs",
     "test:docker-ensure": "node --test scripts/ensure-docker.test.mjs",

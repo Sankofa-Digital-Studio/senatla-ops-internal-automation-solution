@@ -17,6 +17,7 @@ export class AppComponent {
   readonly showDebugControls = !environment.production;
   readonly workspaceLink = computed(() => {
     const role = this.auth.role();
+    if (role === 'readonly') return { label: 'Read-only workspace', path: '/read-only' };
     if (role === 'site') return { label: 'Site workspace', path: '/site-manager' };
     if (role === 'director') return { label: 'Director workspace', path: '/director' };
     return { label: 'Operations workspace', path: '/office-admin' };

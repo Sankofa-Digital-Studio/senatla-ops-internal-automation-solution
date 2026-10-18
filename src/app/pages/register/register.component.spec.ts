@@ -23,11 +23,12 @@ describe('RegisterComponent', () => {
     expect(component.message).toBe('Enter the complete invitation code.');
   });
 
-  it('creates minimum access without granting admin', async () => {
+  it('directs users to an office administrator instead of self-registering', async () => {
     component.displayName = 'New User'; component.email = 'new.user@example.com';
     component.password = 'a-secure-password'; component.confirmPassword = 'a-secure-password';
     await component.handleRegistration();
-    expect(component.isSuccess).toBeTrue();
-    expect(component.message).toContain('minimum access');
+    expect(component.isSuccess).toBeFalse();
+    expect(component.message).toContain('Self-registration is disabled');
+    expect(component.message).toContain('office administrator');
   });
 });

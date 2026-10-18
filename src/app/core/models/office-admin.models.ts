@@ -59,5 +59,6 @@ export interface OfficeAdminWorkspace {
 export interface UserInviteInput {
   email: string;
   displayName: string;
-  role: 'site' | 'office' | 'director';
+  role: 'readonly';
+  siteId: string;
 }

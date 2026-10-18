@@ -352,7 +352,7 @@ export class OfficeAdminService {
       const ready = this.auth.isReady();
       const role = this.auth.role();
       const userId = this.auth.session()?.userId ?? null;
-      if (!ready || !role || !['site', 'office', 'director'].includes(role)) return;
+      if (!ready || !role || !['site', 'office', 'director', 'readonly'].includes(role)) return;
       void this.loadWorkspace(userId);
     });
   }
@@ -559,17 +559,7 @@ export class OfficeAdminService {
     if (!session) throw new Error('You must be signed in.');
 
     if (!this.supabase) {
-      const localUser: ManagedUserProfile = {
-        id: this.createId(),
-        username: input.email.toLowerCase(),
-        displayName: input.displayName,
-        role: 'site',
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      };
-      this.users.update((users) => [localUser, ...users]);
-      await this.persistLocalWorkspace();
-      return localUser;
+      throw new Error('User invitations require the configured Supabase admin backend.');
     }
 
     const { data } = await this.supabase.auth.getSession();
@@ -1351,6 +1341,15 @@ export class OfficeAdminService {
     const employee = this.employees().find((entry) => entry.id === empId);
     if (!employee) return null;
 
+    return this.calculateEmployeePayroll(employee, month, year, this.financialTypes());
+  }
+
+  private calculateEmployeePayroll(
+    employee: Employee,
+    month: number,
+    year: number,
+    financialTypes: FinancialType[],
+  ) {
     let automatedDays = 0;
     Object.values(employee.logs).forEach((log) => {
       const date = new Date(log.date);
@@ -1369,7 +1368,7 @@ export class OfficeAdminService {
     let totalAllowances = 0;
     let totalDeductions = 0;
 
-    this.financialTypes().forEach((type) => {
+    financialTypes.forEach((type) => {
       if (!type.isActive) return;
       const amount = employee.financials[type.id] || 0;
       if (type.category === 'Allowance') totalAllowances += amount;
@@ -1396,11 +1395,12 @@ export class OfficeAdminService {
 
   generatePayrollCsv(month: number, year: number, includeFullIds: boolean) {
     const header = 'ID Number,Surname,First Name,Site,Days Worked,Manual Adj,Basic Rate,Gross Wage,Allowances,Deductions,Advances,UIF Deduction,Net Pay\n';
+    const financialTypes = this.financialTypes();
+    const siteNames = new Map(this.sites().map((site) => [site.id, site.name]));
     const rows = this.activeEmployees().map((employee) => {
-      const payroll = this.calculateMonthlyPayroll(employee.id, month, year);
-      if (!payroll) return '';
+      const payroll = this.calculateEmployeePayroll(employee, month, year, financialTypes);
       const idNumber = includeFullIds ? employee.idNumber : this.maskIdNumber(employee.idNumber);
-      const siteName = this.sites().find((site) => site.id === employee.siteId)?.name || 'Unknown';
+      const siteName = siteNames.get(employee.siteId) || 'Unknown';
       return `${idNumber},${employee.surname},${employee.firstName},${siteName},${payroll.daysWorked},${payroll.adjustmentDays},${employee.basicRate},${payroll.grossWages},${payroll.allowances},${payroll.deductions},${payroll.salaryAdvances},${payroll.uifDeduction.toFixed(2)},${payroll.netPay.toFixed(2)}`;
     }).join('\n');
     return header + rows;

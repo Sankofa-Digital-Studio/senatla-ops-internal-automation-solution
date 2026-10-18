@@ -30,6 +30,10 @@ export class OnboardingService {
       { title: 'Approve only with separation', summary: 'Maker-checker controls keep requesters from approving their own sensitive actions.', action: 'Review pending approvals before accepting or rejecting them.' },
       { title: 'Register strategic assets', summary: 'Directors can register organization assets while RLS keeps site users scoped to permitted sites.', action: 'Use Asset Register when executive asset capture is required.' },
     ],
+    readonly: [
+      { title: 'View your assigned site', summary: 'Your read-only access is limited to information for the site selected by your administrator.', action: 'Use the Read-only workspace to review permitted operations data. Contact your administrator to request changes.' },
+      { title: 'Keep records unchanged', summary: 'This account cannot create, update, or delete operational records.', action: 'Ask an office administrator to make any required updates.' },
+    ],
   };
 
   featuresFor(role: AppRole | null | undefined) {

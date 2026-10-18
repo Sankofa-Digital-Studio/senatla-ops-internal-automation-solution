@@ -11,10 +11,12 @@ import { CostAttributionGateway, COST_ATTRIBUTION_GATEWAY } from './core/gateway
 class TestAuthGateway {
   private session: AuthSession | null = null;
   private pendingResetEmail = '';
-  private readonly credentials = new Map<string, { password: string; role: AppRole; displayName: string }>([
+  private readonly credentials = new Map<string, { password: string; role: AppRole; displayName: string; mustChangePassword?: boolean }>([
     ['site.manager@test.invalid', { password: 'test-password', role: 'site', displayName: 'Site Manager' }],
     ['office.admin@test.invalid', { password: 'test-password', role: 'office', displayName: 'Office Admin' }],
     ['director.exec@test.invalid', { password: 'test-password', role: 'director', displayName: 'Director' }],
+    ['readonly.user@test.invalid', { password: 'temp-password', role: 'readonly', displayName: 'Read-only User', mustChangePassword: true }],
+    ['readonly.reader@test.invalid', { password: 'test-password', role: 'readonly', displayName: 'Read-only Reader' }],
   ]);
 
   async loadSession(): Promise<AuthSession | null> {
@@ -34,18 +36,19 @@ class TestAuthGateway {
       permittedSiteIds: user.role === 'site' ? ['site-1'] : [],
       issuedAt: new Date().toISOString(),
       expiresAt: new Date(Date.now() + 1000 * 60 * 60).toISOString(),
+      mustChangePassword: user.mustChangePassword,
     };
 
     return this.session;
   }
 
-  async register(request: { email: string; password: string; displayName: string; adminCode?: string }) {
-    const email = request.email.trim().toLowerCase();
-    if (!email || request.password.length < 8 || !request.displayName.trim()) {
-      return { success: false, confirmationRequired: false, adminGranted: false, message: 'Registration could not be completed.' };
-    }
-
-    return { success: true, confirmationRequired: false, adminGranted: false };
+  async register(_request: { email: string; password: string; displayName: string; adminCode?: string }) {
+    return {
+      success: false,
+      confirmationRequired: false,
+      adminGranted: false,
+      message: 'Self-registration is disabled. Request an account from your organization\'s office administrator.',
+    };
   }
 
   async redeemAdminCode(_code: string): Promise<boolean> {

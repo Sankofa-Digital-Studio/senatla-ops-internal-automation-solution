@@ -125,7 +125,8 @@ export class OfficeAdminComponent {
   inviteForm: UserInviteInput = {
     email: '',
     displayName: '',
-    role: 'site',
+    role: 'readonly',
+    siteId: '',
   };
   siteForm: Site = {
     id: '',
@@ -283,8 +284,8 @@ export class OfficeAdminComponent {
   async submitInvite() {
     await this.runAction(async () => {
       const created = await this.service.inviteUser(this.inviteForm);
-      this.feedback.set(`User invited: ${created.username}`);
-      this.inviteForm = { email: '', displayName: '', role: 'site' };
+      this.feedback.set(`Read-only user invited: ${created.username}. Temporary credentials were sent by email.`);
+      this.inviteForm = { email: '', displayName: '', role: 'readonly', siteId: '' };
     });
   }
 
@@ -404,7 +405,7 @@ export class OfficeAdminComponent {
 
   async updateUser(user: ManagedUserProfile, role: string, isActive: boolean) {
     await this.runAction(async () => {
-      const normalizedRole = role === 'site' || role === 'office' || role === 'director' ? role : user.role;
+      const normalizedRole = role === 'site' || role === 'office' || role === 'director' || role === 'readonly' ? role : user.role;
       await this.service.saveUser({ ...user, role: normalizedRole, isActive });
       this.feedback.set(`User updated: ${user.username}`);
     });

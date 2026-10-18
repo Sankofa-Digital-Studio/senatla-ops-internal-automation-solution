@@ -71,7 +71,7 @@ export class AuthService {
 
   canAccess(role?: AppRole) {
     const session = this.currentSession();
-    return !!session && (!role || session.role === role);
+    return !!session && !session.mustChangePassword && (!role || session.role === role);
   }
 
   validateSession() {

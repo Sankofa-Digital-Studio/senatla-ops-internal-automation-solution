@@ -137,7 +137,7 @@
       <div class="mt-6 border-t border-slate-800 pt-6 text-center">
         <button *ngIf="!recoveryMode" type="button" (click)="requestPasswordReset()" [disabled]="isSubmitting" class="text-xs text-lime-200 hover:text-lime-100">Forgot password?</button>
         <p class="text-[11px] text-slate-500">
-          Use the work email and password provisioned in Supabase Auth. The selected route still determines the required role.
+          Use the work email and password provisioned by your organization. Your assigned role controls which workspace you can access.
         </p>
         <a routerLink="/landing" class="mt-4 inline-block text-xs text-slate-500 hover:text-slate-300">Back to landing</a>
       </div>

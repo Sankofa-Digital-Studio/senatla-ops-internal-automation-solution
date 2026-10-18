@@ -24,11 +24,12 @@ describe('OfficeAdminComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('forces new email invitations to minimum site access', async () => {
+  it('does not create accounts locally when the admin backend is unavailable', async () => {
     await TestBed.inject(AuthService).login('office.admin@test.invalid', 'test-password');
-    component.inviteForm = { email: 'new@example.com', displayName: 'New User', role: 'director' };
+    component.inviteForm = { email: 'new@example.com', displayName: 'New User', role: 'readonly', siteId: 'site-1' };
     await component.submitInvite();
-    expect(component.service.users()[0].role).toBe('site');
+    expect(component.service.users().some((user) => user.username === 'new@example.com')).toBeFalse();
+    expect(component.feedback()).toContain('configured Supabase admin backend');
   });
 
   it('builds a reviewable timesheet register for the selected date', () => {

@@ -47,28 +47,10 @@ export class RegisterComponent {
       return;
     }
 
-    this.isSubmitting = true;
-    try {
-      const result = await this.auth.register({
-        displayName: this.displayName,
-        email: this.email,
-        password: this.password,
-        adminCode: this.showAdminCode ? this.adminCode : undefined,
-      });
-      this.isSuccess = result.success;
-      this.message = result.success
-        ? result.adminGranted
-          ? 'Account created and the verified administrator invitation was applied.'
-          : result.message || 'Account created with minimum access. You can sign in now.'
-        : result.message || 'Registration could not be completed.';
-      if (result.success) {
-        this.password = '';
-        this.confirmPassword = '';
-        this.adminCode = '';
-      }
-    } finally {
-      this.isSubmitting = false;
-    }
+    // Self-registration is disabled. Instruct users to request an account from an office admin.
+    this.message = 'Self-registration is disabled. Please ask your organization\'s office administrator to invite you.';
+    this.isSuccess = false;
+    return;
   }
 
   async handleAdminRedemption() {

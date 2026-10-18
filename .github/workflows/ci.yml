@@ -40,10 +40,10 @@ jobs:
         with:
           node-version: 24.15.0
           cache: npm
-      - name: Start Supabase with bounded retries
+      - name: Start database-only Supabase with bounded retries
         run: |
           for attempt in 1 2 3; do
-            if npx --yes supabase@2.107.0 start; then
+            if npx --yes supabase@2.107.0 start --ignore-health-check --exclude edge-runtime,gotrue,imgproxy,kong,logflare,mailpit,postgres-meta,postgrest,realtime,storage-api,studio,supavisor,vector; then
               exit 0
             fi
 

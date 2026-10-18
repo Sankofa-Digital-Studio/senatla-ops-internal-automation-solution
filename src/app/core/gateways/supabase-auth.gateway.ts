@@ -44,19 +44,13 @@ export class SupabaseAuthGateway implements AuthGateway {
   }
 
   async register(request: RegistrationRequest): Promise<RegistrationResult> {
-    const email = request.email.trim().toLowerCase();
-    const { data, error } = await this.supabase.auth.signUp({
-      email,
-      password: request.password,
-      options: { data: { display_name: request.displayName.trim() } },
-    });
-    if (error || !data.user) return { success: false, confirmationRequired: false, adminGranted: false, message: 'Registration could not be completed.' };
-    const adminGranted = data.session && request.adminCode ? await this.redeemAdminCode(request.adminCode) : false;
+    // Self-registration is intentionally disabled. Office administrators provision accounts
+    // through the back-end admin API, which emails one-time temporary credentials.
     return {
-      success: true,
-      confirmationRequired: !data.session,
-      adminGranted,
-      message: data.session ? undefined : 'Check your email to confirm the account. Invitation codes are never stored; sign in before redeeming a new code.',
+      success: false,
+      confirmationRequired: false,
+      adminGranted: false,
+      message: 'Self-registration is disabled. Request an account from your organization\'s office administrator.',
     };
   }
 
@@ -80,10 +74,30 @@ export class SupabaseAuthGateway implements AuthGateway {
     return { message: `Password recovery email requested for ${normalizedEmail}.` };
   }
 
-  async updatePassword(nextPassword: string): Promise<void> {
-    const { error } = await this.supabase.auth.updateUser({ password: nextPassword });
-    if (error) {
-      throw error;
+  async updatePassword(nextPassword: string, _usernameHint?: string): Promise<void> {
+    const { data: userData, error: userError } = await this.supabase.auth.getUser();
+    if (userError) throw userError;
+    if (userData.user?.app_metadata?.['must_change_password'] !== true) {
+      const { error } = await this.supabase.auth.updateUser({ password: nextPassword });
+      if (error) throw error;
+      return;
+    }
+
+    const { data } = await this.supabase.auth.getSession();
+    const accessToken = data.session?.access_token;
+    if (!accessToken) throw new Error('Your session has expired. Sign in again to set your new password.');
+
+    const response = await fetch(`${location.origin}/api/auth/complete-password-setup`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ password: nextPassword }),
+    });
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({})) as { error?: string };
+      throw new Error(result.error || 'Unable to complete account password setup.');
     }
   }
 
@@ -132,6 +146,7 @@ export class SupabaseAuthGateway implements AuthGateway {
         session.user.last_sign_in_at || session.user.created_at,
         session.expires_at ? new Date(session.expires_at * 1000).toISOString() : undefined,
       ),
+      mustChangePassword: session.user.app_metadata?.['must_change_password'] === true,
     };
   }
 

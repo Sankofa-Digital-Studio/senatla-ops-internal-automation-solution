@@ -100,12 +100,16 @@
         <app-admin-invitation-manager></app-admin-invitation-manager>
         <div class="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
         <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Invite User</h2>
+          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Invite Read-only User</h2>
           <div class="mt-4 space-y-3">
             <input [(ngModel)]="inviteForm.email" placeholder="user@company.com" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
             <input [(ngModel)]="inviteForm.displayName" placeholder="Display name" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-            <p class="rounded-lg border border-lime-900 bg-lime-950/40 px-3 py-2 text-xs leading-5 text-lime-100">New invitations always start with minimum Site access. Administrator access requires a separately issued, verified code.</p>
-            <button type="button" (click)="submitInvite()" [disabled]="busy()" class="w-full rounded-lg bg-yellow-500 px-4 py-3 text-sm font-bold text-black disabled:opacity-50">Send Invite</button>
+            <select [(ngModel)]="inviteForm.siteId" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
+              <option value="">Select permitted site</option>
+              <option *ngFor="let site of service.sites()" [value]="site.id">{{ site.name }}</option>
+            </select>
+            <p class="rounded-lg border border-lime-900 bg-lime-950/40 px-3 py-2 text-xs leading-5 text-lime-100">Invited users can view data for the selected site only. They cannot create or change records.</p>
+            <button type="button" (click)="submitInvite()" [disabled]="busy() || !inviteForm.siteId" class="w-full rounded-lg bg-yellow-500 px-4 py-3 text-sm font-bold text-black disabled:opacity-50">Send Invite</button>
           </div>
         </div>
 
@@ -117,7 +121,7 @@
                 <div><p class="font-semibold">{{ user.displayName }}</p><p class="text-xs text-gray-500">{{ user.username }}</p></div>
                 <div class="flex flex-wrap items-center gap-2">
                   <select #roleSelect [ngModel]="user.role" class="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white">
-                    <option value="site">Site</option><option value="office">Office</option><option value="director">Director</option>
+                    <option value="readonly">Read-only</option><option value="site">Site</option><option value="office">Office</option><option value="director">Director</option>
                   </select>
                   <label class="flex items-center gap-2 text-xs text-gray-300"><input #activeToggle type="checkbox" [checked]="user.isActive" class="accent-yellow-500">Active</label>
                   <button type="button" (click)="updateUser(user, roleSelect.value, activeToggle.checked)" class="rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-200">Apply</button>

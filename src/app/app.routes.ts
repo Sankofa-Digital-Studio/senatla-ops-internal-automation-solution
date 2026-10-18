@@ -34,6 +34,12 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/site-manager/site-manager.component').then((m) => m.SiteManagerComponent),
   },
   {
+    path: 'read-only',
+    canMatch: [roleCanMatch('readonly')],
+    canActivate: [roleCanActivate('readonly')],
+    loadComponent: () => import('./pages/read-only/read-only.component').then((m) => m.ReadOnlyComponent),
+  },
+  {
     path: 'office-admin',
     canMatch: [roleCanMatch('office')],
     canActivate: [roleCanActivate('office')],

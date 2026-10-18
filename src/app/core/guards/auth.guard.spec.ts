@@ -57,4 +57,34 @@ describe('roleCanActivate', () => {
     expect(result).toBeTrue();
     expect(auth.isAuthenticated()).toBeTrue();
   });
+
+  it('forces temporary-password accounts into password setup before granting protected routes', async () => {
+    const auth = TestBed.inject(AuthService);
+    const router = TestBed.inject(Router);
+    await auth.login('readonly.user@test.invalid', 'temp-password');
+
+    expect(auth.canAccess()).toBeFalse();
+    const result = await TestBed.runInInjectionContext(() =>
+      roleCanActivate('readonly')({} as never, { url: '/read-only' } as never),
+    );
+
+    expect(result).not.toBeTrue();
+    expect(router.serializeUrl(result as never)).toBe('/login/recovery');
+  });
+
+  it('permits the read-only role only on its dedicated workspace route', async () => {
+    const auth = TestBed.inject(AuthService);
+    await auth.login('readonly.reader@test.invalid', 'test-password');
+
+    const readOnlyResult = await TestBed.runInInjectionContext(() =>
+      roleCanActivate('readonly')({} as never, { url: '/read-only' } as never),
+    );
+    expect(readOnlyResult).toBeTrue();
+
+    const siteResult = await TestBed.runInInjectionContext(() =>
+      roleCanActivate('site')({} as never, { url: '/site-manager' } as never),
+    );
+    expect(siteResult).not.toBeTrue();
+    expect(auth.isAuthenticated()).toBeFalse();
+  });
 });
