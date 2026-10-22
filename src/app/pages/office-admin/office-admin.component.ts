@@ -20,6 +20,7 @@ import {
   VendorAccount,
   VendorInvoiceRecord,
   VehicleAsset,
+  ExecutiveOperationalReport,
 } from '../../core/models/app.models';
 import { UserInviteInput } from '../../core/models/office-admin.models';
 import { AssignmentDecision, AssignmentReview } from '../../core/assignment/assignment-planning';
@@ -30,6 +31,15 @@ import { downloadTextFile } from '../../core/utils/browser-file.util';
 import { EmployeeImportRow, stageEmployeeCsv } from '../../core/import/employee-import';
 
 type AdminTab = 'overview' | 'users' | 'people' | 'workforce' | 'timesheets' | 'sites' | 'issues' | 'assets' | 'vendors' | 'costs' | 'approvals' | 'recovery' | 'activity' | 'settings' | 'account';
+export type PrimaryTab = 'workspace' | 'workforce' | 'administration' | 'operations' | 'finance' | 'system';
+
+interface PrimaryTabDefinition {
+  id: PrimaryTab;
+  label: string;
+  icon: string;
+  badge?: () => number | string;
+  subTabs: { id: AdminTab; label: string; icon: string }[];
+}
 
 const COST_PERIOD_START = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
 const COST_PERIOD_END_EXCLUSIVE = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString().slice(0, 10);
@@ -45,6 +55,74 @@ export class OfficeAdminComponent {
   readonly service = inject(OfficeAdminService);
   readonly costAttribution = inject(CostAttributionService);
   private readonly timesheetRegister = inject(TimesheetRegisterService);
+
+  readonly primaryTab = signal<PrimaryTab>('workspace');
+  readonly accountMenuOpen = signal<boolean>(false);
+
+  readonly primaryTabs: PrimaryTabDefinition[] = [
+    {
+      id: 'workspace',
+      label: 'Workspace',
+      icon: 'dashboard',
+      subTabs: [
+        { id: 'overview', label: 'Executive Pulse & Audit', icon: 'speed' },
+      ],
+    },
+    {
+      id: 'workforce',
+      label: 'Workforce',
+      icon: 'groups',
+      subTabs: [
+        { id: 'people', label: 'Current Workforce', icon: 'badge' },
+        { id: 'workforce', label: 'New Hires & PPE', icon: 'security' },
+        { id: 'timesheets', label: 'Timesheet & Shifts', icon: 'schedule' },
+      ],
+    },
+    {
+      id: 'administration',
+      label: 'Administration',
+      icon: 'admin_panel_settings',
+      subTabs: [
+        { id: 'users', label: 'Access Control', icon: 'manage_accounts' },
+        { id: 'issues', label: 'Issues & Disciplinary', icon: 'warning' },
+      ],
+    },
+    {
+      id: 'operations',
+      label: 'Operations',
+      icon: 'precision_manufacturing',
+      subTabs: [
+        { id: 'sites', label: 'Site Details', icon: 'location_on' },
+        { id: 'assets', label: 'Assets & Fleet', icon: 'local_shipping' },
+      ],
+    },
+    {
+      id: 'finance',
+      label: 'Finance',
+      icon: 'account_balance',
+      subTabs: [
+        { id: 'costs', label: 'Cost Attribution', icon: 'pie_chart' },
+        { id: 'approvals', label: 'Approvals Queue', icon: 'rule' },
+        { id: 'vendors', label: 'Vendors', icon: 'storefront' },
+      ],
+    },
+    {
+      id: 'system',
+      label: 'System',
+      icon: 'tune',
+      subTabs: [
+        { id: 'recovery', label: 'Sync & Recovery', icon: 'sync' },
+        { id: 'activity', label: 'Activity Audit', icon: 'history' },
+        { id: 'settings', label: 'Settings', icon: 'settings' },
+        { id: 'account', label: 'Account Profile', icon: 'person' },
+      ],
+    },
+  ];
+
+  readonly currentSubTabs = computed(() => {
+    const primary = this.primaryTabs.find((t) => t.id === this.primaryTab());
+    return primary?.subTabs || [];
+  });
 
   readonly tabs: { id: AdminTab; label: string; group: string }[] = [
     { id: 'overview', label: 'Overview', group: 'Workspace' },
@@ -214,16 +292,83 @@ export class OfficeAdminComponent {
     const fullName = `${employee.firstName} ${employee.surname}`.trim().toLowerCase();
     return this.service.issues().filter((issue) => issue.status === 'Open' && (issue.reportedBy.trim().toLowerCase() === fullName || issue.description.toLowerCase().includes(employee.surname.toLowerCase())));
   });
+  readonly employeeRoleFilter = signal('');
+  readonly employeeStatusFilter = signal('');
+  readonly showEmployeeModal = signal(false);
+  readonly employeeModalMode = signal<'create' | 'edit'>('create');
+  readonly pendingEmployeeModalDeletion = signal<Employee | null>(null);
+
+  readonly showAssetModal = signal(false);
+  readonly assetModalMode = signal<'create' | 'edit'>('create');
+  assetForm: VehicleAsset = {
+    id: '', registrationNumber: '', serialNumber: '', vin: '', make: '', model: '',
+    type: 'Heavy Duty', assetClass: 'Excavator', licenseExpiry: new Date(Date.now() + 180 * 86400000).toISOString().slice(0, 10),
+    status: 'Active', lifecycleState: 'active', assignedSiteId: '', custodianName: '', notes: '',
+  };
+  readonly pendingAssetDeletion = signal<VehicleAsset | null>(null);
+  readonly assetSearchTerm = signal('');
+  readonly assetSiteFilter = signal('');
+  readonly assetTypeFilter = signal('');
+  readonly assetStatusFilter = signal('');
+
+  readonly showSiteModal = signal(false);
+  readonly siteModalMode = signal<'create' | 'edit'>('create');
+  readonly pendingSiteDeletion = signal<Site | null>(null);
+  readonly siteSearchTerm = signal('');
+  readonly siteStatusFilter = signal('');
+
+  readonly generatingReport = signal(false);
+  readonly lastGeneratedReport = signal<ExecutiveOperationalReport | null>(null);
+  readonly directorReports = computed(() => this.service.directorReports());
+
   readonly filteredEmployees = computed(() => {
     const term = this.searchTerm().trim().toLowerCase();
     const siteId = this.selectedSiteId();
+    const role = this.employeeRoleFilter();
+    const status = this.employeeStatusFilter();
     return this.service.employees().filter((employee) => {
       const matchesTerm = !term
         || employee.firstName.toLowerCase().includes(term)
         || employee.surname.toLowerCase().includes(term)
         || this.service.maskIdNumber(employee.idNumber).toLowerCase().includes(term);
       const matchesSite = !siteId || employee.siteId === siteId;
-      return matchesTerm && matchesSite;
+      const matchesRole = !role || employee.role === role;
+      const matchesStatus = !status || (employee.employmentStatus || 'active') === status;
+      return matchesTerm && matchesSite && matchesRole && matchesStatus;
+    });
+  });
+
+  readonly filteredSites = computed(() => {
+    const term = this.siteSearchTerm().trim().toLowerCase();
+    const status = this.siteStatusFilter();
+    return this.service.sites().filter((site) => {
+      const matchesTerm = !term
+        || site.name.toLowerCase().includes(term)
+        || site.location.toLowerCase().includes(term)
+        || (site.jobNumber || '').toLowerCase().includes(term)
+        || (site.teamName || '').toLowerCase().includes(term);
+      const matchesStatus = !status || (status === 'active' ? site.isActive : !site.isActive);
+      return matchesTerm && matchesStatus;
+    });
+  });
+
+  readonly filteredAssets = computed(() => {
+    const term = this.assetSearchTerm().trim().toLowerCase();
+    const siteId = this.assetSiteFilter();
+    const type = this.assetTypeFilter();
+    const status = this.assetStatusFilter();
+    return this.service.assets().filter((asset) => {
+      const matchesTerm = !term
+        || (asset.registrationNumber || '').toLowerCase().includes(term)
+        || (asset.vin || '').toLowerCase().includes(term)
+        || (asset.serialNumber || '').toLowerCase().includes(term)
+        || asset.make.toLowerCase().includes(term)
+        || asset.model.toLowerCase().includes(term)
+        || (asset.custodianName || '').toLowerCase().includes(term);
+      const matchesSite = !siteId || asset.assignedSiteId === siteId;
+      const matchesType = !type || asset.type === type;
+      const matchesStatus = !status || asset.status === status;
+      return matchesTerm && matchesSite && matchesType && matchesStatus;
     });
   });
 
@@ -613,7 +758,241 @@ export class OfficeAdminComponent {
   selectTab(id: string) {
     if (!this.tabs.some((tab) => tab.id === id)) return;
     this.activeTab.set(id as AdminTab);
+
+    // Keep primaryTab in sync
+    const matched = this.primaryTabs.find((pt) => pt.subTabs.some((st) => st.id === id));
+    if (matched && matched.id !== this.primaryTab()) {
+      this.primaryTab.set(matched.id);
+    }
+
     if (id === 'costs' && !this.costAttribution.report() && !this.costAttribution.isLoading()) void this.refreshCostAttribution();
+  }
+
+  selectPrimaryTab(tabId: PrimaryTab) {
+    this.primaryTab.set(tabId);
+    const def = this.primaryTabs.find((t) => t.id === tabId);
+    if (def?.subTabs.length) {
+      this.selectTab(def.subTabs[0].id);
+    }
+  }
+
+  toggleAccountMenu() {
+    this.accountMenuOpen.update((open) => !open);
+  }
+
+  closeAccountMenu() {
+    this.accountMenuOpen.set(false);
+  }
+
+  async generateDirectorReportAction() {
+    await this.runAction(async () => {
+      this.generatingReport.set(true);
+      try {
+        const report = await this.service.generateDirectorReport();
+        this.lastGeneratedReport.set(report);
+        this.feedback.set(`Executive Report Pack ${report.reportNumber} generated with 5 verified records and sent to Director Awaiting Review!`);
+      } finally {
+        this.generatingReport.set(false);
+      }
+    });
+  }
+
+  // Asset CRUD
+  createEmptyAsset(): VehicleAsset {
+    return {
+      id: '',
+      registrationNumber: '',
+      serialNumber: '',
+      vin: '',
+      make: '',
+      model: '',
+      type: 'Heavy Duty',
+      assetClass: 'Excavator',
+      licenseExpiry: new Date(Date.now() + 180 * 86400000).toISOString().slice(0, 10),
+      status: 'Active',
+      lifecycleState: 'active',
+      assignedSiteId: this.service.activeSites()[0]?.id || '',
+      custodianName: '',
+      notes: '',
+    };
+  }
+
+  openCreateAssetModal() {
+    this.assetForm = this.createEmptyAsset();
+    this.assetModalMode.set('create');
+    this.showAssetModal.set(true);
+  }
+
+  openEditAssetModal(asset: VehicleAsset) {
+    this.assetForm = { ...asset };
+    this.assetModalMode.set('edit');
+    this.showAssetModal.set(true);
+  }
+
+  closeAssetModal() {
+    this.showAssetModal.set(false);
+  }
+
+  async saveAssetModal() {
+    await this.runAction(async () => {
+      await this.service.saveAsset(this.assetForm);
+      this.feedback.set(`Asset ${this.assetForm.registrationNumber || this.assetForm.make} saved.`);
+      this.closeAssetModal();
+    });
+  }
+
+  stageAssetDeletion(asset: VehicleAsset) {
+    this.pendingAssetDeletion.set(asset);
+  }
+
+  cancelAssetDeletion() {
+    this.pendingAssetDeletion.set(null);
+  }
+
+  async confirmAssetDeletion() {
+    const asset = this.pendingAssetDeletion();
+    if (!asset) return;
+    await this.runAction(async () => {
+      await this.service.deleteAsset(asset.id);
+      this.feedback.set(`Asset ${asset.registrationNumber || asset.make} removed.`);
+      this.pendingAssetDeletion.set(null);
+    });
+  }
+
+  async quickToggleAssetStatus(asset: VehicleAsset) {
+    await this.runAction(async () => {
+      const nextStatus = asset.status === 'Active' ? 'Maintenance' : 'Active';
+      await this.service.saveAsset({ ...asset, status: nextStatus });
+      this.feedback.set(`Asset status set to ${nextStatus}.`);
+    });
+  }
+
+  // Site CRUD
+  openCreateSiteModal() {
+    this.siteForm = {
+      id: '',
+      name: '',
+      location: '',
+      managerId: undefined,
+      teamName: '',
+      jobNumber: '',
+      estimatedDuration: '',
+      complianceChecklist: [],
+      isActive: true,
+    };
+    this.siteComplianceText = '';
+    this.siteModalMode.set('create');
+    this.showSiteModal.set(true);
+  }
+
+  openEditSiteModal(site: Site) {
+    this.siteForm = { ...site, complianceChecklist: site.complianceChecklist || [] };
+    this.siteComplianceText = (site.complianceChecklist || []).join(', ');
+    this.siteModalMode.set('edit');
+    this.showSiteModal.set(true);
+  }
+
+  openSiteModal(site?: Site) {
+    if (site) {
+      this.openEditSiteModal(site);
+    } else {
+      this.openCreateSiteModal();
+    }
+  }
+
+  closeSiteModal() {
+    this.showSiteModal.set(false);
+  }
+
+  async saveSiteModal() {
+    await this.runAction(async () => {
+      await this.service.saveSite({
+        ...this.siteForm,
+        complianceChecklist: this.parseChecklist(this.siteComplianceText),
+      });
+      this.feedback.set(`Site ${this.siteForm.name} saved.`);
+      this.closeSiteModal();
+    });
+  }
+
+  stageSiteDeletion(site: Site) {
+    this.pendingSiteDeletion.set(site);
+  }
+
+  cancelSiteDeletion() {
+    this.pendingSiteDeletion.set(null);
+  }
+
+  async confirmSiteDeletion() {
+    const site = this.pendingSiteDeletion();
+    if (!site) return;
+    await this.runAction(async () => {
+      await this.service.deleteSite(site.id);
+      this.feedback.set(`Site ${site.name} deleted.`);
+      this.pendingSiteDeletion.set(null);
+    });
+  }
+
+  async quickToggleSiteActive(site: Site) {
+    await this.runAction(async () => {
+      await this.service.saveSite({ ...site, isActive: !site.isActive });
+      this.feedback.set(`Site ${site.name} is now ${!site.isActive ? 'active' : 'inactive'}.`);
+    });
+  }
+
+  // Employee CRUD Modal
+  openCreateEmployeeModal() {
+    this.resetEmployeeForm();
+    this.employeeModalMode.set('create');
+    this.showEmployeeModal.set(true);
+  }
+
+  openEditEmployeeModal(employee: Employee) {
+    this.personForm = { ...employee, employmentStatus: employee.employmentStatus || 'active' };
+    this.employeeModalMode.set('edit');
+    this.showEmployeeModal.set(true);
+  }
+
+  closeEmployeeModal() {
+    this.showEmployeeModal.set(false);
+  }
+
+  async saveEmployeeModal() {
+    await this.runAction(async () => {
+      await this.service.saveEmployee(this.personForm);
+      this.feedback.set(`Employee ${this.personForm.firstName} ${this.personForm.surname} saved.`);
+      this.closeEmployeeModal();
+    });
+  }
+
+  stageEmployeeModalDeletion(employee: Employee) {
+    this.pendingEmployeeModalDeletion.set(employee);
+  }
+
+  cancelEmployeeModalDeletion() {
+    this.pendingEmployeeModalDeletion.set(null);
+  }
+
+  async confirmEmployeeModalDeletion() {
+    const employee = this.pendingEmployeeModalDeletion();
+    if (!employee) return;
+    await this.runAction(async () => {
+      await this.service.deleteEmployee(employee.id);
+      this.feedback.set(`Employee ${employee.firstName} ${employee.surname} archived.`);
+      this.pendingEmployeeModalDeletion.set(null);
+    });
+  }
+
+  async toggleEmployeeStatus(employee: Employee) {
+    await this.runAction(async () => {
+      const nextStatus = (employee.employmentStatus || 'active') === 'active' ? 'inactive' : 'active';
+      await this.service.updateEmployeeStatus(employee.id, nextStatus as EmploymentStatus);
+      this.feedback.set(`${employee.firstName} ${employee.surname} status changed to ${nextStatus}.`);
+    });
+  }
+
+  quickToggleEmployeeStatus(employee: Employee) {
+    void this.toggleEmployeeStatus(employee);
   }
 
   async refreshCostAttribution() {

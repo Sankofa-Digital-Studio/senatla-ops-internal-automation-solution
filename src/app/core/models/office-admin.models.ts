@@ -25,6 +25,7 @@ import {
   SavedAdminView,
   Site,
   VehicleAsset,
+  ExecutiveOperationalReport,
 } from './app.models';
 
 export interface OfficeAdminWorkspace {
@@ -54,6 +55,7 @@ export interface OfficeAdminWorkspace {
   savedViews: SavedAdminView[];
   organizations: Organization[];
   anomalies: AdminAnomaly[];
+  directorReports?: ExecutiveOperationalReport[];
 }
 
 export interface UserInviteInput {

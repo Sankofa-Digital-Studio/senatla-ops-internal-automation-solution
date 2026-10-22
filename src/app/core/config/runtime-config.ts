@@ -33,6 +33,14 @@ export async function loadRuntimeConfig(): Promise<RuntimeConfig> {
 
     const parsed = (await response.json()) as Partial<RuntimeConfig>;
     const config = { api: { ...DEFAULT_RUNTIME_CONFIG.api, ...parsed.api } };
+    if (
+      config.api.supabaseUrl.includes('your-project.supabase.co') ||
+      config.api.supabaseAnonKey === 'your-anon-key'
+    ) {
+      config.api.mode = 'local';
+      config.api.supabaseUrl = '';
+      config.api.supabaseAnonKey = '';
+    }
     if (config.api.mode === 'supabase' && (!config.api.supabaseUrl || !config.api.supabaseAnonKey)) {
       throw new Error('Supabase runtime configuration is incomplete.');
     }

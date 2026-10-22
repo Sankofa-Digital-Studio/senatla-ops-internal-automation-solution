@@ -1,0 +1,11 @@
+{
+  "name": "Senatla Ops",
+  "description": "Internal operations management and automation platform connecting field activity, workforce controls, asset evidence, Approvals, and Gmail communications.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
