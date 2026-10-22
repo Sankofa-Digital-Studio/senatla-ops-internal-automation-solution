@@ -38,7 +38,11 @@ async function hasAccess(expectedRole?: RoleRequirement, requestedUrl: string = 
   }
 
   if (!roleAllowed(auth.role(), expectedRole)) {
-    void auth.logout();
+    const userRole = auth.role();
+    if (userRole) {
+      const homePath = userRole === 'site' ? '/site-manager' : userRole === 'office' ? '/office-admin' : '/director';
+      return router.createUrlTree([homePath]);
+    }
     return getLoginTree(router, expectedRole, requestedUrl, preferredLoginRole);
   }
 

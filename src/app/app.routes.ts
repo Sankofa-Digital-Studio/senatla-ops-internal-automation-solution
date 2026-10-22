@@ -58,6 +58,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/profile-settings/profile-settings.component').then((m) => m.ProfileSettingsComponent),
   },
   {
+    path: 'gmail',
+    loadComponent: () => import('./pages/gmail-communications/gmail-communications.component').then((m) => m.GmailCommunicationsComponent),
+  },
+  {
     path: '**',
     redirectTo: 'landing',
   },
