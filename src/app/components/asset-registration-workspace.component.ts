@@ -30,14 +30,14 @@ export interface AssetEvidenceFileSelection {
       </section>
 
       <section class="capture-workspace">
-        <header><h3>Capture and scan</h3><p>Scan a serial number, number plate or licence disc. Images and detected values stay with the local draft until the asset is saved.</p></header>
+        <header><h3>Capture and scan</h3><p>Scan a serial number, number plate or licence disc. Evidence is validated and attached to the registration draft; detected values still require human review.</p></header>
         <div class="capture-grid">
           <button *ngFor="let option of captureOptions" type="button" [disabled]="busy" (click)="captureRequested.emit(option.type)">
             <span>{{ option.symbol }}</span><strong>{{ option.label }}</strong><small>{{ option.detail }}</small>
           </button>
         </div>
         <div class="document-grid">
-          <label *ngFor="let option of documentOptions"><strong>{{ option.label }}</strong><span>PDF or image</span><input type="file" accept="application/pdf,image/*" [disabled]="busy" (change)="selectFile($event, option.type)"></label>
+          <label *ngFor="let option of documentOptions"><strong>{{ option.label }}</strong><span>PDF or image</span><input type="file" accept="application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif" [disabled]="busy" (change)="selectFile($event, option.type)"></label>
         </div>
         <aside *ngIf="showOcrGuide" class="ocr-guide" aria-live="polite">
           <div><strong>How OCR review works</strong><p>Capture or upload a document, apply detected fields, then compare every value with the source before you verify and save.</p></div>
@@ -55,7 +55,7 @@ export interface AssetEvidenceFileSelection {
         <div class="evidence-list">
           <article *ngFor="let item of evidence">
             <button *ngIf="item.previewUrl" type="button" class="preview-button" (click)="zoomedEvidence = item" [attr.aria-label]="'View ' + evidenceLabel(item.evidenceType)"><img [src]="item.previewUrl" [alt]="evidenceLabel(item.evidenceType)"></button>
-            <div><strong>{{ evidenceLabel(item.evidenceType) }}</strong><small>{{ item.fileName }}</small><span [class.needs-review]="item.extractionState === 'review_required'">{{ extractionLabel(item) }}</span><dl *ngIf="extractedEntries(item).length" class="extracted-fields"><div *ngFor="let field of extractedEntries(item)"><dt>{{ fieldLabel(field[0]) }}</dt><dd>{{ field[1] }}</dd></div></dl></div>
+            <div><strong>{{ evidenceLabel(item.evidenceType) }}</strong><small>{{ item.fileName }} · {{ provenanceLabel(item) }}</small><span [class.needs-review]="item.extractionState === 'review_required'">{{ extractionLabel(item) }}</span><dl *ngIf="extractedEntries(item).length" class="extracted-fields"><div *ngFor="let field of extractedEntries(item)"><dt>{{ fieldLabel(field[0]) }}</dt><dd>{{ field[1] }}</dd></div></dl></div>
             <app-ui-button *ngIf="item.extractionState === 'review_required'" size="sm" variant="secondary" [busy]="busy" (pressed)="extractionRequested.emit(item)">Apply values</app-ui-button>
           </article>
         </div>
@@ -220,6 +220,16 @@ export class AssetRegistrationWorkspaceComponent {
     return { asset_photo: 'Asset photo', number_plate: 'Serial or number plate', licence_disc: 'Licence disc', registration_document: 'Registration document', purchase_invoice: 'Purchase invoice', other: 'Other evidence' }[type];
   }
 
+  provenanceLabel(evidence: AssetRegistrationEvidence) {
+    const source = {
+      native_scan: 'Native document scan',
+      native_camera: 'Device camera',
+      upload: 'Uploaded file',
+      manual: 'Manual evidence',
+    }[evidence.captureSource];
+    const confidence = evidence.ocrConfidence === null ? '' : ` · OCR ${Math.round(evidence.ocrConfidence * 100)}%`;
+    return `${source}${confidence}`;
+  }
   extractionLabel(evidence: AssetRegistrationEvidence) {
     if (evidence.extractionState === 'review_required') return 'Values detected - apply and verify';
     if (evidence.extractionState === 'pending') return 'Saved for manual review';
@@ -287,6 +297,3 @@ export class AssetRegistrationWorkspaceComponent {
     return this.sites.find((site) => site.id === siteId)?.name || 'Unassigned';
   }
 }
-
-
-

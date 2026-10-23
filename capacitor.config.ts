@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'io.ionic.starter',
-  appName: 'senatla-ops',
+  appId: 'za.co.senatlatrading.ops',
+  appName: 'Senatla Ops',
   webDir: 'www'
 };
 

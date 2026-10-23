@@ -1,2 +1,10 @@
   .animate-fade-in { animation: fadeIn 0.2s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+/* Shared responsive tiers: mobile, tablet, mini-PC, laptop, desktop, TV. */
+@media (max-width: 479px) { :host { font-size: 14px; } }
+@media (min-width: 480px) { :host { --workspace-gutter: 1rem; } }
+@media (min-width: 768px) { :host { --workspace-gutter: 1.25rem; } }
+@media (min-width: 1024px) { :host { --workspace-gutter: 1.5rem; } }
+@media (min-width: 1280px) { :host { --workspace-gutter: 2rem; } }
+@media (min-width: 1536px) { :host { --workspace-gutter: 2.5rem; } }
+@media (min-width: 1920px) { :host { --workspace-gutter: 3rem; } }

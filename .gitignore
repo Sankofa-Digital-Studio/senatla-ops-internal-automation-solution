@@ -70,11 +70,29 @@ testem.log
 /.env.*
 !/.env.example
 /src/assets/runtime-config.json
+/output/credentials/
+/output/uat-private/
+/output/reference-archive/
 
 # System files
 .DS_Store
 Thumbs.db
+.vercel
+
+output/playwright/
+supabase/.branches/
+supabase/.temp/
 
 # Local Codex runtime overrides
 /.codex/node-v24.18.0-win-x64/
-.vercel
+# Native signing and service credentials (never commit)
+*.jks
+*.keystore
+*.p12
+*.p8
+*.mobileprovision
+*.provisionprofile
+/android/key.properties
+/android/keystore.properties
+/android/app/google-services.json
+/ios/App/App/GoogleService-Info.plist

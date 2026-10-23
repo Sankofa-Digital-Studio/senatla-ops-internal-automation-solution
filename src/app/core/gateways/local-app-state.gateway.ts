@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { AppStateGateway, AppStateSnapshot } from './app-state.gateway';
-import { AdminAuditEvent, AttendanceAuditEvent } from '../models/app.models';
+import { AdminAuditEvent, AttendanceAuditEvent, AttendanceDeliveryPayload, AttendanceQueueSubmission } from '../models/app.models';
 
 @Injectable()
 export class LocalAppStateGateway implements AppStateGateway {
@@ -9,6 +9,7 @@ export class LocalAppStateGateway implements AppStateGateway {
   private readonly legacyBackupKey = 'senatla_ops_data_backup';
   private readonly adminAuditStorageKey = 'senatla_ops_admin_audit';
   private readonly attendanceAuditStorageKey = 'senatla_ops_attendance_audit';
+  private readonly attendanceQueueStorageKey = 'senatla_ops_attendance_queue';
 
   async loadState(): Promise<AppStateSnapshot | null> {
     const sessionData = sessionStorage.getItem(this.storageKey);
@@ -48,6 +49,32 @@ export class LocalAppStateGateway implements AppStateGateway {
     this.persistAuditTrail(this.attendanceAuditStorageKey, [event, ...trail].slice(0, 40));
   }
 
+  async loadAttendanceQueue(): Promise<AttendanceQueueSubmission[]> {
+    return JSON.parse(sessionStorage.getItem(this.attendanceQueueStorageKey) || '[]') as AttendanceQueueSubmission[];
+  }
+
+  async submitAttendance(payload: AttendanceDeliveryPayload, idempotencyKey: string): Promise<AttendanceQueueSubmission> {
+    const submissions = await this.loadAttendanceQueue();
+    const duplicate = submissions.find((entry) => entry.idempotencyKey === idempotencyKey);
+    if (duplicate) return duplicate;
+    const now = new Date().toISOString();
+    const submission: AttendanceQueueSubmission = {
+      id: crypto.randomUUID(), organizationId: '00000000-0000-4000-8000-000000000001', submittedBy: 'local-site-user',
+      siteId: payload.siteId, workDate: payload.workDate, status: 'completed', outcome: 'accepted', attempts: 1,
+      idempotencyKey, lastError: null, diagnosticContext: { delivery: 'local-demo' }, createdAt: now, processedAt: now,
+    };
+    sessionStorage.setItem(this.attendanceQueueStorageKey, JSON.stringify([submission, ...submissions]));
+    return submission;
+  }
+
+  async retryAttendance(submissionId: string): Promise<AttendanceQueueSubmission> {
+    const submissions = await this.loadAttendanceQueue();
+    const current = submissions.find((entry) => entry.id === submissionId);
+    if (!current || current.outcome !== 'retryable') throw new Error('Only retryable attendance deliveries can be retried.');
+    const updated: AttendanceQueueSubmission = { ...current, status: 'completed', outcome: 'accepted', attempts: current.attempts + 1, lastError: null, processedAt: new Date().toISOString() };
+    sessionStorage.setItem(this.attendanceQueueStorageKey, JSON.stringify(submissions.map((entry) => entry.id === submissionId ? updated : entry)));
+    return updated;
+  }
   private loadAuditTrail<T extends AdminAuditEvent | AttendanceAuditEvent>(
     storageKey: string,
     legacyTrailKey: 'adminAuditTrail' | 'attendanceAuditTrail',

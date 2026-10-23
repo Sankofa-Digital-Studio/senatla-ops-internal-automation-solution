@@ -1,5 +1,5 @@
 import { InjectionToken } from '@angular/core';
-import { AdminAuditEvent, AttendanceAuditEvent, Employee, FinancialType, Group, Issue, SafetyTalkRecord, Site, SyncRecord } from '../models/app.models';
+import { AdminAuditEvent, AttendanceAuditEvent, AttendanceDeliveryPayload, AttendanceQueueSubmission, Employee, FinancialType, Group, Issue, SafetyTalkRecord, Site, SyncRecord } from '../models/app.models';
 
 export interface AppStateSnapshot {
   siteName: string;
@@ -21,6 +21,9 @@ export interface AppStateGateway {
   loadAttendanceAuditTrail(): Promise<AttendanceAuditEvent[]>;
   appendAdminAuditEvent(event: AdminAuditEvent): Promise<void>;
   appendAttendanceAuditEvent(event: AttendanceAuditEvent): Promise<void>;
+  loadAttendanceQueue(): Promise<AttendanceQueueSubmission[]>;
+  submitAttendance(payload: AttendanceDeliveryPayload, idempotencyKey: string): Promise<AttendanceQueueSubmission>;
+  retryAttendance(submissionId: string): Promise<AttendanceQueueSubmission>;
 }
 
 export const APP_STATE_GATEWAY = new InjectionToken<AppStateGateway>('APP_STATE_GATEWAY');

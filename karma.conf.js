@@ -33,6 +33,8 @@ module.exports = function (config) {
     },
     reporters: process.env.CI === 'true' ? ['progress'] : ['progress', 'kjhtml'],
     port: 9876,
+    hostname: '127.0.0.1',
+    listenAddress: '127.0.0.1',
     colors: true,
     logLevel: config.LOG_INFO,
     autoWatch: process.env.CI !== 'true',

@@ -2,6 +2,8 @@ import { Injectable, signal, computed, effect, inject } from '@angular/core';
 import {
   AdminAuditEvent,
   AttendanceAuditEvent,
+  AttendanceDeliveryPayload,
+  AttendanceQueueSubmission,
   AttendanceEvidence,
   Employee,
   Group,
@@ -14,19 +16,24 @@ import {
 } from '../models/app.models';
 import { APP_STATE_GATEWAY, AppStateGateway, AppStateSnapshot } from '../gateways/app-state.gateway';
 import { AuthService } from './auth.service';
+import { RUNTIME_CONFIG } from '../config/runtime-config';
 
 @Injectable({ providedIn: 'root' })
 export class StaffDataService {
   private readonly appStateGateway = inject<AppStateGateway>(APP_STATE_GATEWAY);
   private readonly auth = inject(AuthService);
+  private readonly runtimeConfig = inject(RUNTIME_CONFIG);
   private readonly hydrated = signal(false);
+  private readonly persistenceEnabled = signal(false);
   private auditWriteSequence = Promise.resolve();
   private loadSequence = 0;
 
   currentTime = signal<Date>(new Date());
-  siteName = signal<string>('Senatla Shaft 1');
+  siteName = signal<string>(this.runtimeConfig.api.mode === 'local' ? 'Senatla Shaft 1' : '');
+  currentSiteId = signal<string>('');
   lastSyncTime = signal<Date | null>(null);
   unsyncedChanges = signal<boolean>(false);
+  dataLoadError = signal<string | null>(null);
 
   safetyTalkCompleted = signal<boolean>(false);
   currentSafetyTopic = signal<string | null>(null);
@@ -45,6 +52,8 @@ export class StaffDataService {
   financialTypes = signal<FinancialType[]>([]);
   adminAuditTrail = signal<AdminAuditEvent[]>([]);
   attendanceAuditTrail = signal<AttendanceAuditEvent[]>([]);
+  attendanceQueue = signal<AttendanceQueueSubmission[]>([]);
+  deliveryError = signal<string | null>(null);
   auditPersistenceError = signal<string | null>(null);
 
   private employeeState = signal<Employee[]>([]);
@@ -54,6 +63,7 @@ export class StaffDataService {
   readonly activeSites = computed(() => this.sites().filter((site) => site.isActive));
   readonly activeFinancialTypes = computed(() => this.financialTypes().filter((type) => type.isActive));
   readonly pendingAttendanceSummary = computed(() => this.getAttendanceSummary());
+  readonly latestAttendanceDelivery = computed(() => this.attendanceQueue()[0] || null);
 
   constructor() {
     effect(() => {
@@ -64,7 +74,7 @@ export class StaffDataService {
     });
 
     effect(() => {
-      if (!this.hydrated()) return;
+      if (!this.hydrated() || !this.persistenceEnabled()) return;
       void this.saveToGateway();
     });
   }
@@ -72,28 +82,43 @@ export class StaffDataService {
   private async loadForSession() {
     const loadId = ++this.loadSequence;
     this.hydrated.set(false);
+    this.persistenceEnabled.set(false);
+    this.dataLoadError.set(null);
 
     try {
-      const [snapshotResult, adminAuditResult, attendanceAuditResult] = await Promise.all([
+      const [snapshotResult, adminAuditResult, attendanceAuditResult, attendanceQueueResult] = await Promise.all([
         this.settlePromise(this.appStateGateway.loadState()),
         this.settlePromise(this.appStateGateway.loadAdminAuditTrail()),
         this.settlePromise(this.appStateGateway.loadAttendanceAuditTrail()),
+        this.settlePromise(this.appStateGateway.loadAttendanceQueue()),
       ]);
       if (loadId !== this.loadSequence) return;
 
       const snapshot = snapshotResult.status === 'fulfilled' ? snapshotResult.value : null;
       if (snapshot) {
         this.applySnapshot(snapshot);
-      } else {
+        this.persistenceEnabled.set(true);
+      } else if (this.runtimeConfig.api.mode === 'local') {
         this.initializeDefaults();
+        this.persistenceEnabled.set(true);
+      } else {
+        this.clearRuntimeData();
+        this.dataLoadError.set('Live site data is unavailable. No local or demonstration records were loaded.');
       }
 
       this.adminAuditTrail.set(adminAuditResult.status === 'fulfilled' ? adminAuditResult.value : []);
       this.attendanceAuditTrail.set(attendanceAuditResult.status === 'fulfilled' ? attendanceAuditResult.value : []);
+      this.attendanceQueue.set(attendanceQueueResult.status === 'fulfilled' ? attendanceQueueResult.value : []);
       this.hydrated.set(true);
     } catch {
       if (loadId !== this.loadSequence) return;
-      this.initializeDefaults();
+      if (this.runtimeConfig.api.mode === 'local') {
+        this.initializeDefaults();
+        this.persistenceEnabled.set(true);
+      } else {
+        this.clearRuntimeData();
+        this.dataLoadError.set('Live site data could not be loaded. No local or demonstration records were loaded.');
+      }
       this.hydrated.set(true);
     }
   }
@@ -189,6 +214,25 @@ export class StaffDataService {
       { id: '4', firstName: 'Samuel', surname: 'Nkosi', idNumber: '9502285800080', role: 'General Worker', siteId: 's1', groupId: undefined, startDate: '2023-06-01', basicRate: 350, salaryAdvances: 0, financials: { travel: 0, housing: 0, advance: 0 }, logs: this.generateMockLogs(), adjustments: {} },
       { id: '5', firstName: 'Michael', surname: 'Khumalo', idNumber: '8207155800080', role: 'Driver', siteId: 's1', groupId: 'g2', startDate: '2020-03-10', basicRate: 550, salaryAdvances: 0, financials: { travel: 0, housing: 0, advance: 0 }, logs: this.generateMockLogs(), adjustments: {} }
     ]);
+  }
+
+  private clearRuntimeData() {
+    this.siteName.set('');
+    this.currentSiteId.set('');
+    this.lastSyncTime.set(null);
+    this.unsyncedChanges.set(false);
+    this.safetyTalkCompleted.set(false);
+    this.currentSafetyTopic.set(null);
+    this.safetyTalks.set([]);
+    this.safetyTopics.set([]);
+    this.syncHistory.set([]);
+    this.sites.set([]);
+    this.issues.set([]);
+    this.groups.set([]);
+    this.financialTypes.set([]);
+    this.adminAuditTrail.set([]);
+    this.attendanceAuditTrail.set([]);
+    this.employeeState.set([]);
   }
 
   setTime(hour: number, minute: number) { const d = new Date(); d.setHours(hour, minute, 0, 0); this.currentTime.set(d); }
@@ -373,27 +417,48 @@ export class StaffDataService {
     };
   }
 
-  performSync(signature: string, isRolloverAck: boolean = false) {
+  async performSync(signature: string, isRolloverAck: boolean = false, workDate = this.getTodayStr()) {
     const status = this.determineSyncStatus();
-    const summary = this.getAttendanceSummary();
-    this.syncHistory.update((history) => [
-      {
-        siteId: this.siteName(),
-        syncTime: this.currentTime(),
-        status,
-        acknowledgedWarning: isRolloverAck,
-        signatureData: signature,
-        safetyTopic: this.currentSafetyTopic() || 'None Recorded',
-        actor: this.currentActor(),
-        attendanceSummary: summary,
-      },
-      ...history
-    ]);
+    const summary = this.getAttendanceSummary(workDate);
+    const site = this.sites().find((entry) => entry.name === this.siteName()) || this.sites()[0];
+    if (!site) throw new Error('An assigned site is required before attendance can be delivered.');
+    const rows = this.employeeState().filter((employee) => employee.siteId === site.id).map((employee) => {
+      const log = employee.logs[workDate] || { date: workDate, status: 'pending' as const };
+      return { employeeId: employee.id, status: log.status, reason: log.reason, comment: log.comment, isFlagged: log.isFlagged };
+    });
+    const payload: AttendanceDeliveryPayload = { siteId: site.id, workDate, rows, summary, timingStatus: status, acknowledgedWarning: isRolloverAck, safetyTopic: this.currentSafetyTopic() || 'None Recorded' };
+    const idempotencyKey = `attendance:${site.id}:${workDate}`;
+    this.deliveryError.set(null);
+    let delivery: AttendanceQueueSubmission;
+    try {
+      delivery = await this.appStateGateway.submitAttendance(payload, idempotencyKey);
+      this.attendanceQueue.update((entries) => [delivery, ...entries.filter((entry) => entry.id !== delivery.id)]);
+    } catch (error) {
+      this.deliveryError.set(error instanceof Error ? error.message : 'Attendance delivery failed.');
+      this.unsyncedChanges.set(true);
+      throw error;
+    }
+    this.syncHistory.update((history) => [{ siteId: site.id, syncTime: this.currentTime(), status, acknowledgedWarning: isRolloverAck, signatureData: signature, safetyTopic: payload.safetyTopic, actor: this.currentActor(), attendanceSummary: summary }, ...history]);
     this.recordAttendanceAudit('sync_submitted', `Daily sync submitted with ${summary.present} present, ${summary.absent} absent, ${summary.pending} pending.`);
     this.lastSyncTime.set(this.currentTime());
-    this.unsyncedChanges.set(false);
+    this.unsyncedChanges.set(delivery.outcome !== 'accepted');
+    if (delivery.outcome !== 'accepted') this.deliveryError.set(delivery.lastError || 'Attendance delivery requires attention.');
+    return delivery;
   }
 
+  async retryAttendanceDelivery(submissionId: string) {
+    this.deliveryError.set(null);
+    try {
+      const delivery = await this.appStateGateway.retryAttendance(submissionId);
+      this.attendanceQueue.update((entries) => [delivery, ...entries.filter((entry) => entry.id !== delivery.id)]);
+      this.unsyncedChanges.set(delivery.outcome !== 'accepted');
+      if (delivery.outcome !== 'accepted') this.deliveryError.set(delivery.lastError || 'Attendance delivery remains retryable.');
+      return delivery;
+    } catch (error) {
+      this.deliveryError.set(error instanceof Error ? error.message : 'Attendance retry failed.');
+      throw error;
+    }
+  }
   private determineSyncStatus(): 'On Time' | 'Late' | 'Critical' | 'Rollover' {
     const status = this.timeStatus();
     if (status === 'late_window') return 'Late';
@@ -402,7 +467,11 @@ export class StaffDataService {
     return 'Rollover';
   }
 
-  setSiteName(name: string) { this.siteName.set(this.cleanText(name).slice(0, 80) || 'Senatla Shaft 1'); }
+  setSiteName(name: string) { this.siteName.set(this.cleanText(name).slice(0, 80) || (this.runtimeConfig.api.mode === 'local' ? 'Senatla Shaft 1' : '')); }
+  setCurrentSite(siteId: string, siteName: string) {
+    this.currentSiteId.set(this.cleanText(siteId));
+    this.setSiteName(siteName);
+  }
   updateStatus(empId: string, dateStr: string, newStatus: DailyLog['status'], evidence?: DailyLog['evidence']) {
     this.unsyncedChanges.set(true);
     const todayStr = this.getTodayStr();
@@ -493,7 +562,7 @@ export class StaffDataService {
       employeeName,
       siteId: employeeId
         ? this.employeeState().find((employee) => employee.id === employeeId)?.siteId
-        : this.sites().find((site) => site.name === this.siteName())?.id,
+        : this.currentSiteId() || undefined,
       details: this.cleanText(details) || undefined,
     };
     this.attendanceAuditTrail.update((events) => [entry, ...events].slice(0, 40));
@@ -509,8 +578,8 @@ export class StaffDataService {
       });
   }
 
-  private getAttendanceSummary() {
-    const today = this.getTodayStr();
+  private getAttendanceSummary(dateStr = this.getTodayStr()) {
+    const today = dateStr;
     return this.employeeState().reduce(
       (summary, employee) => {
         const log = employee.logs[today] || { date: today, status: 'pending' as const };
@@ -651,5 +720,4 @@ export class StaffDataService {
     return this.auth.currentSession()?.displayName || 'Unknown User';
   }
 }
-
 

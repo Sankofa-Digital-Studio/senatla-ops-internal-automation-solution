@@ -63,7 +63,7 @@ select lives_ok(
   'site role can save asset registration draft validation metadata'
 );
 select lives_ok(
-  'insert into public.asset_registration_evidence (organization_id, draft_id, uploaded_by, evidence_type, file_name, mime_type, storage_path, extraction_state, extracted_fields) values (''00000000-0000-4000-8000-000000000001'', ''14000000-0000-4000-8000-000000000001'', ''10000000-0000-4000-8000-000000000003'', ''number_plate'', ''plate.jpg'', ''image/jpeg'', ''00000000-0000-4000-8000-000000000001/10000000-0000-4000-8000-000000000003/14000000-0000-4000-8000-000000000001/plate.jpg'', ''review_required'', jsonb_build_object(''registrationNumber'', ''SITE-OCR''))',
+  'insert into public.asset_registration_evidence (organization_id, draft_id, uploaded_by, evidence_type, file_name, mime_type, storage_path, extraction_state, extracted_fields, capture_source, content_sha256, storage_state) values (''00000000-0000-4000-8000-000000000001'', ''14000000-0000-4000-8000-000000000001'', ''10000000-0000-4000-8000-000000000003'', ''number_plate'', ''plate.jpg'', ''image/jpeg'', ''00000000-0000-4000-8000-000000000001/10000000-0000-4000-8000-000000000003/14000000-0000-4000-8000-000000000001/plate.jpg'', ''review_required'', jsonb_build_object(''registrationNumber'', ''SITE-OCR''), ''upload'', repeat(''a'', 64), ''pending_upload'')',
   'site role can attach OCR evidence metadata to an owned draft'
 );
 select lives_ok(

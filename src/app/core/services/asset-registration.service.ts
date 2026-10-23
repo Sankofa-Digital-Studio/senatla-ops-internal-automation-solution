@@ -3,7 +3,9 @@ import { Camera, CameraDirection, CameraResultType, CameraSource } from '@capaci
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { RUNTIME_CONFIG, RuntimeConfig } from '../config/runtime-config';
 import {
+  AssetEvidenceInput,
   AssetEvidenceType,
+  AssetOcrEngine,
   AssetRegistrationDraft,
   AssetRegistrationEvent,
   AssetRegistrationEvidence,
@@ -14,11 +16,17 @@ import {
 import { injectSupabaseClient } from '../gateways/supabase.client';
 import { AuthService } from './auth.service';
 import { validateAssetRegistration } from '../validation/asset-registration-rules';
+import { ScanCoordinator } from '../scanning/scan-coordinator';
+import { ScanError } from '../scanning/scan-contract';
 
 const LOCAL_DRAFTS_KEY = 'senatla.asset-registration.v1';
 const LOCAL_EVENTS_KEY = 'senatla.asset-registration.events.v1';
 const PRE_EXPIRY_DAYS = [7, 5, 3, 1] as const;
 const GRACE_DAYS = 30;
+const MAX_EVIDENCE_BYTES = 15 * 1024 * 1024;
+const ALLOWED_EVIDENCE_MIME_TYPES = new Set([
+  'application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif',
+]);
 
 interface NativeLocalNotifications {
   requestPermissions(): Promise<{ display: string }>;
@@ -62,6 +70,7 @@ export class AssetRegistrationService {
   private readonly draftsState = signal<AssetRegistrationDraft[]>([]);
   private readonly evidenceState = signal<AssetRegistrationEvidence[]>([]);
   private readonly eventState = signal<AssetRegistrationEvent[]>([]);
+  private readonly scanCoordinator = new ScanCoordinator();
 
   readonly drafts = this.draftsState.asReadonly();
   readonly evidence = this.evidenceState.asReadonly();
@@ -162,33 +171,73 @@ export class AssetRegistrationService {
     await this.recordEvent('asset_registration_completed', next.id, { completedAssetId, verifiedAt });
     this.persistLocal();
   }
-  async captureImage(evidenceType: AssetEvidenceType): Promise<File> {
-    const photo = await Camera.getPhoto({
-      source: CameraSource.Camera,
-      direction: CameraDirection.Rear,
-      resultType: CameraResultType.Uri,
-      quality: evidenceType === 'asset_photo' ? 78 : 92,
-      correctOrientation: true,
-      width: 1800,
-    });
-    if (!photo.webPath) throw new Error('The camera did not return an image.');
-    const blob = await fetch(photo.webPath).then((response) => response.blob());
-    return new File([blob], `${evidenceType}-${Date.now()}.${photo.format || 'jpeg'}`, { type: blob.type || `image/${photo.format || 'jpeg'}` });
+  async captureEvidence(evidenceType: AssetEvidenceType): Promise<AssetEvidenceInput> {
+    if (EXTRACTABLE_EVIDENCE_TYPES.includes(evidenceType) && Capacitor.isNativePlatform()) {
+      try {
+        const scan = await this.scanCoordinator.scanAssetEvidence({
+          galleryImportAllowed: false,
+          recognitionLanguages: ['en-ZA'],
+        });
+        return this.validateEvidenceInput({
+          file: scan.file,
+          captureSource: 'native_scan',
+          contentSha256: scan.sha256,
+          ocrEngine: Capacitor.getPlatform() === 'android' ? 'android_mlkit_v2' : 'ios_vision',
+          ocrConfidence: this.averageConfidence(scan.ocr.textBlocks.map((block) => block.confidence)),
+          ocrPageCount: 1,
+          rawOcrText: scan.ocr.text,
+        });
+      } catch (error) {
+        if (error instanceof ScanError
+          && !['UNSUPPORTED_PLATFORM', 'NATIVE_FAILURE'].includes(error.code)) {
+          throw error;
+        }
+      }
+    }
+    return this.captureWithCamera(evidenceType);
   }
 
-  async addEvidence(draft: AssetRegistrationDraft, evidenceType: AssetEvidenceType, file: File) {
+  async captureImage(evidenceType: AssetEvidenceType): Promise<File> {
+    return (await this.captureWithCamera(evidenceType)).file;
+  }
+
+  async prepareEvidenceFile(file: File, captureSource: AssetEvidenceInput['captureSource'] = 'upload'): Promise<AssetEvidenceInput> {
+    this.validateEvidenceFile(file);
+    return {
+      file,
+      captureSource,
+      contentSha256: await this.sha256(file),
+      ocrEngine: null,
+      ocrConfidence: null,
+      ocrPageCount: 1,
+    };
+  }
+
+  async addEvidence(
+    draft: AssetRegistrationDraft,
+    evidenceType: AssetEvidenceType,
+    input: AssetEvidenceInput | File,
+  ) {
     const session = this.requireSession();
+    const prepared = input instanceof File ? await this.prepareEvidenceFile(input) : this.validateEvidenceInput(input);
+    const { file } = prepared;
     const extractable = EXTRACTABLE_EVIDENCE_TYPES.includes(evidenceType);
-    const extracted = extractable && file.type.startsWith('image/') ? await this.extractFromImage(file) : { raw: '', fields: {} };
+    let raw = prepared.rawOcrText?.slice(0, 8_000) ?? '';
+    let fields = raw ? this.parseOcrText(raw) : {};
+    let ocrEngine: AssetOcrEngine | null = prepared.ocrEngine;
+    if (extractable && !raw && file.type.startsWith('image/')) {
+      const browserExtraction = await this.extractFromImage(file);
+      raw = browserExtraction.raw.slice(0, 8_000);
+      fields = browserExtraction.fields;
+      if (browserExtraction.detectorUsed) ocrEngine = 'browser_detector';
+    }
+    const verifiedSha256 = await this.sha256(file);
+    if (verifiedSha256 !== prepared.contentSha256) {
+      throw new Error('Evidence bytes changed after capture validation. Capture or select the document again.');
+    }
     const id = crypto.randomUUID();
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, '-').toLowerCase();
     const storagePath = `${draft.organizationId}/${draft.ownerId}/${draft.id}/${id}-${safeName}`;
-
-    if (this.supabase) {
-      const upload = await this.supabase.storage.from('asset-evidence').upload(storagePath, file, { upsert: false, contentType: file.type });
-      if (upload.error) throw upload.error;
-    }
-
     const evidence: AssetRegistrationEvidence = {
       id,
       organizationId: draft.organizationId,
@@ -196,17 +245,23 @@ export class AssetRegistrationService {
       uploadedBy: session.userId,
       evidenceType,
       fileName: file.name,
-      mimeType: file.type || 'application/octet-stream',
+      mimeType: file.type,
+      captureSource: prepared.captureSource,
+      contentSha256: verifiedSha256,
+      ocrEngine,
+      ocrConfidence: prepared.ocrConfidence,
+      ocrPageCount: prepared.ocrPageCount,
+      storageState: this.supabase ? 'pending_upload' : 'ready',
       storagePath: this.supabase ? storagePath : null,
-      previewUrl: file.type.startsWith('image/') ? await this.toDataUrl(file) : null,
-      extractionState: extractable ? (Object.keys(extracted.fields).length ? 'review_required' : 'pending') : 'not_applicable',
-      extractedFields: extracted.fields,
-      rawExtraction: extracted.raw || null,
+      previewUrl: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
+      extractionState: extractable ? (Object.keys(fields).length ? 'review_required' : 'pending') : 'not_applicable',
+      extractedFields: fields,
+      rawExtraction: raw || null,
       createdAt: new Date().toISOString(),
     };
 
     if (this.supabase) {
-      const { error } = await this.supabase.from('asset_registration_evidence').insert({
+      const { error: insertError } = await this.supabase.from('asset_registration_evidence').insert({
         id: evidence.id,
         organization_id: evidence.organizationId,
         draft_id: evidence.draftId,
@@ -214,29 +269,56 @@ export class AssetRegistrationService {
         evidence_type: evidence.evidenceType,
         file_name: evidence.fileName,
         mime_type: evidence.mimeType,
+        capture_source: evidence.captureSource,
+        content_sha256: evidence.contentSha256,
+        ocr_engine: evidence.ocrEngine,
+        ocr_confidence: evidence.ocrConfidence,
+        ocr_page_count: evidence.ocrPageCount,
+        storage_state: evidence.storageState,
         storage_path: evidence.storagePath,
         extraction_state: evidence.extractionState,
         extracted_fields: evidence.extractedFields,
         raw_extraction: evidence.rawExtraction,
         created_at: evidence.createdAt,
       });
-      if (error) {
-        await this.supabase.storage.from('asset-evidence').remove([storagePath]);
-        throw error;
-      }
-    }
+      if (insertError) throw insertError;
 
+      const upload = await this.supabase.storage.from('asset-evidence').upload(storagePath, file, {
+        upsert: false,
+        contentType: file.type,
+      });
+      if (upload.error) {
+        const rolledBack = await this.rollbackPendingEvidence(evidence.id, storagePath);
+        throw new Error(rolledBack
+          ? 'Evidence upload failed. No evidence was retained.'
+          : 'Evidence upload failed and secure rollback requires administrator review.');
+      }
+
+      const { error: readyError } = await this.supabase.from('asset_registration_evidence')
+        .update({ storage_state: 'ready' })
+        .eq('id', evidence.id)
+        .eq('storage_state', 'pending_upload');
+      if (readyError) {
+        const rolledBack = await this.rollbackPendingEvidence(evidence.id, storagePath);
+        throw new Error(rolledBack
+          ? 'Evidence finalisation failed. No evidence was retained.'
+          : 'Evidence finalisation failed and secure rollback requires administrator review.');
+      }
+      evidence.storageState = 'ready';
+    }
     this.evidenceState.update((items) => [evidence, ...items]);
     this.persistLocal();
     await this.recordEvent('asset_registration_evidence_attached', draft.id, {
       evidenceId: evidence.id,
       evidenceType: evidence.evidenceType,
+      captureSource: evidence.captureSource,
+      ocrEngine: evidence.ocrEngine,
+      ocrPageCount: evidence.ocrPageCount,
       extractionState: evidence.extractionState,
       detectedFields: Object.keys(evidence.extractedFields),
     });
     return evidence;
   }
-
   async applyExtraction(asset: VehicleAsset, evidence: AssetRegistrationEvidence): Promise<VehicleAsset> {
     if (this.supabase) {
       const { error } = await this.supabase.from('asset_registration_evidence')
@@ -329,13 +411,21 @@ export class AssetRegistrationService {
       if (!raw) return;
       const data = JSON.parse(raw) as { drafts: AssetRegistrationDraft[]; evidence: AssetRegistrationEvidence[]; events?: AssetRegistrationEvent[] };
       this.draftsState.set(data.drafts || []);
-      this.evidenceState.set(data.evidence || []);
+      this.evidenceState.set((data.evidence || []).map((item) => ({
+        ...item,
+        captureSource: item.captureSource ?? 'upload',
+        contentSha256: item.contentSha256 ?? null,
+        ocrEngine: item.ocrEngine ?? null,
+        ocrConfidence: item.ocrConfidence ?? null,
+        ocrPageCount: item.ocrPageCount ?? 1,
+        storageState: item.storageState ?? 'ready',
+      })));
       this.eventState.set(data.events || []);
       return;
     }
     const [drafts, evidence, events] = await Promise.all([
       this.supabase.from('asset_registration_drafts').select('*').order('updated_at', { ascending: false }),
-      this.supabase.from('asset_registration_evidence').select('*').order('created_at', { ascending: false }),
+      this.supabase.from('asset_registration_evidence').select('*').eq('storage_state', 'ready').order('created_at', { ascending: false }),
       this.supabase.from('admin_activity_log').select('id, organization_id, action, entity_id, actor_id, actor_name, details, occurred_at').eq('entity_type', 'asset_registration').order('occurred_at', { ascending: false }).limit(50),
     ]);
     if (drafts.error) throw drafts.error;
@@ -354,6 +444,9 @@ export class AssetRegistrationService {
     this.evidenceState.set((evidence.data || []).map((row) => ({
       id: row.id, organizationId: row.organization_id, draftId: row.draft_id, uploadedBy: row.uploaded_by,
       evidenceType: row.evidence_type, fileName: row.file_name, mimeType: row.mime_type, storagePath: row.storage_path,
+      captureSource: row.capture_source || 'upload', contentSha256: row.content_sha256 || null,
+      ocrEngine: row.ocr_engine || null, ocrConfidence: row.ocr_confidence ?? null, ocrPageCount: row.ocr_page_count || 1,
+      storageState: row.storage_state || 'ready',
       previewUrl: null, extractionState: row.extraction_state, extractedFields: row.extracted_fields || {},
       rawExtraction: row.raw_extraction, createdAt: row.created_at,
     })));
@@ -368,7 +461,62 @@ export class AssetRegistrationService {
     return 'ready';
   }
 
+  private async captureWithCamera(evidenceType: AssetEvidenceType): Promise<AssetEvidenceInput> {
+    const photo = await Camera.getPhoto({
+      source: CameraSource.Camera,
+      direction: CameraDirection.Rear,
+      resultType: CameraResultType.Uri,
+      quality: evidenceType === 'asset_photo' ? 78 : 92,
+      correctOrientation: true,
+      width: 1800,
+    });
+    if (!photo.webPath) throw new Error('The camera did not return an image.');
+    const response = await fetch(photo.webPath, { cache: 'no-store' });
+    if (!response.ok) throw new Error('The captured image could not be read securely.');
+    const blob = await response.blob();
+    const mimeType = blob.type || `image/${photo.format || 'jpeg'}`;
+    const file = new File([blob], `${evidenceType}-${Date.now()}.${photo.format || 'jpeg'}`, { type: mimeType });
+    return this.prepareEvidenceFile(file, Capacitor.isNativePlatform() ? 'native_camera' : 'upload');
+  }
+
+  private validateEvidenceInput(input: AssetEvidenceInput): AssetEvidenceInput {
+    this.validateEvidenceFile(input.file);
+    if (!/^[a-f0-9]{64}$/.test(input.contentSha256)
+      || !['native_scan', 'native_camera', 'upload', 'manual'].includes(input.captureSource)
+      || (input.ocrEngine !== null && !['android_mlkit_v2', 'ios_vision', 'browser_detector', 'manual'].includes(input.ocrEngine))
+      || (input.ocrConfidence !== null && (!Number.isFinite(input.ocrConfidence) || input.ocrConfidence < 0 || input.ocrConfidence > 1))
+      || !Number.isInteger(input.ocrPageCount)
+      || input.ocrPageCount < 1
+      || input.ocrPageCount > 5) {
+      throw new Error('The evidence provenance is invalid. Capture or select the document again.');
+    }
+    return { ...input, rawOcrText: input.rawOcrText?.slice(0, 8_000) };
+  }
+
+  private validateEvidenceFile(file: File): void {
+    const mimeType = file.type.toLowerCase();
+    if (!ALLOWED_EVIDENCE_MIME_TYPES.has(mimeType)) {
+      throw new Error('Unsupported evidence type. Use PDF, JPEG, PNG, WebP, HEIC, or HEIF.');
+    }
+    if (file.size <= 0) throw new Error('The selected evidence file is empty.');
+    if (file.size > MAX_EVIDENCE_BYTES) throw new Error('Evidence files must be 15 MiB or smaller.');
+  }
+
+  private async sha256(file: Blob): Promise<string> {
+    const digest = await crypto.subtle.digest('SHA-256', await file.arrayBuffer());
+    return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+  }
+
+  private averageConfidence(values: Array<number | undefined>): number | null {
+    const measured = values.filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
+    if (!measured.length) return null;
+    return measured.reduce((sum, value) => sum + value, 0) / measured.length;
+  }
   private async extractFromImage(file: File) {
+    const detectorUsed = Boolean(
+      (globalThis as typeof globalThis & { BarcodeDetector?: BarcodeDetectorConstructor }).BarcodeDetector
+      || (globalThis as typeof globalThis & { TextDetector?: TextDetectorConstructor }).TextDetector,
+    );
     try {
       const bitmap = await createImageBitmap(file);
       const raw = [
@@ -376,12 +524,11 @@ export class AssetRegistrationService {
         await this.extractOcrText(bitmap),
       ].filter(Boolean).join('\n');
       bitmap.close();
-      return { raw, fields: this.parseOcrText(raw) };
+      return { raw, fields: this.parseOcrText(raw), detectorUsed };
     } catch {
-      return { raw: '', fields: {} };
+      return { raw: '', fields: {}, detectorUsed };
     }
   }
-
   private async extractBarcodeText(bitmap: ImageBitmap) {
     const Detector = (globalThis as typeof globalThis & { BarcodeDetector?: BarcodeDetectorConstructor }).BarcodeDetector;
     if (!Detector) return '';
@@ -450,6 +597,15 @@ export class AssetRegistrationService {
     return local ? `${local[3]}-${local[2].padStart(2, '0')}-${local[1].padStart(2, '0')}` : undefined;
   }
 
+  private async rollbackPendingEvidence(evidenceId: string, storagePath: string): Promise<boolean> {
+    if (!this.supabase) return true;
+    const storageRemoval = await this.supabase.storage.from('asset-evidence').remove([storagePath]);
+    const rowRemoval = await this.supabase.from('asset_registration_evidence')
+      .delete()
+      .eq('id', evidenceId)
+      .eq('storage_state', 'pending_upload');
+    return !storageRemoval.error && !rowRemoval.error;
+  }
   private persistLocal() {
     if (this.supabase) return;
     const userId = this.auth.session()?.userId;

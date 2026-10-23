@@ -1,4 +1,15 @@
-<section class="landing-shell min-h-full overflow-auto text-white">
+<section class="landing-shell min-h-full overflow-auto text-white" [attr.aria-busy]="!landingReady()">
+  <div *ngIf="!landingReady()" class="cornerstone-loader" role="status" aria-live="polite" aria-label="Preparing the Senatla Ops welcome page">
+    <img src="assets/images/cornerstone-welcome.png" alt="A team placing a cornerstone together at sunrise">
+    <div class="cornerstone-loader__veil"></div>
+    <div class="cornerstone-loader__content">
+      <p class="cornerstone-loader__eyebrow">Senatla means a rock</p>
+      <h1>Built together, on a sure foundation.</h1>
+      <p>“The stone the builders rejected has become the chief cornerstone.” <span>Psalm 118:22</span></p>
+      <div class="cornerstone-loader__progress" aria-hidden="true"><span></span></div>
+    </div>
+  </div>
+
   <div class="landing-frame relative isolate mx-auto flex min-h-full w-full flex-col px-5 py-6">
     <div class="ambient-layer absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
       <div class="ambient-orb ambient-orb--lime"></div>
@@ -7,80 +18,117 @@
     </div>
 
     <header class="site-header flex items-center justify-between gap-4">
-      <a routerLink="/landing" class="flex items-center gap-3" aria-label="Senatla Ops home">
+      <a routerLink="/landing" (click)="scrollToTop($event)" class="flex items-center gap-3" aria-label="Senatla Ops home">
         <span class="brand-mark grid place-items-center rounded-2xl bg-lime-300 text-lg font-black text-slate-950 shadow-xl">S</span>
         <span>
           <span class="block text-xs font-semibold uppercase tracking-[0.32em] text-lime-200">Senatla Ops</span>
-          <span class="block text-xs text-white/50">Operations with a pulse</span>
+          <span class="block text-xs text-white/50">Built together, on a sure foundation</span>
         </span>
       </a>
 
       <nav class="desktop-menu" aria-label="Primary navigation">
-        <a href="#capabilities">Capabilities</a>
-        <a href="#assurance">Assurance</a>
-        <a routerLink="/register" class="nav-register">Register</a>
-        <a routerLink="/login" class="nav-login">Login</a>
+        <a href="#capabilities" (click)="scrollTo('capabilities', $event)">Capabilities</a>
+        <a href="#assurance" (click)="scrollTo('assurance', $event)">Assurance</a>
+        <a href="https://github.com/Sankofa-Digital-Studio/senatla-ops/releases/download/dev-latest/senatla-ops-dev.apk" download target="_blank" rel="noopener noreferrer">Android APK</a>
+        <button type="button" *ngIf="isLocalMode()" (click)="showTestCredentials()">Test users</button>
+        <a routerLink="/login" class="nav-login">Sign In</a>
       </nav>
 
       <details class="mobile-menu">
         <summary aria-label="Open navigation menu"><span></span><span></span><span></span></summary>
         <nav aria-label="Mobile navigation">
-          <a href="#capabilities">Capabilities</a>
-          <a href="#assurance">Assurance</a>
-          <a routerLink="/register">Register</a>
-          <a routerLink="/login">Login</a>
+          <a href="#capabilities" (click)="scrollTo('capabilities', $event)">Capabilities</a>
+          <a href="#assurance" (click)="scrollTo('assurance', $event)">Assurance</a>
+          <a href="https://github.com/Sankofa-Digital-Studio/senatla-ops/releases/download/dev-latest/senatla-ops-dev.apk" download target="_blank" rel="noopener noreferrer">Android APK</a>
+          <button type="button" *ngIf="isLocalMode()" (click)="showTestCredentials()">Test users</button>
+          <a routerLink="/login">Sign In</a>
         </nav>
       </details>
     </header>
+
+    <div *ngIf="testCredentialsVisible()" class="credential-modal" role="dialog" aria-modal="true" aria-labelledby="test-credentials-heading">
+      <button type="button" class="credential-modal__backdrop" aria-label="Close test users dialog" (click)="hideTestCredentials()"></button>
+      <section class="credential-modal__panel">
+        <header class="credential-modal__header">
+          <div>
+            <p class="section-kicker">Testing access</p>
+            <h2 id="test-credentials-heading">Local review users</h2>
+          </div>
+          <button type="button" class="credential-modal__close" aria-label="Close test users dialog" (click)="hideTestCredentials()">Close</button>
+        </header>
+        <p class="credential-modal__note">Use these accounts for fast local review with seeded datasets. You can also sign in with one click on the main login page.</p>
+        <div class="credential-table" role="table" aria-label="Test user credentials and roles">
+          <div class="credential-table__row credential-table__row--head" role="row">
+            <span role="columnheader">Role</span>
+            <span role="columnheader">Email</span>
+            <span role="columnheader">Password</span>
+            <span role="columnheader">Action</span>
+          </div>
+          <div class="credential-table__row" role="row" *ngFor="let account of testCredentials">
+            <strong role="cell">{{ account.role }}</strong>
+            <code role="cell">{{ account.email }}</code>
+            <span role="cell">{{ account.passwordHint }}</span>
+            <span role="cell">
+              <button type="button" (click)="quickLaunchRole(account.roleKey)" class="rounded-full bg-lime-300 px-3 py-1 text-[11px] font-black uppercase text-slate-950 hover:bg-lime-200">
+                Launch
+              </button>
+            </span>
+          </div>
+        </div>
+        <div class="mt-4 pt-3 border-t border-white/10 text-center">
+          <a routerLink="/login" (click)="hideTestCredentials()" class="text-xs font-bold text-lime-200 hover:text-lime-100">
+            Open Main Login Page (Google Sign-In & One-Click Logins) &rarr;
+          </a>
+        </div>
+      </section>
+    </div>
 
     <main class="hero-grid grid flex-1 items-center gap-10 py-12">
       <div class="hero-copy max-w-3xl">
         <p class="eyebrow mb-6 inline-flex rounded-full border border-lime-300/30 bg-lime-300/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-lime-100">
           Clear operations. Confident decisions.
         </p>
-        <h1 class="hero-title font-black leading-[0.94] tracking-tight text-white">
+        <h2 class="hero-title font-black leading-[0.94] tracking-tight text-white">
           Command every moving part before it becomes a blocker.
-        </h1>
+        </h2>
         <p class="hero-summary mt-6 max-w-2xl leading-8 text-white/70">
           Senatla Ops connects field activity, workforce controls, asset evidence, and approvals in one secure operating system built for accountable teams.
         </p>
         <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-          <a routerLink="/register" class="inline-flex items-center justify-center rounded-full bg-lime-300 px-7 py-4 text-sm font-black uppercase tracking-[0.18em] text-slate-950 shadow-2xl transition hover:bg-lime-200">
-            Create account
-          </a>
-          <a routerLink="/login" class="inline-flex items-center justify-center rounded-full border border-white/15 px-7 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white/80 transition hover:border-white/40 hover:text-white">
-            Secure login
-          </a>
-          <a *ngIf="auth.isAuthenticated()" routerLink="/profile-settings" class="inline-flex items-center justify-center rounded-full border border-lime-300/30 px-7 py-4 text-sm font-bold uppercase tracking-[0.18em] text-lime-100 transition hover:border-lime-200 hover:text-lime-200">
-            Review onboarding
-          </a>
+          <a routerLink="/login" class="inline-flex items-center justify-center rounded-full bg-lime-300 px-7 py-4 text-sm font-black uppercase tracking-[0.18em] text-slate-950 shadow-2xl transition hover:bg-lime-200">Employee Sign In</a>
+          <a routerLink="/register" class="inline-flex items-center justify-center rounded-full border border-white/15 px-7 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white/80 transition hover:border-white/40 hover:text-white">Redeem Invitation</a>
         </div>
       </div>
 
-      <aside id="capabilities" class="capability-panel rounded-[2rem] border border-white/10 bg-white/[0.06] p-5 shadow-2xl backdrop-blur" aria-label="Platform capabilities">
-        <div class="rounded-[1.5rem] bg-slate-950/70 p-5">
-          <p class="text-xs font-bold uppercase tracking-[0.22em] text-lime-200">Live operating stack</p>
-          <div class="mt-5 space-y-3">
-            <article class="feature-card">
-              <h2>Evidence-ready asset control</h2>
-              <p>Capture identifiers, documents, images, verification decisions, and accountable handovers.</p>
-            </article>
-            <article class="feature-card">
-              <h2>Focused daily workflows</h2>
-              <p>Give every person the smallest useful workspace while keeping operational context connected.</p>
-            </article>
-            <article id="assurance" class="feature-card">
-              <h2>Governance by design</h2>
-              <p>Protected data boundaries, auditable actions, and release gates keep trust visible.</p>
-            </article>
-          </div>
+      <aside class="cornerstone-card rounded-[2rem] border border-white/10 bg-white/[0.06] p-5 shadow-2xl backdrop-blur" aria-label="Senatla meaning">
+        <img src="assets/images/cornerstone-welcome.png" alt="Teamwork placing a cornerstone" loading="lazy">
+        <div class="cornerstone-card__copy">
+          <p>One foundation. Shared responsibility.</p>
+          <span>Senatla means a rock - the work is stronger when it is placed together.</span>
         </div>
       </aside>
     </main>
 
+    <section id="capabilities" class="landing-section" tabindex="-1" aria-labelledby="capabilities-heading">
+      <div class="landing-section__heading"><p class="section-kicker">Capabilities</p><h2 id="capabilities-heading">Useful control, where the work happens.</h2></div>
+      <div class="section-grid">
+        <article class="feature-card"><h3>Evidence-ready asset control</h3><p>Capture identifiers, documents, images, verification decisions, and accountable handovers in one asset record.</p></article>
+        <article class="feature-card"><h3>Focused daily workflows</h3><p>Give each person a smaller, role-appropriate workspace without losing the operational context that leaders need.</p></article>
+        <article class="feature-card"><h3>Approval visibility</h3><p>Keep vendor invoices, onboarding, and operational requests visible until a named person makes the next decision.</p></article>
+      </div>
+    </section>
+
+    <section id="assurance" class="landing-section landing-section--assurance" tabindex="-1" aria-labelledby="assurance-heading">
+      <div class="landing-section__heading"><p class="section-kicker">Assurance</p><h2 id="assurance-heading">Trust is designed into the workflow.</h2></div>
+      <div class="assurance-list">
+        <article><strong>Human review before commitment</strong><span>OCR assists registration; it never silently approves an asset record.</span></article>
+        <article><strong>Access matched to responsibility</strong><span>Role-aware routes and approval paths keep sensitive actions accountable.</span></article>
+        <article><strong>Short, deliberate sessions</strong><span>For security, inactive workspaces require a fresh login after ten minutes.</span></article>
+      </div>
+    </section>
+
     <footer class="flex flex-col gap-2 border-t border-white/10 py-5 text-xs text-white/45 sm:flex-row sm:items-center sm:justify-between">
-      <span>© 2026 Senatla Ops</span>
-      <span>Secure operations, designed to scale.</span>
+      <span>© 2026 Senatla Ops</span><span>Secure operations, designed to scale.</span>
     </footer>
   </div>
 </section>

@@ -20,6 +20,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/login/login.component').then((m) => m.LoginComponent),
   },
   {
+    path: 'login/recovery',
+    loadComponent: () => import('./pages/login/login.component').then((m) => m.LoginComponent),
+  },
+  {
     path: 'login/:role',
     loadComponent: () => import('./pages/login/login.component').then((m) => m.LoginComponent),
   },
@@ -52,6 +56,10 @@ export const routes: Routes = [
     canMatch: [roleCanMatch()],
     canActivate: [roleCanActivate()],
     loadComponent: () => import('./pages/profile-settings/profile-settings.component').then((m) => m.ProfileSettingsComponent),
+  },
+  {
+    path: 'gmail',
+    loadComponent: () => import('./pages/gmail-communications/gmail-communications.component').then((m) => m.GmailCommunicationsComponent),
   },
   {
     path: '**',

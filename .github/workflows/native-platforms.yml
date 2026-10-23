@@ -1,0 +1,122 @@
+name: Senatla Ops native platform gates
+
+on:
+  pull_request:
+    paths:
+      - "android/**"
+      - "ios/**"
+      - "src/**"
+      - "package.json"
+      - "package-lock.json"
+      - "capacitor.config.ts"
+      - ".browserslistrc"
+      - ".npmrc"
+      - "angular.json"
+      - "ionic.config.json"
+      - "tsconfig*.json"
+      - "scripts/normalize-capacitor-spm-paths.mjs"
+      - "scripts/write-runtime-config.mjs"
+      - ".github/workflows/native-platforms.yml"
+  push:
+    branches: [dev]
+    paths:
+      - "android/**"
+      - "ios/**"
+      - "src/**"
+      - "package.json"
+      - "package-lock.json"
+      - "capacitor.config.ts"
+      - ".browserslistrc"
+      - ".npmrc"
+      - "angular.json"
+      - "ionic.config.json"
+      - "tsconfig*.json"
+      - "scripts/normalize-capacitor-spm-paths.mjs"
+      - "scripts/write-runtime-config.mjs"
+      - ".github/workflows/native-platforms.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: senatla-ops-native-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SENATLA_API_MODE: local
+  SENATLA_AUTH_REVIEW_BYPASS: "false"
+
+jobs:
+  android-debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.15.0
+          cache: npm
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+      - run: npm ci
+      - run: npm run build
+      - run: npm run native:sync:android
+      - name: Build unsigned Android debug package
+        working-directory: android
+        run: ./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
+      - name: Prepare dev APK artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/senatla-ops-dev.apk
+      - name: Upload dev APK
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+        uses: actions/upload-artifact@v4
+        with:
+          name: senatla-ops-dev-apk
+          path: android/app/build/outputs/apk/debug/senatla-ops-dev.apk
+          if-no-files-found: error
+          retention-days: 7
+
+  publish-dev-apk:
+    needs: android-debug
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: senatla-ops-dev-apk
+          path: artifacts
+      - name: Publish current dev APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: dev-latest
+          name: Senatla Ops dev APK
+          prerelease: true
+          make_latest: false
+          body: Unsigned Android debug build for the current dev deployment. Install only for UAT testing.
+          files: artifacts/senatla-ops-dev.apk
+  ios-simulator:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.15.0
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run native:sync:ios
+      - name: Build unsigned iOS simulator application
+        run: >-
+          xcodebuild
+          -project ios/App/App.xcodeproj
+          -scheme App
+          -configuration Debug
+          -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          CODE_SIGNING_ALLOWED=NO
+          build

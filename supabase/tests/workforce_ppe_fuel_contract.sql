@@ -1,8 +1,13 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(12);
+select plan(17);
 
 select has_table('public', 'employee_onboarding_records', 'employee onboarding table exists');
+select has_column('public', 'employees', 'company_number', 'company employee number is stored');
+select has_column('public', 'employees', 'designation', 'employee designation is stored separately from access role');
+select has_column('public', 'employees', 'pay_rate_unit', 'employee pay rate unit is explicit');
+select has_column('public', 'employees', 'safety_qualifications', 'employee safety qualifications are stored');
+select has_column('public', 'employees', 'additional_fields', 'future import columns are retained');
 select has_table('public', 'ppe_issue_records', 'PPE issue table exists');
 select has_table('public', 'asset_fuel_entries', 'asset fuel table exists');
 select is((select relrowsecurity from pg_class where oid = 'public.employee_onboarding_records'::regclass), true, 'onboarding RLS is enabled');

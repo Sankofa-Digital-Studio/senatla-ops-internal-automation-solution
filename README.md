@@ -51,4 +51,4 @@ npm run verify
 
 ## Delivery workflow
 
-GitHub Issues authorize work. Pull requests target the repository default branch, `master`, and contain acceptance evidence. CI, database validation, desktop/mobile browser proof and rollback notes are required before release. See [CONTRIBUTING.md](CONTRIBUTING.md).
+GitHub Issues authorize work. Pull requests target `dev`, the repository integration and demo branch, and contain acceptance evidence. CI, database validation, desktop/mobile browser proof and rollback notes are required before release. See [CONTRIBUTING.md](CONTRIBUTING.md).

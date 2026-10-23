@@ -73,4 +73,19 @@ describe('LocalAppStateGateway', () => {
     expect(loadedTrail[0].occurredAt instanceof Date).toBeTrue();
     expect(sessionStorage.getItem('senatla_ops_admin_audit') || '').toContain('masked_payroll_export');
   });
+  it('returns one delivery result for repeated attendance idempotency keys', async () => {
+    const payload = {
+      siteId: 'site-1', workDate: '2026-08-10',
+      rows: [{ employeeId: 'employee-1', status: 'present' as const }],
+      summary: { present: 1, absent: 0, pending: 0, flagged: 0, evidenceCount: 0 },
+      timingStatus: 'On Time' as const, acknowledgedWarning: false, safetyTopic: 'Start safe',
+    };
+
+    const first = await gateway.submitAttendance(payload, 'attendance:site-1:2026-08-10');
+    const duplicate = await gateway.submitAttendance(payload, 'attendance:site-1:2026-08-10');
+
+    expect(duplicate.id).toBe(first.id);
+    expect((await gateway.loadAttendanceQueue()).length).toBe(1);
+    expect(first.outcome).toBe('accepted');
+  });
 });

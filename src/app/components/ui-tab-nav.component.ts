@@ -48,8 +48,11 @@ export class UiTabNavComponent {
   @Output() readonly selected = new EventEmitter<string>();
 
   get groupedTabs() {
+    const visibleTabs = this.tabs
+      .filter((tab) => tab.id !== 'payroll')
+      .map((tab) => tab.id === 'timesheets' ? { ...tab, label: 'Timesheets' } : tab);
     const groups = new Map<string, UiTabItem[]>();
-    for (const tab of this.tabs) {
+    for (const tab of visibleTabs) {
       const key = tab.group || '';
       groups.set(key, [...(groups.get(key) || []), tab]);
     }

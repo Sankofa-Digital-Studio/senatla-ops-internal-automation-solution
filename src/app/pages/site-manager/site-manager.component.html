@@ -6,7 +6,7 @@
         <p class="text-[10px] font-bold uppercase tracking-wider text-yellow-500">Site Manager</p>
         <h1 class="mt-1 text-lg font-bold">Timesheet Register</h1>
         <label class="mt-2 block text-[10px] text-gray-400 uppercase font-bold tracking-wider">Current site</label>
-        <input [(ngModel)]="localSiteName" (blur)="updateSiteName()" class="bg-transparent border-b border-gray-600 w-full text-lg font-bold focus:border-yellow-500 outline-none text-white placeholder-gray-600" placeholder="Enter Site Name">
+        <input [ngModel]="localSiteName" readonly aria-label="Current authorized site" class="w-full border-b border-gray-700 bg-transparent text-lg font-bold text-white outline-none" placeholder="Authorized site not loaded">
       </div>
 
       <div class="flex flex-col items-end">
@@ -36,6 +36,13 @@
     <div *ngIf="service.auditPersistenceError() as auditError" class="mb-2 rounded border border-red-500 bg-red-950 px-3 py-2 text-xs text-red-200">
       Audit write failed: {{ auditError }} Changes remain visible locally but are not release evidence until the write succeeds.
     </div>
+    <section *ngIf="service.latestAttendanceDelivery() as delivery" class="mb-2 rounded-xl border p-3" [class.border-emerald-700]="delivery.outcome === 'accepted'" [class.bg-emerald-950]="delivery.outcome === 'accepted'" [class.border-red-700]="delivery.outcome === 'rejected'" [class.bg-red-950]="delivery.outcome === 'rejected'" [class.border-amber-700]="delivery.outcome === 'retryable'" [class.bg-amber-950]="delivery.outcome === 'retryable'">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div><p class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Attendance delivery</p><p class="mt-1 text-sm font-semibold">{{ delivery.workDate }} · {{ delivery.outcome }}</p><p class="mt-1 text-xs text-slate-300">Attempt {{ delivery.attempts }}<span *ngIf="delivery.lastError"> · {{ delivery.lastError }}</span></p></div>
+        <button *ngIf="delivery.outcome === 'retryable'" type="button" (click)="retryAttendanceDelivery(delivery.id)" [disabled]="deliveryBusy()" class="rounded-lg border border-amber-500 px-3 py-2 text-xs font-bold uppercase text-amber-200 disabled:opacity-50">Retry delivery</button>
+      </div>
+    </section>
+    <div *ngIf="service.deliveryError() as deliveryError" class="mb-2 rounded border border-red-500 bg-red-950 px-3 py-2 text-xs text-red-200">Delivery status: {{ deliveryError }}</div>
     <div *ngIf="service.unsyncedChanges()" class="bg-slate-900 border border-slate-700 text-slate-300 text-xs p-3 rounded mb-2">
       Pending sync summary:
       Present {{ service.pendingAttendanceSummary().present }},
@@ -143,40 +150,102 @@
   </div>
 
 
-  <div *ngIf="showDailySetup" class="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4">
-    <div class="w-full max-w-2xl rounded-2xl border border-yellow-500/30 bg-gray-900 p-5 text-white shadow-2xl">
+  <div *ngIf="showDailySetup" class="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/90 p-4 sm:items-center" style="padding-bottom: max(1rem, env(safe-area-inset-bottom));">
+    <div class="my-2 w-full max-w-2xl rounded-2xl border border-yellow-500/30 bg-gray-900 p-5 text-white shadow-2xl sm:my-6">
       <p class="text-[10px] font-bold uppercase tracking-[0.25em] text-yellow-500">Start of shift</p>
-      <h2 class="mt-1 text-2xl font-black">Confirm site, targets and movement risk</h2>
-      <p class="mt-2 text-sm text-gray-400">Complete this before the safety talk. This keeps the site manager flow grounded in today's location and planned work.</p>
-      <div class="mt-5 grid gap-4 md:grid-cols-2">
-        <label class="text-xs font-bold uppercase tracking-wider text-gray-400">Current site
-          <input [(ngModel)]="localSiteName" class="mt-1 w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white" placeholder="Current site name">
+      <h2 class="mt-1 text-2xl font-black">Confirm readiness, targets and movement risk</h2>
+      <p class="mt-2 text-sm text-gray-400">Live readiness is checked against the authenticated site before the safety talk. No confidential clearance details are shown here.</p>
+
+      <div *ngIf="service.dataLoadError() as dataError" class="mt-4 rounded-lg border border-red-500/40 bg-red-950/60 p-3 text-xs text-red-100">
+        {{ dataError }}
+      </div>
+
+      <section class="mt-5 rounded-xl border border-slate-700 bg-slate-950 p-4" aria-labelledby="readiness-heading">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h3 id="readiness-heading" class="text-sm font-black text-white">Live site readiness</h3>
+            <p class="mt-1 text-xs text-slate-400">Site access and evidence are evaluated by the server policy for this signed-in user.</p>
+          </div>
+          <button type="button" (click)="refreshReadiness()" [disabled]="readiness.state() === 'loading'" class="min-h-11 rounded border border-slate-600 px-4 py-2 text-xs font-bold text-slate-100 disabled:cursor-wait disabled:opacity-50">Refresh</button>
+        </div>
+
+        <label class="mt-4 block text-xs font-bold uppercase tracking-wider text-slate-400">Authorized site
+          <select [ngModel]="readiness.selectedSiteId()" (ngModelChange)="selectReadinessSite($event)" [disabled]="readiness.state() === 'loading'" class="mt-1 min-h-11 w-full rounded-lg border border-slate-700 bg-gray-900 px-3 py-2 text-white">
+            <option value="">Select an authorized site</option>
+            <option *ngFor="let site of readiness.sites()" [value]="site.id">{{ site.name }} — {{ site.location }}</option>
+          </select>
         </label>
+
+        <div class="mt-4 rounded-lg border p-3"
+             [class.border-emerald-500]="readiness.state() === 'ready'"
+             [class.bg-emerald-950]="readiness.state() === 'ready'"
+             [class.border-amber-500]="readiness.state() === 'warning' || readiness.state() === 'unknown'"
+             [class.bg-amber-950]="readiness.state() === 'warning' || readiness.state() === 'unknown'"
+             [class.border-red-500]="readiness.state() === 'blocked' || readiness.state() === 'unavailable'"
+             [class.bg-red-950]="readiness.state() === 'blocked' || readiness.state() === 'unavailable'"
+             [class.border-slate-700]="readiness.state() === 'idle' || readiness.state() === 'loading'">
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-xs font-black uppercase tracking-widest">{{ readiness.state() }}</span>
+            <span *ngIf="readiness.rows()[0] as firstRow" class="text-[10px] text-slate-400">Policy {{ firstRow.policyVersion }}</span>
+          </div>
+          <p *ngIf="readiness.state() === 'loading'" class="mt-2 text-xs text-slate-300">Checking live site, employee and asset evidence…</p>
+          <p *ngIf="readiness.error() as readinessError" class="mt-2 text-xs text-red-100">{{ readinessError }}</p>
+          <p *ngIf="readiness.state() === 'ready'" class="mt-2 text-xs text-emerald-100">All evaluated records are ready. Continue with GPS and work targets.</p>
+          <p *ngIf="readiness.state() === 'warning'" class="mt-2 text-xs text-amber-100">Work may continue, but review every action below before assigning duties.</p>
+          <p *ngIf="readiness.state() === 'blocked' || readiness.state() === 'unknown'" class="mt-2 text-xs text-amber-100">Start of shift is locked until Office Admin resolves the items below and readiness is refreshed.</p>
+        </div>
+
+        <div *ngIf="readiness.rows().length" class="mt-3 max-h-56 space-y-2 overflow-y-auto pr-1">
+          <article *ngFor="let row of readiness.rows()" class="rounded-lg border border-slate-800 bg-gray-900 p-3">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="truncate text-sm font-bold text-white">{{ row.entityLabel }}</p>
+                <p class="text-[10px] uppercase tracking-wider text-slate-500">{{ row.entityType }}</p>
+              </div>
+              <span class="rounded px-2 py-1 text-[10px] font-black uppercase"
+                    [class.bg-emerald-700]="row.outcome === 'ready'"
+                    [class.bg-amber-600]="row.outcome === 'warning' || row.outcome === 'unknown'"
+                    [class.bg-red-700]="row.outcome === 'blocked'">{{ row.outcome }}</span>
+            </div>
+            <ul *ngIf="row.correctiveActions.length" class="mt-2 list-disc space-y-1 pl-4 text-xs text-slate-300">
+              <li *ngFor="let action of row.correctiveActions">{{ action }}</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <div class="mt-5 grid gap-4 md:grid-cols-2">
+        <div class="rounded-lg border border-gray-700 bg-gray-950 p-3 text-xs text-gray-300">
+          <div class="font-bold uppercase tracking-wider text-gray-500">Confirmed site</div>
+          <div class="mt-1 font-bold text-white">{{ readiness.selectedSite()?.name || 'Not loaded' }}</div>
+          <div class="mt-1 text-gray-500">{{ readiness.selectedSite()?.location }}</div>
+        </div>
         <div class="rounded-lg border border-gray-700 bg-gray-950 p-3 text-xs text-gray-300">
           <div class="font-bold uppercase tracking-wider text-gray-500">GPS site confirmation</div>
           <div class="mt-1">{{ siteLocationLabel }}</div>
           <div *ngIf="siteLocationWarning" class="mt-1 text-amber-300">{{ siteLocationWarning }}</div>
-          <button type="button" (click)="captureCurrentSiteLocation()" class="mt-3 rounded bg-yellow-500 px-3 py-2 text-xs font-black text-black">Capture current GPS</button>
+          <button type="button" (click)="captureCurrentSiteLocation()" class="mt-3 min-h-11 rounded bg-yellow-500 px-3 py-2 text-xs font-black text-black">Capture current GPS</button>
         </div>
         <label class="text-xs font-bold uppercase tracking-wider text-gray-400 md:col-span-2">Planned work targets for today
-          <textarea [(ngModel)]="plannedTargets" rows="3" class="mt-1 w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white" placeholder="Example: Complete trenching at Block B, inspect generator, move Hilux to client site..."></textarea>
+          <textarea [(ngModel)]="plannedTargets" rows="3" class="mt-1 w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white" placeholder="Record today's authorized work targets"></textarea>
         </label>
       </div>
+
       <div class="mt-5 rounded-xl border border-sky-500/20 bg-sky-500/10 p-4">
         <h3 class="text-sm font-black text-sky-100">Trip away from site</h3>
-        <p class="mt-1 text-xs text-sky-100/70">Use this when a vehicle or asset leaves the confirmed site. Capture current KM and GPS before departure.</p>
+        <p class="mt-1 text-xs text-sky-100/70">Only assets returned by the live readiness evaluation for this site can be selected.</p>
         <div class="mt-3 grid gap-3 md:grid-cols-2">
           <label class="text-xs text-sky-100">Asset / vehicle
-            <select [(ngModel)]="tripAssetId" class="mt-1 w-full rounded border border-sky-800 bg-gray-950 px-3 py-2 text-white">
-              <option value="">Select asset</option>
-              <option *ngFor="let asset of siteAssets()" [value]="asset.id">{{ assetLabel(asset) }}</option>
+            <select [(ngModel)]="tripAssetId" class="mt-1 min-h-11 w-full rounded border border-sky-800 bg-gray-950 px-3 py-2 text-white">
+              <option value="">Select ready-site asset</option>
+              <option *ngFor="let asset of siteAssets()" [value]="asset.entityId">{{ assetLabel(asset) }} — {{ asset.outcome }}</option>
             </select>
           </label>
           <label class="text-xs text-sky-100">Current KM / meter
-            <input type="number" min="0" [(ngModel)]="tripCurrentKm" class="mt-1 w-full rounded border border-sky-800 bg-gray-950 px-3 py-2 text-white" placeholder="Current reading">
+            <input type="number" min="0" [(ngModel)]="tripCurrentKm" class="mt-1 min-h-11 w-full rounded border border-sky-800 bg-gray-950 px-3 py-2 text-white" placeholder="Current reading">
           </label>
           <label class="text-xs text-sky-100">Reason
-            <select [(ngModel)]="tripReason" class="mt-1 w-full rounded border border-sky-800 bg-gray-950 px-3 py-2 text-white">
+            <select [(ngModel)]="tripReason" class="mt-1 min-h-11 w-full rounded border border-sky-800 bg-gray-950 px-3 py-2 text-white">
               <option value="">Select reason</option>
               <option *ngFor="let reason of tripReasons" [value]="reason">{{ reason }}</option>
             </select>
@@ -184,20 +253,20 @@
           <div class="rounded border border-sky-800 bg-gray-950 p-3 text-xs text-sky-100">
             <div>{{ tripLocationLabel }}</div>
             <div *ngIf="tripLocationWarning" class="mt-1 text-amber-300">{{ tripLocationWarning }}</div>
-            <button type="button" (click)="captureTripLocation()" class="mt-2 rounded bg-sky-500 px-3 py-2 text-xs font-black text-black">Capture trip GPS</button>
+            <button type="button" (click)="captureTripLocation()" class="mt-2 min-h-11 rounded bg-sky-500 px-3 py-2 text-xs font-black text-black">Capture trip GPS</button>
           </div>
           <label class="text-xs text-sky-100 md:col-span-2">Custom reason / instruction
-            <textarea [(ngModel)]="tripCustomReason" rows="2" class="mt-1 w-full rounded border border-sky-800 bg-gray-950 px-3 py-2 text-white" placeholder="Add client instruction, breakdown note, destination, or other reason."></textarea>
+            <textarea [(ngModel)]="tripCustomReason" rows="2" class="mt-1 w-full rounded border border-sky-800 bg-gray-950 px-3 py-2 text-white" placeholder="Add client instruction, destination, or operational reason"></textarea>
           </label>
         </div>
-        <button type="button" (click)="logTripAway()" class="mt-3 rounded bg-sky-400 px-4 py-2 text-xs font-black uppercase tracking-wider text-black">Log trip away</button>
+        <button type="button" (click)="logTripAway()" class="mt-3 min-h-11 rounded bg-sky-400 px-4 py-2 text-xs font-black uppercase tracking-wider text-black">Log trip away</button>
       </div>
+
       <div class="mt-5 flex justify-end gap-3">
-        <button type="button" (click)="confirmDailySetup()" class="rounded bg-yellow-500 px-5 py-3 text-xs font-black uppercase tracking-wider text-black">Confirm and continue to safety</button>
+        <button type="button" (click)="confirmDailySetup()" [disabled]="!readiness.canProceed()" class="min-h-11 rounded bg-yellow-500 px-5 py-3 text-xs font-black uppercase tracking-wider text-black disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400">Confirm and continue to safety</button>
       </div>
     </div>
-  </div>
-  <div *ngIf="!service.safetyTalkCompleted()" class="fixed inset-0 bg-gray-900 z-50 flex flex-col items-center justify-center p-6 backdrop-blur-sm">
+  </div>  <div *ngIf="!service.safetyTalkCompleted()" class="fixed inset-0 bg-gray-900 z-50 flex flex-col items-center justify-center p-6 backdrop-blur-sm">
     <div class="w-20 h-20 bg-orange-500 rounded-full flex items-center justify-center mb-6 shadow-glow">
       <span class="text-xl font-black text-gray-950">Safe</span>
     </div>
@@ -315,7 +384,7 @@
       <div class="flex gap-3">
         <button (click)="clearSignature()" class="px-4 py-3 rounded border border-gray-300 text-gray-600 font-bold text-xs uppercase">Clear</button>
         <button (click)="submitSyncWithSignature()"
-                [disabled]="!hasSigned"
+                [disabled]="!hasSigned || deliveryBusy()"
                 class="flex-1 bg-black text-white py-3 rounded font-bold text-sm uppercase disabled:opacity-50">
           Confirm
         </button>

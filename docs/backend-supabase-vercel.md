@@ -40,7 +40,7 @@ Use `local` mode only for the local app-state gateway. Authentication still uses
 ## Supabase setup
 
 1. Create a Supabase project.
-2. Run the SQL migration in [20260406000000_init_senatla_ops.sql](C:\Users\thoso\Dev\Portfolio\senatla\senatla-ops\supabase\migrations\20260406000000_init_senatla_ops.sql).
+2. Run the SQL migration in [20260406000000_init_senatla_ops.sql](../supabase/migrations/20260406000000_init_senatla_ops.sql).
 3. Create Auth users in Supabase Auth.
 4. Insert matching rows into `public.profiles` with:
    - `id` = auth user id

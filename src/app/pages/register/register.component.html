@@ -21,7 +21,7 @@
       </div>
       <form (ngSubmit)="handleRegistration()" class="grid gap-4">
         <label><span>Full name</span><input [(ngModel)]="displayName" name="displayName" autocomplete="name" placeholder="Your full name"></label>
-        <label><span>Work email</span><input [(ngModel)]="email" name="email" type="email" autocomplete="email" placeholder="name@company.com"></label>
+        <label><span>Work email</span><input [(ngModel)]="email" name="email" type="email" autocomplete="email" placeholder="employee@senatlatrading.com"></label>
         <div class="grid gap-4 sm:grid-cols-2">
           <label><span>Password</span><input [(ngModel)]="password" name="password" [type]="showPassword ? 'text' : 'password'" autocomplete="new-password" placeholder="12+ characters"></label>
           <label><span>Confirm password</span><input [(ngModel)]="confirmPassword" name="confirmPassword" [type]="showPassword ? 'text' : 'password'" autocomplete="new-password" placeholder="Repeat password"></label>

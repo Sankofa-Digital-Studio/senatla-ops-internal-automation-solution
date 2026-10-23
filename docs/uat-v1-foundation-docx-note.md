@@ -1,0 +1,1 @@
+The DOCX report is delivered as a generated workspace artifact because the GitHub text contents API cannot safely create binary DOCX content.

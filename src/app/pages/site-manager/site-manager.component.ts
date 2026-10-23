@@ -1,12 +1,13 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, ElementRef, ViewChild, inject, computed } from '@angular/core';
+import { Component, ElementRef, ViewChild, inject, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AttendanceCommentChange, AttendanceReasonChange, AttendanceRowComponent, AttendanceStatusChange } from '../../components/attendance-row.component';
 import { TimesheetSummaryComponent } from '../../components/timesheet-summary.component';
-import { DailyLog, Employee, VehicleAsset } from 'src/app/core/models/app.models';
+import { DailyLog, Employee } from 'src/app/core/models/app.models';
 import { StaffDataService } from 'src/app/core/services/staff-data.service';
 import { TimesheetRegisterService } from 'src/app/core/services/timesheet-register.service';
-import { OfficeAdminService } from 'src/app/core/services/office-admin.service';
+import { SiteReadinessRow } from 'src/app/core/gateways/readiness.gateway';
+import { SiteReadinessService } from 'src/app/core/services/site-readiness.service';
 import { readFileAsDataUrl } from '../../core/utils/browser-file.util';
 import { toLocalDateKey } from '../../core/utils/date.util';
 
@@ -19,7 +20,7 @@ import { toLocalDateKey } from '../../core/utils/date.util';
 })
 export class SiteManagerComponent {
   service = inject(StaffDataService);
-  readonly assets = inject(OfficeAdminService);
+  readonly readiness = inject(SiteReadinessService);
   private readonly timesheetRegister = inject(TimesheetRegisterService);
   @ViewChild('sigCanvas') sigCanvas!: ElementRef<HTMLCanvasElement>;
   @ViewChild('canvasContainer') canvasContainer!: ElementRef<HTMLDivElement>;
@@ -67,10 +68,12 @@ export class SiteManagerComponent {
   private ctx!: CanvasRenderingContext2D;
   readonly latestSyncRecord = computed(() => this.service.syncHistory()[0] || null);
   readonly recentAttendanceAudit = computed(() => this.service.attendanceAuditTrail().slice(0, 6));
-  readonly siteAssets = computed(() => this.assets.assets().filter((asset) => !asset.assignedSiteId || asset.assignedSiteId === 'demo-workshop' || asset.assignedSiteId === 'site-1'));
+  readonly deliveryBusy = signal(false);
+  readonly siteAssets = computed(() => this.readiness.assetRows());
 
   constructor() {
     this.localSiteName = this.service.siteName();
+    void this.initializeReadiness();
   }
 
 
@@ -80,14 +83,31 @@ export class SiteManagerComponent {
     this.siteLocationWarning = location.warning;
   }
 
-  confirmDailySetup() {
-    if (!this.localSiteName.trim() || !this.plannedTargets.trim() || !this.siteLocationLabel.includes(',')) {
-      this.siteLocationWarning = 'Confirm site name, planned work targets, and current GPS location before starting the day.';
+  async confirmDailySetup() {
+    const selectedSite = this.readiness.selectedSite();
+    if (!selectedSite || !this.readiness.canProceed() || !this.plannedTargets.trim() || !this.siteLocationLabel.includes(',')) {
+      this.siteLocationWarning = 'Confirm an authorized ready site, planned work targets, and current GPS location before starting the day.';
       return;
     }
-    this.updateSiteName();
+    if (!await this.readiness.confirmSelectedSite()) {
+      this.siteLocationWarning = 'Live readiness changed or could not be confirmed. Refresh and review before continuing.';
+      return;
+    }
+    this.service.setCurrentSite(selectedSite.id, selectedSite.name);
+    this.localSiteName = selectedSite.name;
     this.showDailySetup = false;
   }
+
+  async selectReadinessSite(siteId: string) {
+    await this.readiness.selectSite(siteId);
+    const selectedSite = this.readiness.selectedSite();
+    if (selectedSite) {
+      this.service.setCurrentSite(selectedSite.id, selectedSite.name);
+      this.localSiteName = selectedSite.name;
+    }
+  }
+
+  async refreshReadiness() { await this.readiness.refresh(); }
 
   async captureTripLocation() {
     const location = await this.captureGpsLabel('trip');
@@ -96,14 +116,14 @@ export class SiteManagerComponent {
   }
 
   logTripAway() {
-    const asset = this.siteAssets().find((entry) => entry.id === this.tripAssetId) || null;
+    const asset = this.siteAssets().find((entry) => entry.entityId === this.tripAssetId) || null;
     if (!asset || !this.tripReason || !this.tripLocationLabel.includes(',')) {
       this.tripLocationWarning = 'Select an asset or vehicle, capture GPS, and choose a reason before logging a trip away.';
       return;
     }
 
     this.tripLogs = [{
-      assetId: asset.id,
+      assetId: asset.entityId,
       assetLabel: this.assetLabel(asset),
       km: this.tripCurrentKm,
       reason: this.tripReason,
@@ -120,9 +140,7 @@ export class SiteManagerComponent {
     this.tripLocationWarning = '';
   }
 
-  assetLabel(asset: VehicleAsset) {
-    return [asset.registrationNumber || asset.serialNumber || asset.vin, asset.make, asset.model].filter(Boolean).join(' / ');
-  }
+  assetLabel(asset: SiteReadinessRow) { return asset.entityLabel; }
 
   private async captureGpsLabel(context: 'site' | 'trip') {
     if (!navigator.geolocation) {
@@ -316,7 +334,10 @@ export class SiteManagerComponent {
   onAttendanceStatusChange(change: AttendanceStatusChange) { this.setAttendanceStatus(change.employee, change.status); }
   onAttendanceReasonChange(change: AttendanceReasonChange) { this.service.updateReason(change.employeeId, this.selectedDateStr, change.reason); }
   onAttendanceCommentChange(change: AttendanceCommentChange) { this.service.updateComment(change.employeeId, this.selectedDateStr, change.comment); }
-  updateSiteName() { this.service.setSiteName(this.localSiteName); }
+  updateSiteName() {
+    const selectedSite = this.readiness.selectedSite();
+    if (selectedSite) this.localSiteName = selectedSite.name;
+  }
   createGroup() { if (this.newGroupName) { this.service.addGroup(this.newGroupName); this.newGroupName = ''; this.showGroupModal = false; } }
 
   toggleGroupSelect(emp: Employee) {
@@ -346,11 +367,31 @@ export class SiteManagerComponent {
     setTimeout(() => this.setupCanvas(), 100);
   }
 
-  submitSyncWithSignature() {
+  async submitSyncWithSignature() {
     const sig = this.sigCanvas.nativeElement.toDataURL();
-    this.service.performSync(sig, this.rolloverAcknowledged);
-    this.showSignatureModal = false;
-    this.rolloverAcknowledged = false;
+    this.deliveryBusy.set(true);
+    try {
+      await this.service.performSync(sig, this.rolloverAcknowledged, this.selectedDateStr);
+      this.showSignatureModal = false;
+      this.rolloverAcknowledged = false;
+    } finally {
+      this.deliveryBusy.set(false);
+    }
+  }
+
+  async retryAttendanceDelivery(submissionId: string) {
+    this.deliveryBusy.set(true);
+    try { await this.service.retryAttendanceDelivery(submissionId); }
+    finally { this.deliveryBusy.set(false); }
+  }
+
+  private async initializeReadiness() {
+    await this.readiness.initialize();
+    const selectedSite = this.readiness.selectedSite();
+    if (selectedSite) {
+      this.service.setCurrentSite(selectedSite.id, selectedSite.name);
+      this.localSiteName = selectedSite.name;
+    }
   }
 
   private parseLocation() {
@@ -364,4 +405,3 @@ export class SiteManagerComponent {
   }
 
 }
-

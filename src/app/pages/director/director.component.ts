@@ -1,118 +1,113 @@
-import { CommonModule, DecimalPipe, DatePipe } from '@angular/common';
-import { Component, inject, computed, signal } from '@angular/core';
+import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { StaffDataService } from 'src/app/core/services/staff-data.service';
 import { OfficeAdminService } from 'src/app/core/services/office-admin.service';
+import { CostAttributionService } from 'src/app/core/services/cost-attribution.service';
 
 @Component({
-  selector: 'app-director',
-  templateUrl: './director.component.html',
-  styleUrls: ['./director.component.scss'],
-  standalone: true,
+  selector: 'app-director', templateUrl: './director.component.html', styleUrls: ['./director.component.scss'], standalone: true,
   imports: [CommonModule, DecimalPipe, DatePipe],
 })
-export class DirectorComponent  {
-service = inject(StaffDataService);
- office = inject(OfficeAdminService);
- viewMode = signal<'day' | 'month' | 'year'>('day');
+export class DirectorComponent {
+  readonly service = inject(StaffDataService);
+  readonly office = inject(OfficeAdminService);
+  readonly costAttribution = inject(CostAttributionService);
+  readonly viewMode = signal<'day' | 'month' | 'year'>('day');
+  readonly staff = computed(() => this.office.employees());
+  readonly sites = computed(() => this.office.sites());
+  readonly presentCount = computed(() => this.attendance('present'));
+  readonly absentCount = computed(() => this.attendance('absent'));
+  readonly pendingInvoices = computed(() => this.office.vendorInvoices().filter((invoice) => invoice.status === 'pending_director'));
+  readonly pendingInvoiceAmount = computed(() => this.pendingInvoices().reduce((total, invoice) => total + invoice.total, 0));
+  readonly periodInvoiceAmount = computed(() => this.office.vendorInvoices().filter((invoice) => this.inPeriod(invoice.invoiceDate)).reduce((total, invoice) => total + invoice.total, 0));
+  readonly pendingApprovals = computed(() => this.office.approvals().filter((request) => request.status === 'pending' && request.requestType !== 'full_id_payroll_export'));
+  readonly pendingExecutiveReports = computed(() => this.office.directorReports().filter((r) => r.status === 'pending_director'));
+  readonly approvedExecutiveReports = computed(() => this.office.directorReports().filter((r) => r.status === 'approved'));
+  readonly activeReportModal = signal<any | null>(null);
+  readonly directorNotes = signal<string>('');
+  readonly feedback = signal<string>('');
 
-  // --- ANALYTICS LOGIC ---
+  openReportModal(report: any) {
+    this.activeReportModal.set(report);
+    this.directorNotes.set('');
+  }
 
-  private readonly periodSyncs = computed(() => this.service.syncHistory().filter((entry) => this.isInSelectedPeriod(entry.syncTime)));
+  closeReportModal() {
+    this.activeReportModal.set(null);
+  }
 
-  // 1. Compliance Score - persisted synchronization records only.
-  complianceScore = computed(() => {
-    const history = this.periodSyncs();
-    if (history.length === 0) return 0;
-    const onTime = history.filter((entry) => entry.status === 'On Time').length;
-    return (onTime / history.length) * 100;
+  async approveReport(reportId: string) {
+    await this.office.approveDirectorReport(reportId, this.directorNotes());
+    this.feedback.set('Executive operational report approved. Real-time cost & workforce margin locked.');
+    this.closeReportModal();
+  }
+
+  async rejectReport(reportId: string) {
+    await this.office.rejectDirectorReport(reportId, this.directorNotes());
+    this.feedback.set('Executive report returned to Office Admin for revisions.');
+    this.closeReportModal();
+  }
+  readonly assetSummary = computed(() => {
+    const assets = this.office.assets();
+    const blocked = assets.filter((asset) => this.assetState(asset) === 'blocked').length;
+    const attention = assets.filter((asset) => this.assetState(asset) === 'attention').length;
+    return { total: assets.length, ready: Math.max(0, assets.length - blocked - attention), attention, blocked };
   });
-
-  // 2. Headcount
-  presentCount = computed(() => {
-    const today = this.toDateKey(this.service.currentTime());
-    return this.service.employees().filter(e => e.logs[today]?.status === 'present').length;
+  readonly costRows = computed(() => this.costAttribution.report()?.rows || []);
+  readonly ppeExpense = computed(() => this.costForCategory('ppe'));
+  readonly fuelExpense = computed(() => this.costForCategory('fuel'));
+  readonly workOrderExpense = computed(() => this.costForCategory('asset_work_order'));
+  readonly vendorInvoiceExpense = computed(() => this.costForCategory('vendor_invoice'));
+  readonly operatingExpense = computed(() => this.costRows().reduce((sum, row) => sum + row.recognizedAmount, 0));
+  readonly unattributedExpense = computed(() => (this.costAttribution.report()?.unattributedRows || []).reduce((sum, row) => sum + (row.sourceAmount || 0), 0));
+  readonly provisionalLabourSources = computed(() => this.costRows().filter((row) => row.sourceType === 'labour_provisional').length);
+  readonly siteStats = computed(() => this.sites().filter((site) => site.isActive).map((site) => {
+    const people = this.staff().filter((employee) => employee.siteId === site.id);
+    const recognizedCost = this.costRows().filter((row) => row.siteId === site.id && !!row.jobNumber).reduce((sum, row) => sum + row.recognizedAmount, 0);
+    return {
+      name: site.name,
+      location: site.location,
+      jobNumber: site.jobNumber || 'Job number missing',
+      staffCount: people.length,
+      present: people.filter((employee) => employee.logs[this.today()]?.status === 'present').length,
+      recognizedCost,
+    };
+  }));
+  readonly risks = computed(() => [
+    ...this.office.assets().filter((asset) => this.assetState(asset) !== 'ready').map((asset) => ({ label: `${asset.make} ${asset.model}`, detail: this.assetState(asset) === 'blocked' ? 'Out of service' : 'Needs attention', severity: this.assetState(asset) })),
+    ...this.office.integrationOutbox().filter((event) => event.status === 'failed').map((event) => ({ label: 'Integration delivery', detail: `${event.eventType} failed`, severity: 'blocked' })),
+  ].slice(0, 6));
+  readonly dataAsOf = computed(() => {
+    const dates = [this.service.currentTime(), ...this.office.activity().map((item) => new Date(item.occurredAt)), ...this.office.vendorInvoices().map((item) => new Date(item.updatedAt))]
+      .filter((date) => !Number.isNaN(date.getTime()));
+    return new Date(Math.max(...dates.map((date) => date.getTime())));
   });
+  constructor() {
+    effect(() => {
+      const bounds = this.costPeriodBounds(this.service.currentTime(), this.viewMode());
+      void this.costAttribution.loadCosts({ periodStart: bounds.start, periodEndExclusive: bounds.endExclusive }).catch(() => undefined);
+    });
+  }
 
-  absentCount = computed(() => {
-    const today = this.toDateKey(this.service.currentTime());
-    return this.service.employees().filter(e => e.logs[today]?.status === 'absent').length;
-  });
+  private costForCategory(category: string) {
+    return this.costRows().filter((row) => row.sourceType === category).reduce((sum, row) => sum + row.recognizedAmount, 0);
+  }
 
-  // 3. Financials
-  // "Actual" is based on who is PRESENT today
-  actualDailyCost = computed(() => {
-    const today = this.toDateKey(this.service.currentTime());
-    return this.service.employees().reduce((acc, emp) => {
-       const isPresent = emp.logs[today]?.status === 'present';
-       return acc + (isPresent ? emp.basicRate : 0);
-    }, 0);
-  });
-
-  // Actual cost from recorded attendance. No synthetic multipliers.
-  displayedCost = computed(() => {
-     return this.service.employees().reduce((total, employee) => total + Object.entries(employee.logs)
-       .filter(([dateKey, log]) => log.status === 'present' && this.isDateKeyInSelectedPeriod(dateKey))
-       .reduce((employeeTotal) => employeeTotal + employee.basicRate, 0), 0);
-  });
-
-  ppeExpense = computed(() => this.office.ppeIssues().filter((entry) => this.isDateKeyInSelectedPeriod((entry.orderDate || entry.requestedAt).slice(0, 10))).reduce((total, entry) => total + entry.unitCost, 0));
-  fuelExpense = computed(() => this.office.assetFuelEntries().filter((entry) => this.isDateKeyInSelectedPeriod(entry.fuelDate)).reduce((total, entry) => total + entry.totalCost, 0));
-  vendorPayables = computed(() => this.office.vendorAccounts().reduce((total, vendor) => total + vendor.totalOwingAmount, 0));
-  pendingVendorInvoices = computed(() => this.office.vendorInvoices().filter((invoice) => invoice.status === 'pending_director'));
-  recentVendorInvoices = computed(() => this.office.vendorInvoices().slice(0, 8));
+  private costPeriodBounds(now: Date, mode: 'day' | 'month' | 'year') {
+    const start = mode === 'day' ? new Date(now.getFullYear(), now.getMonth(), now.getDate()) : mode === 'month' ? new Date(now.getFullYear(), now.getMonth(), 1) : new Date(now.getFullYear(), 0, 1);
+    const end = mode === 'day' ? new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1) : mode === 'month' ? new Date(now.getFullYear(), now.getMonth() + 1, 1) : new Date(now.getFullYear() + 1, 0, 1);
+    const key = (value: Date) => `${value.getFullYear()}-${`${value.getMonth() + 1}`.padStart(2, '0')}-${`${value.getDate()}`.padStart(2, '0')}`;
+    return { start: key(start), endExclusive: key(end) };
+  }
   vendorName(vendorId: string) { return this.office.vendorAccounts().find((vendor) => vendor.id === vendorId)?.name || 'Unknown vendor'; }
-  operatingExpense = computed(() => this.displayedCost() + this.ppeExpense() + this.fuelExpense() + this.vendorPayables());
-  // 4. Per-Site Breakdown
-  siteStats = computed(() => {
-     return this.service.sites().map(site => {
-        const staff = this.service.employees().filter(e => e.siteId === site.id);
-        const displayCost = staff.reduce((total, employee) => total + Object.entries(employee.logs)
-          .filter(([dateKey, log]) => log.status === 'present' && this.isDateKeyInSelectedPeriod(dateKey))
-          .reduce((employeeTotal) => employeeTotal + employee.basicRate, 0), 0);
-
-        return {
-           name: site.name,
-           location: site.location,
-           staffCount: staff.length,
-           dailyCost: displayCost
-        };
-     });
-  });
-
-  // 5. Recent Activity
-  recentSyncs = computed(() => this.service.syncHistory().slice(0, 5));
-  highestRiskSync = computed(() => this.service.syncHistory().find((entry) => entry.status !== 'On Time') || null);
-
-  // 6. Persisted attendance cost trend.
-  trendData = computed(() => {
-     const totals = new Map<string, number>();
-     for (const employee of this.service.employees()) {
-       for (const [dateKey, log] of Object.entries(employee.logs)) {
-         if (log.status !== 'present' || !this.isDateKeyInSelectedPeriod(dateKey)) continue;
-         const bucket = this.viewMode() === 'year' ? dateKey.slice(0, 7) : dateKey;
-         totals.set(bucket, (totals.get(bucket) || 0) + employee.basicRate);
-       }
-     }
-     const entries = [...totals.entries()].sort(([left], [right]) => left.localeCompare(right));
-     const max = Math.max(0, ...entries.map(([, value]) => value));
-     return entries.map(([label, value]) => ({ label, value, ratio: max ? (value / max) * 100 : 0 }));
-  });
-
-  private isInSelectedPeriod(value: Date) {
-    return this.isDateKeyInSelectedPeriod(this.toDateKey(new Date(value)));
+  private attendance(status: 'present' | 'absent') { return this.staff().filter((employee) => employee.logs[this.today()]?.status === status).length; }
+  private assetState(asset: { id: string; status: string; lifecycleState?: string; licenseExpiry: string }) {
+    if (asset.status === 'Expired' || ['retired', 'disposed'].includes(asset.lifecycleState || '')) return 'blocked';
+    const work = this.office.assetWorkOrders().some((item) => item.assetId === asset.id && !['completed', 'cancelled'].includes(item.status) && ['critical', 'high'].includes(item.priority));
+    if (work) return 'blocked';
+    const compliance = this.office.assetComplianceRecords().some((item) => item.assetId === asset.id && ['due', 'expired'].includes(item.status));
+    return asset.status === 'Maintenance' || compliance || new Date(`${asset.licenseExpiry}T23:59:59`).getTime() < Date.now() ? 'attention' : 'ready';
   }
-
-  private isDateKeyInSelectedPeriod(dateKey: string) {
-    const currentKey = this.toDateKey(this.service.currentTime());
-    if (this.viewMode() === 'day') return dateKey === currentKey;
-    if (this.viewMode() === 'month') return dateKey.startsWith(currentKey.slice(0, 7));
-    return dateKey.startsWith(currentKey.slice(0, 4));
-  }
-
-  private toDateKey(value: Date): string {
-    const year = value.getFullYear();
-    const month = `${value.getMonth() + 1}`.padStart(2, '0');
-    const day = `${value.getDate()}`.padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
+  private inPeriod(value: string) { const today = this.today(); return this.viewMode() === 'day' ? value === today : this.viewMode() === 'month' ? value.startsWith(today.slice(0, 7)) : value.startsWith(today.slice(0, 4)); }
+  private today() { const now = this.service.currentTime(); return `${now.getFullYear()}-${`${now.getMonth() + 1}`.padStart(2, '0')}-${`${now.getDate()}`.padStart(2, '0')}`; }
 }

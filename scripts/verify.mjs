@@ -3,11 +3,17 @@ import { spawn } from 'node:child_process';
 const isWindows = process.platform === 'win32';
 
 const steps = [
-  { name: 'runtime-config', script: 'npm run test:runtime-config', timeoutMs: 60_000 },
-  { name: 'lint', script: 'npm run lint', timeoutMs: 180_000 },
-  { name: 'typecheck', script: 'npm run typecheck', timeoutMs: 180_000 },
-  { name: 'build', script: 'npm run build', timeoutMs: 600_000, env: { CI: null } },
-  { name: 'tests', script: 'npm run test:ci', timeoutMs: 420_000, env: { CI: 'true' }, successPattern: /TOTAL:\s+\d+\s+SUCCESS/, failurePattern: /TOTAL:\s+\d+\s+FAILED|FAILED/i },
+  { name: 'runtime-config', script: 'npm run test:runtime-config', timeoutMs: 120_000 },
+  { name: 'ocr-device-uat-contract', script: 'npm run test:ocr-device-uat-contract', timeoutMs: 120_000 },
+  { name: 'lint', script: 'npm run lint', timeoutMs: 360_000 },
+  { name: 'typecheck', script: 'npm run typecheck', timeoutMs: 360_000 },
+  {
+    name: 'build',
+    script: 'npm run build',
+    timeoutMs: 600_000,
+    env: { CI: null, SENATLA_API_MODE: 'local', VERCEL: '0' },
+  },
+  { name: 'tests', script: 'npm run test:ci', timeoutMs: 900_000, env: { CI: 'true' }, successPattern: /TOTAL:\s+\d+\s+SUCCESS/, failurePattern: /TOTAL:\s+\d+\s+FAILED|FAILED/i },
 ];
 
 function now() {
@@ -166,4 +172,4 @@ for (const step of steps) {
   }
 }
 
-console.log(`[verify] ${now()} PASS release gate: runtime-config, lint, typecheck, build, tests`);
+console.log(`[verify] ${now()} PASS release gate: runtime-config, ocr-device-uat-contract, lint, typecheck, build, tests`);

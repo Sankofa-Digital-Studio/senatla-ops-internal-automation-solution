@@ -3,7 +3,7 @@ name: Senatla Ops quality gates
 on:
   pull_request:
   push:
-    branches: [dev, main]
+    branches: [dev]
 
 permissions:
   contents: read
@@ -71,6 +71,47 @@ jobs:
 
             sleep $((attempt * 15))
           done
-      - run: npx --yes supabase@2.107.0 test db
+      - name: Run database tests
+        run: npx --yes supabase@2.107.0 test db
+      - name: Report test status
+        if: success()
+        run: echo "✓ Database tests and migrations passed"
+      - if: always()
+        run: npx --yes supabase@2.107.0 stop --no-backup
+
+
+
+  responsive-layout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.15.0
+          cache: npm
+      - run: npm ci
+      - name: Start isolated Supabase browser database
+        run: npx --yes supabase@2.107.0 start -x realtime,storage-api,imgproxy,studio
+      - run: npx --yes supabase@2.107.0 db reset --local
+      - name: Export local browser-test connection
+        shell: bash
+        run: |
+          npx --yes supabase@2.107.0 status -o env > /tmp/supabase.env
+          source /tmp/supabase.env
+          echo "SENATLA_API_MODE=supabase" >> "$GITHUB_ENV"
+          echo "SENATLA_SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "SENATLA_SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:responsive
+        env:
+          CI: true
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: responsive-layout-evidence
+          path: output/playwright
+          if-no-files-found: error
+          retention-days: 14
       - if: always()
         run: npx --yes supabase@2.107.0 stop --no-backup

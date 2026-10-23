@@ -38,6 +38,42 @@ export interface SyncRecord {
   };
 }
 
+export type AttendanceDeliveryStatus = 'pending' | 'processing' | 'completed' | 'failed';
+export type AttendanceDeliveryOutcome = 'pending' | 'accepted' | 'rejected' | 'retryable';
+
+export interface AttendanceDeliveryRow {
+  employeeId: string;
+  status: DailyLog['status'];
+  reason?: DailyLog['reason'];
+  comment?: string;
+  isFlagged?: boolean;
+}
+
+export interface AttendanceDeliveryPayload {
+  siteId: string;
+  workDate: string;
+  rows: AttendanceDeliveryRow[];
+  summary: NonNullable<SyncRecord['attendanceSummary']>;
+  timingStatus: SyncRecord['status'];
+  acknowledgedWarning: boolean;
+  safetyTopic: string;
+}
+
+export interface AttendanceQueueSubmission {
+  id: string;
+  organizationId: string;
+  submittedBy: string;
+  siteId: string;
+  workDate: string;
+  status: AttendanceDeliveryStatus;
+  outcome: AttendanceDeliveryOutcome;
+  attempts: number;
+  idempotencyKey: string;
+  lastError?: string | null;
+  diagnosticContext?: Record<string, unknown> | null;
+  createdAt: string;
+  processedAt?: string | null;
+}
 export interface Site {
   id: string;
   organizationId?: string;
@@ -58,11 +94,16 @@ export interface Employee {
   firstName: string;
   surname: string;
   idNumber: string;
+  companyNumber?: string;
   role: 'General Worker' | 'Safety Rep' | 'Operator' | 'Driver' | 'Foreman';
+  designation?: string;
   siteId: string;
   groupId?: string;
   startDate: string;
   basicRate: number;
+  payRateUnit?: 'hourly' | 'daily' | 'monthly';
+  safetyQualifications?: string[];
+  additionalFields?: Record<string, string>;
   
   // New fields
   salaryAdvances: number;
@@ -177,6 +218,7 @@ export interface AttendanceAuditEvent {
     | 'attendance_comment_updated'
     | 'safety_talk_completed'
     | 'safety_talk_updated'
+    | 'site_readiness_confirmed'
     | 'sync_submitted';
   occurredAt: Date;
   actor: string;
@@ -239,6 +281,18 @@ export interface AssetRegistrationEvent {
   occurredAt: string;
 }
 
+export type AssetEvidenceCaptureSource = 'native_scan' | 'native_camera' | 'upload' | 'manual';
+export type AssetOcrEngine = 'android_mlkit_v2' | 'ios_vision' | 'browser_detector' | 'manual';
+
+export interface AssetEvidenceInput {
+  file: File;
+  captureSource: AssetEvidenceCaptureSource;
+  contentSha256: string;
+  ocrEngine: AssetOcrEngine | null;
+  ocrConfidence: number | null;
+  ocrPageCount: number;
+  rawOcrText?: string;
+}
 export interface AssetRegistrationEvidence {
   id: string;
   organizationId: string;
@@ -247,6 +301,12 @@ export interface AssetRegistrationEvidence {
   evidenceType: AssetEvidenceType;
   fileName: string;
   mimeType: string;
+  captureSource: AssetEvidenceCaptureSource;
+  contentSha256: string | null;
+  ocrEngine: AssetOcrEngine | null;
+  ocrConfidence: number | null;
+  ocrPageCount: number;
+  storageState: 'pending_upload' | 'ready';
   storagePath?: string | null;
   previewUrl?: string | null;
   extractionState: 'not_applicable' | 'pending' | 'review_required' | 'applied';
@@ -339,6 +399,8 @@ export interface VendorAccount {
   organizationId: string;
   name: string;
   description: string;
+  taxNumber?: string;
+  isActive?: boolean;
   totalOwingAmount: number;
   createdAt: string;
   updatedAt: string;
@@ -352,6 +414,9 @@ export interface VendorInvoiceRecord {
   vendorId: string;
   invoiceDate: string;
   orderNumber: string;
+  invoiceNumber?: string;
+  supplierOrderNumber?: string;
+  internalOrderNumber?: string;
   itemsPurchased: string;
   total: number;
   responsiblePerson: string;
@@ -424,7 +489,7 @@ export interface PayrollExportRecord {
   createdAt: string;
 }
 
-export type ApprovalRequestType = 'full_id_payroll_export' | 'user_suspension' | 'asset_return_to_service' | 'vendor_invoice_approval';
+export type ApprovalRequestType = 'full_id_payroll_export' | 'user_suspension' | 'asset_return_to_service' | 'vendor_invoice_approval' | 'director_executive_report';
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'executed';
 
 export interface ApprovalRequest {
@@ -440,6 +505,44 @@ export interface ApprovalRequest {
   createdAt: string;
   reviewedAt?: string | null;
   notes?: string | null;
+}
+
+export interface ExecutiveOperationalReport {
+  id: string;
+  reportNumber: string;
+  generatedAt: string;
+  generatedBy: string;
+  generatedByName: string;
+  status: 'pending_director' | 'approved' | 'rejected';
+  recordsCount: number;
+  records: {
+    site: Site;
+    employee: Employee;
+    asset: VehicleAsset;
+    timesheet: {
+      date: string;
+      employeeId: string;
+      employeeName: string;
+      siteId: string;
+      siteName: string;
+      status: 'present' | 'absent' | 'overtime';
+      hoursWorked: number;
+      overtimeHours: number;
+      supervisorSigned: boolean;
+    };
+    invoice: VendorInvoiceRecord;
+  };
+  executiveAdvantage: {
+    marginIntegrityScore: number;
+    laborHoursSavedPerWeek: number;
+    costTraceabilityStatus: string;
+    complianceConfidence: string;
+    strategicSummary: string;
+    verdict: string;
+  };
+  directorReviewedAt?: string | null;
+  directorReviewedBy?: string | null;
+  directorNotes?: string | null;
 }
 
 export interface SavedAdminView {

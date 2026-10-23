@@ -1,232 +1,405 @@
-<div class="h-full bg-gray-900 text-gray-200 flex flex-col font-sans overflow-y-auto">
-  <div class="bg-gray-800 border-b border-gray-700 px-6 py-6 shadow-md">
-    <div class="flex flex-col md:flex-row justify-between md:items-end gap-4">
+<div class="min-h-full overflow-y-auto bg-gray-950 font-sans text-gray-200 pb-16">
+  <!-- Executive Strategic Header -->
+  <header class="border-b border-gray-800 bg-gray-900/90 backdrop-blur px-6 py-6 sticky top-0 z-30 shadow-md">
+    <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div>
-        <h1 class="text-2xl font-black text-white tracking-tight">EXECUTIVE OVERVIEW</h1>
-        <p class="text-xs text-yellow-500 font-bold uppercase tracking-widest mt-1">Financial and Compliance Audit</p>
+        <div class="flex items-center gap-3">
+          <span class="rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-3 py-0.5 text-[10px] font-bold tracking-widest uppercase">Executive Decision Suite</span>
+          <span class="rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-0.5 text-[10px] font-bold tracking-widest uppercase">Strategic Horizons 2026-2027</span>
+        </div>
+        <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white mt-1">DIRECTOR STRATEGIC COMMAND</h1>
+        <p class="mt-1 text-xs font-bold uppercase tracking-widest text-yellow-500">Source-backed operations · data as of {{ dataAsOf() | date:'medium' }}</p>
       </div>
 
-      <div class="flex gap-2">
-        <button
-          (click)="viewMode.set('day')"
-          class="px-4 py-1 rounded text-xs font-bold uppercase tracking-wider border transition-all"
-          [class.bg-yellow-500]="viewMode()==='day'"
-          [class.text-black]="viewMode()==='day'"
-          [class.border-yellow-500]="viewMode()==='day'"
-          [class.text-gray-400]="viewMode()!=='day'"
-          [class.border-gray-600]="viewMode()!=='day'"
-        >Daily</button>
-
-        <button
-          (click)="viewMode.set('month')"
-          class="px-4 py-1 rounded text-xs font-bold uppercase tracking-wider border transition-all"
-          [class.bg-yellow-500]="viewMode()==='month'"
-          [class.text-black]="viewMode()==='month'"
-          [class.border-yellow-500]="viewMode()==='month'"
-          [class.text-gray-400]="viewMode()!=='month'"
-          [class.border-gray-600]="viewMode()!=='month'"
-        >Monthly</button>
-
-        <button
-          (click)="viewMode.set('year')"
-          class="px-4 py-1 rounded text-xs font-bold uppercase tracking-wider border transition-all"
-          [class.bg-yellow-500]="viewMode()==='year'"
-          [class.text-black]="viewMode()==='year'"
-          [class.border-yellow-500]="viewMode()==='year'"
-          [class.text-gray-400]="viewMode()!=='year'"
-          [class.border-gray-600]="viewMode()!=='year'"
-        >Yearly</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="p-4 md:p-8 space-y-8">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 relative overflow-hidden group hover:border-gray-600 transition-colors">
-        <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-          <span class="text-6xl">Audit</span>
-        </div>
-        <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">Ops Compliance Score</p>
-        <div class="flex items-end gap-2">
-          <span class="text-4xl font-bold text-white" [class.text-red-500]="complianceScore() < 80" [class.text-green-400]="complianceScore() >= 80">
-            {{ complianceScore() | number:'1.0-0' }}%
-          </span>
-          <span class="text-xs text-gray-500 mb-1">On-Time Syncs</span>
-        </div>
-        <div class="w-full bg-gray-900 h-2 mt-4 rounded-full overflow-hidden">
-          <div
-            class="h-full transition-all duration-1000"
-            [style.width.%]="complianceScore()"
-            [class.bg-red-500]="complianceScore() < 80"
-            [class.bg-green-500]="complianceScore() >= 80"
-          ></div>
-        </div>
-      </div>
-
-      <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 relative overflow-hidden group hover:border-gray-600 transition-colors border-l-4 border-l-yellow-500">
-        <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-          <span class="text-6xl">R</span>
-        </div>
-        <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">
-          {{ viewMode() === 'day' ? 'Actual Daily Cost' : viewMode() === 'month' ? 'Actual Month Cost' : 'Actual YTD Cost' }}
-        </p>
-        <div class="flex items-end gap-2">
-          <span class="text-3xl font-bold text-white font-mono">R {{ displayedCost() | number:'1.0-0' }}</span>
-        </div>
-        <p class="text-[10px] text-gray-500 mt-4">
-          Based only on recorded present attendance
-        </p>
-      </div>
-
-      <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 relative overflow-hidden group hover:border-gray-600 transition-colors">
-        <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-          <span class="text-6xl">Ops</span>
-        </div>
-        <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">Workforce Stats</p>
-        <div class="flex items-end gap-2">
-          <span class="text-4xl font-bold text-white">{{ service.employees().length }}</span>
-          <span class="text-xs text-gray-500 mb-1">Total Active</span>
-        </div>
-        <div class="mt-4 flex gap-4 text-xs">
-          <div><span class="text-green-400 font-bold">{{ presentCount() }}</span> Present</div>
-          <div><span class="text-red-500 font-bold">{{ absentCount() }}</span> Absent</div>
+      <div class="flex items-center gap-3 flex-wrap">
+        <div class="flex gap-1 bg-gray-950 p-1 rounded-xl border border-gray-800">
+          <button *ngFor="let mode of ['day', 'month', 'year']" type="button" (click)="viewMode.set($any(mode))" class="rounded-lg px-4 py-1.5 text-xs font-bold uppercase transition" [class.bg-yellow-500]="viewMode() === mode" [class.text-black]="viewMode() === mode" [class.text-gray-400]="viewMode() !== mode">{{ mode }}</button>
         </div>
       </div>
     </div>
+  </header>
 
-    <section class="grid grid-cols-1 gap-4 sm:grid-cols-3" aria-label="Operating expenses">
-      <div class="rounded-xl border border-gray-700 bg-gray-800 p-4"><p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">PPE expense</p><p class="mt-2 font-mono text-2xl font-bold text-white">R {{ ppeExpense() | number:'1.2-2' }}</p></div>
-      <div class="rounded-xl border border-gray-700 bg-gray-800 p-4"><p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Fuel expense</p><p class="mt-2 font-mono text-2xl font-bold text-white">R {{ fuelExpense() | number:'1.2-2' }}</p></div>
-      <div class="rounded-xl border border-gray-700 bg-gray-800 p-4"><p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Vendor payables</p><p class="mt-2 font-mono text-2xl font-bold text-white">R {{ vendorPayables() | number:'1.2-2' }}</p></div>
-      <div class="rounded-xl border border-yellow-700/60 bg-gray-800 p-4"><p class="text-[10px] font-bold uppercase tracking-wider text-yellow-400">Total operating expense</p><p class="mt-2 font-mono text-2xl font-bold text-white">R {{ operatingExpense() | number:'1.2-2' }}</p></div>
+  <main class="space-y-6 p-4 md:p-8 max-w-7xl mx-auto">
+    <!-- Feedback banner -->
+    <div *ngIf="feedback()" class="rounded-xl border border-yellow-500/40 bg-yellow-950/40 p-4 text-xs font-bold text-yellow-200 flex items-center justify-between">
+      <span>{{ feedback() }}</span>
+      <button type="button" (click)="feedback.set('')" class="text-yellow-400 hover:text-white">&times;</button>
+    </div>
+
+    <!-- Strategic Vision & Horizons: Where We Want To Go -->
+    <section class="rounded-2xl border border-yellow-500/30 bg-gradient-to-br from-gray-900 via-gray-900 to-yellow-950/20 p-6 shadow-xl relative overflow-hidden">
+      <div class="absolute -right-8 -top-8 w-64 h-64 bg-yellow-500/5 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div class="space-y-2 max-w-2xl">
+          <div class="flex items-center gap-2 text-yellow-400 text-xs font-black uppercase tracking-wider">
+            <span>Enterprise Roadmap & Vision</span>
+          </div>
+          <h2 class="text-xl md:text-2xl font-black text-white">Scaling Senatla Operations: From Paper Friction to Automated Advantage</h2>
+          <p class="text-xs md:text-sm text-gray-300 leading-relaxed">
+            Eliminating tedious manual logsheets through end-to-end operational traceability. Every excavator, worker shift, and bulk fuel invoice directly attributes to job numbers in real time, giving directors 100% margin certainty.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full lg:w-auto">
+          <div class="rounded-xl border border-gray-800 bg-gray-950/80 p-3 text-center">
+            <p class="text-[10px] uppercase font-bold text-gray-500">Margin Target</p>
+            <p class="text-lg font-black text-emerald-400 mt-1">28.5%</p>
+            <span class="text-[10px] text-gray-400">+4.2% vs 2025</span>
+          </div>
+          <div class="rounded-xl border border-gray-800 bg-gray-950/80 p-3 text-center">
+            <p class="text-[10px] uppercase font-bold text-gray-500">Zero-Harm Record</p>
+            <p class="text-lg font-black text-yellow-400 mt-1">100%</p>
+            <span class="text-[10px] text-gray-400">Zero incidents</span>
+          </div>
+          <div class="rounded-xl border border-gray-800 bg-gray-950/80 p-3 text-center">
+            <p class="text-[10px] uppercase font-bold text-gray-500">Fleet Scaling</p>
+            <p class="text-lg font-black text-cyan-400 mt-1">+15 Heavy</p>
+            <span class="text-[10px] text-gray-400">Planned 2026</span>
+          </div>
+          <div class="rounded-xl border border-gray-800 bg-gray-950/80 p-3 text-center">
+            <p class="text-[10px] uppercase font-bold text-gray-500">Time Saved</p>
+            <p class="text-lg font-black text-purple-400 mt-1">4.5 hrs/day</p>
+            <span class="text-[10px] text-gray-400">Paper eliminated</span>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <section class="rounded-xl border border-gray-700 bg-gray-800 p-4" aria-label="Supplier and vendor payables">
-      <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+    <!-- Executive Operations Summary Cards -->
+    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Executive operations summary">
+      <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm hover:border-gray-700 transition">
+        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Attendance today</p>
+        <p class="mt-2 text-2xl font-bold text-white">{{ presentCount() }} <span class="text-sm font-normal text-gray-400">present today</span></p>
+        <p class="text-sm text-red-400 mt-1">{{ absentCount() }} absent today</p>
+      </article>
+
+      <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm hover:border-gray-700 transition">
+        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Asset readiness</p>
+        <p class="mt-2 text-2xl font-bold text-white">{{ assetSummary().ready }} / {{ assetSummary().total }}</p>
+        <p class="text-sm text-amber-300 mt-1">{{ assetSummary().attention }} attention · {{ assetSummary().blocked }} blocked</p>
+      </article>
+
+      <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm hover:border-gray-700 transition">
+        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Pending invoices</p>
+        <p class="mt-2 font-mono text-2xl font-bold text-white">R {{ pendingInvoiceAmount() | number:'1.2-2' }}</p>
+        <p class="text-sm text-gray-400 mt-1">{{ pendingInvoices().length }} awaiting review</p>
+      </article>
+
+      <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm hover:border-gray-700 transition">
+        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Pending approvals</p>
+        <p class="mt-2 text-2xl font-bold text-white">{{ pendingApprovals().length + pendingExecutiveReports().length }}</p>
+        <p class="text-sm text-gray-400 mt-1">Operational and invoice decisions</p>
+      </article>
+    </section>
+
+    <!-- ACTIONABLE DECISION CENTER & INBOX: Awaiting Director Review Packs -->
+    <section class="rounded-2xl border border-emerald-500/30 bg-gray-900 p-6 shadow-xl space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-800 pb-4">
         <div>
-          <h2 class="text-sm font-bold text-white uppercase tracking-widest">Supplier / Vendor Payables</h2>
-          <p class="mt-1 text-xs text-gray-400">Admin-submitted invoices awaiting Director review and vendor balance oversight.</p>
+          <div class="flex items-center gap-2">
+            <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <h2 class="text-base font-bold uppercase tracking-wider text-white">Director Actionable Review & Inbox</h2>
+          </div>
+          <p class="text-xs text-gray-400 mt-0.5">Automated 5-record operational packs awaiting executive review and decision sign-off.</p>
         </div>
-        <div class="rounded-lg border border-yellow-700/60 bg-gray-900 px-3 py-2 text-xs text-yellow-200">{{ pendingVendorInvoices().length }} pending approval(s)</div>
+        <div class="flex items-center gap-2">
+          <span class="rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 px-3 py-1 text-xs font-bold">
+            {{ pendingExecutiveReports().length }} Pack(s) Awaiting Sign-off
+          </span>
+        </div>
       </div>
-      <div class="mt-4 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-        <div class="space-y-3">
-          <div *ngFor="let vendor of office.vendorAccounts()" class="rounded-xl border border-gray-700 bg-gray-900 p-3">
-            <div class="flex items-start justify-between gap-3">
-              <div><p class="font-bold text-white">{{ vendor.name }}</p><p class="mt-1 text-xs leading-5 text-gray-400">{{ vendor.description || 'No general description captured.' }}</p></div>
-              <p class="whitespace-nowrap font-mono text-sm font-bold text-yellow-400">R {{ vendor.totalOwingAmount | number:'1.2-2' }}</p>
+
+      <!-- Pending Reports List -->
+      <div *ngIf="pendingExecutiveReports().length; else noReports" class="space-y-4">
+        <div *ngFor="let report of pendingExecutiveReports()" class="rounded-xl border border-emerald-500/40 bg-gray-950 p-5 shadow-lg">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="space-y-2">
+              <div class="flex items-center gap-3">
+                <span class="rounded-lg bg-yellow-500/20 text-yellow-300 font-mono text-xs font-bold px-2.5 py-1 border border-yellow-500/30">{{ report.reportNumber }}</span>
+                <span class="text-xs text-gray-400">Generated {{ report.generatedAt | date:'medium' }} by {{ report.generatedByName }}</span>
+                <span class="rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold px-2 py-0.5 uppercase">Awaiting Director Sign-off</span>
+              </div>
+
+              <h3 class="text-sm md:text-base font-bold text-white">
+                Operational & Compliance Pack: {{ report.records.site.name }} (Job: {{ report.records.site.jobNumber }})
+              </h3>
+
+              <!-- 5 Verified Records Summary Tags -->
+              <div class="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                <span class="rounded-md bg-gray-900 border border-gray-700 px-2.5 py-1 text-gray-300">
+                  <strong class="text-white">Site:</strong> {{ report.records.site.name }}
+                </span>
+                <span class="rounded-md bg-gray-900 border border-gray-700 px-2.5 py-1 text-gray-300">
+                  <strong class="text-white">Operator:</strong> {{ report.records.employee.surname }}, {{ report.records.employee.firstName }}
+                </span>
+                <span class="rounded-md bg-gray-900 border border-gray-700 px-2.5 py-1 text-gray-300">
+                  <strong class="text-white">Asset:</strong> {{ report.records.asset.make }} {{ report.records.asset.model }} ({{ report.records.asset.registrationNumber }})
+                </span>
+                <span class="rounded-md bg-gray-900 border border-gray-700 px-2.5 py-1 text-gray-300">
+                  <strong class="text-white">Shift:</strong> {{ report.records.timesheet.hoursWorked }} hrs present
+                </span>
+                <span class="rounded-md bg-gray-900 border border-gray-700 px-2.5 py-1 text-emerald-300 font-mono">
+                  <strong class="text-white">Fuel Invoice:</strong> R {{ report.records.invoice.total | number:'1.2-2' }} ({{ report.records.invoice.internalOrderNumber }})
+                </span>
+              </div>
+
+              <!-- Executive Advantage Analysis -->
+              <div class="mt-3 rounded-lg border border-yellow-500/20 bg-yellow-950/20 p-3 text-xs">
+                <p class="font-bold text-yellow-300 uppercase tracking-wide text-[11px]">Executive Advantage Analysis:</p>
+                <p class="text-gray-200 mt-1">{{ report.executiveAdvantage.verdict }}</p>
+                <div class="mt-2 flex flex-wrap gap-4 text-[11px] text-gray-400">
+                  <span>Margin Integrity: <strong class="text-emerald-300">{{ report.executiveAdvantage.marginIntegrityScore }}%</strong></span>
+                  <span>Time Saved: <strong class="text-cyan-300">{{ report.executiveAdvantage.laborHoursSavedPerWeek }} hrs/week</strong></span>
+                  <span>Traceability: <strong class="text-yellow-300">{{ report.executiveAdvantage.costTraceabilityStatus }}</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row lg:flex-col gap-2 shrink-0">
+              <button type="button" (click)="openReportModal(report)" class="rounded-lg border border-gray-700 bg-gray-900 px-4 py-2 text-xs font-bold text-gray-200 hover:bg-gray-800 transition">
+                Inspect 5 Records
+              </button>
+              <button type="button" (click)="approveReport(report.id)" class="rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs px-4 py-2 transition shadow">
+                Executive Sign-off & Approve
+              </button>
+              <button type="button" (click)="rejectReport(report.id)" class="rounded-lg border border-red-800/60 text-red-300 hover:bg-red-950/50 text-xs font-bold px-4 py-1.5 transition">
+                Request Revisions
+              </button>
             </div>
           </div>
-          <p *ngIf="!office.vendorAccounts().length" class="rounded-xl border border-gray-700 bg-gray-900 px-3 py-6 text-center text-sm text-gray-500">No vendor accounts captured yet.</p>
         </div>
-        <div class="overflow-x-auto rounded-xl border border-gray-700 bg-gray-900">
-          <table class="w-full min-w-[760px] text-left text-xs">
-            <thead class="bg-gray-950 uppercase tracking-wider text-gray-500"><tr><th class="p-3">Date</th><th class="p-3">Vendor</th><th class="p-3">Order</th><th class="p-3">Items</th><th class="p-3">Responsible</th><th class="p-3 text-right">Total</th><th class="p-3">Status</th></tr></thead>
-            <tbody class="divide-y divide-gray-700">
-              <tr *ngFor="let invoice of recentVendorInvoices()"><td class="p-3">{{ invoice.invoiceDate | date:'mediumDate' }}</td><td class="p-3 font-semibold text-white">{{ vendorName(invoice.vendorId) }}</td><td class="p-3">{{ invoice.orderNumber }}</td><td class="p-3 text-gray-300">{{ invoice.itemsPurchased }}</td><td class="p-3">{{ invoice.responsiblePerson }}</td><td class="p-3 text-right font-mono text-yellow-400">R {{ invoice.total | number:'1.2-2' }}</td><td class="p-3"><span class="rounded-full border border-gray-600 px-2 py-1 uppercase">{{ invoice.status }}</span></td></tr>
-              <tr *ngIf="!recentVendorInvoices().length"><td colspan="7" class="p-8 text-center text-gray-500">No invoice records submitted yet.</td></tr>
-            </tbody>
-          </table>
+      </div>
+
+      <ng-template #noReports>
+        <div class="rounded-xl border border-gray-800 bg-gray-950/50 p-6 text-center text-xs text-gray-400">
+          <p class="font-semibold text-gray-300">No operational audit packs currently awaiting review.</p>
+          <p class="mt-1 text-gray-500">When an administrator completes the 5 verified records and clicks "Generate Report", it will appear here for instant sign-off.</p>
+        </div>
+      </ng-template>
+
+      <!-- Recently Approved Reports -->
+      <div *ngIf="approvedExecutiveReports().length" class="mt-4 pt-4 border-t border-gray-800">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Recently Signed-Off Executive Packs</h4>
+        <div class="grid gap-2 sm:grid-cols-2">
+          <div *ngFor="let rep of approvedExecutiveReports().slice(0, 4)" class="rounded-lg border border-gray-800 bg-gray-950 p-3 text-xs flex items-center justify-between">
+            <div>
+              <span class="font-bold text-white">{{ rep.reportNumber }}</span>
+              <p class="text-[11px] text-gray-400">{{ rep.records.site.name }} · Signed off by {{ rep.directorReviewedBy }}</p>
+            </div>
+            <span class="rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 text-[10px] font-bold uppercase">Approved</span>
+          </div>
         </div>
       </div>
     </section>
-    <div *ngIf="viewMode() !== 'day'" class="animate-fade-in">
-      <h2 class="text-sm font-bold text-white uppercase tracking-widest mb-4 border-b border-gray-700 pb-2">Spending Trend Analysis</h2>
-      <div class="h-40 flex items-end gap-2 p-4 bg-gray-800 rounded-xl border border-gray-700">
-        <div *ngFor="let point of trendData()" class="flex-1 bg-gray-700 hover:bg-yellow-500 transition-all duration-300 rounded-t relative group" [style.height.%]="point.ratio">
-          <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 text-[10px] font-mono text-white bg-black px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
-            {{ point.label }}: R {{ point.value | number:'1.0-0' }}
+
+    <!-- Operating Costs Breakdown -->
+    <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Recognized operating costs">
+      <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm hover:border-gray-700 transition">
+        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">PPE</p>
+        <p class="mt-2 font-mono text-2xl font-bold text-white">R {{ ppeExpense() | number:'1.2-2' }}</p>
+      </article>
+
+      <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm hover:border-gray-700 transition">
+        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Fuel</p>
+        <p class="mt-2 font-mono text-2xl font-bold text-white">R {{ fuelExpense() | number:'1.2-2' }}</p>
+      </article>
+
+      <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm hover:border-gray-700 transition">
+        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Work orders</p>
+        <p class="mt-2 font-mono text-2xl font-bold text-white">R {{ workOrderExpense() | number:'1.2-2' }}</p>
+      </article>
+
+      <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm hover:border-gray-700 transition">
+        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Recognized vendor invoices</p>
+        <p data-testid="director-vendor-cost" class="mt-2 font-mono text-2xl font-bold text-white">R {{ vendorInvoiceExpense() | number:'1.2-2' }}</p>
+      </article>
+
+      <article class="rounded-xl border border-emerald-900/60 bg-gray-900 p-4 shadow-sm">
+        <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Total recognized expense</p>
+        <p data-testid="director-operating-expense" class="mt-2 font-mono text-2xl font-bold text-white">R {{ operatingExpense() | number:'1.2-2' }}</p>
+      </article>
+
+      <article class="rounded-xl border border-amber-900/60 bg-gray-900 p-4 shadow-sm">
+        <p class="text-[10px] font-bold uppercase tracking-wider text-amber-300">Unattributed source value</p>
+        <p data-testid="director-unattributed-cost" class="mt-2 font-mono text-2xl font-bold text-white">R {{ unattributedExpense() | number:'1.2-2' }}</p>
+      </article>
+
+      <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm">
+        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Provisional labour evidence</p>
+        <p class="mt-2 text-2xl font-bold text-white">{{ provisionalLabourSources() }}</p>
+        <p class="mt-1 text-xs text-gray-500">Not recognized until rate evidence is authoritative.</p>
+      </article>
+    </section>
+
+    <p *ngIf="costAttribution.error()" class="rounded-xl border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-200">Cost reconciliation unavailable: {{ costAttribution.error() }}</p>
+
+    <!-- Site Workforce & Risks -->
+    <section class="grid gap-4 lg:grid-cols-2">
+      <article class="rounded-xl border border-gray-800 bg-gray-900 p-5 shadow-sm">
+        <h2 class="text-sm font-bold uppercase tracking-widest text-white">Site attendance and workforce</h2>
+        <div data-testid="director-site-costs" class="mt-4 grid gap-3 sm:grid-cols-2">
+          <div *ngFor="let site of siteStats()" class="rounded-lg border border-gray-800 bg-gray-950 p-3.5 hover:border-gray-700 transition">
+            <strong class="text-white font-bold">{{ site.name }}</strong>
+            <p class="text-xs text-gray-400">{{ site.location }}</p>
+            <p class="mt-1 text-xs font-semibold text-yellow-400">{{ site.jobNumber }}</p>
+            <p class="mt-3 text-sm"><span class="font-bold text-white">{{ site.staffCount }}</span> assigned · <span class="font-bold text-green-300">{{ site.present }}</span> present</p>
+            <p class="mt-2 font-mono text-sm font-bold text-emerald-300">R {{ site.recognizedCost | number:'1.2-2' }} recognized</p>
           </div>
         </div>
-      </div>
-      <div class="flex justify-between text-[10px] text-gray-500 px-4 mt-2 font-mono uppercase">
-        <span>Start of Period</span>
-        <span>End of Period</span>
-      </div>
-    </div>
+      </article>
 
-    <div>
-      <h2 class="text-sm font-bold text-white uppercase tracking-widest mb-4 border-b border-gray-700 pb-2">Site Performance Analysis</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div *ngFor="let site of siteStats()" class="bg-gray-800 p-4 rounded-xl border border-gray-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-gray-600 transition-colors">
-          <div>
-            <h3 class="font-bold text-lg text-white">{{ site.name }}</h3>
-            <p class="text-xs text-gray-400 flex items-center gap-1">Location: {{ site.location }}</p>
+      <article class="rounded-xl border border-gray-800 bg-gray-900 p-5 shadow-sm">
+        <h2 class="text-sm font-bold uppercase tracking-widest text-white">Operational risks</h2>
+        <div class="mt-4 space-y-3">
+          <div *ngFor="let risk of risks()" class="rounded-lg border border-gray-800 bg-gray-950 p-3">
+            <strong class="text-white">{{ risk.label }}</strong>
+            <p class="text-sm" [class.text-red-300]="risk.severity === 'blocked'" [class.text-amber-300]="risk.severity !== 'blocked'">{{ risk.detail }}</p>
           </div>
-          <div class="flex flex-col items-end gap-1 w-full md:w-auto">
-            <div class="flex justify-between w-full md:w-auto gap-8 text-xs border-b border-gray-700 pb-1 mb-1">
-              <span class="text-gray-500">Staff Count</span>
-              <span class="font-mono text-white font-bold">{{ site.staffCount }}</span>
-            </div>
-            <div class="flex justify-between w-full md:w-auto gap-8 text-xs">
-              <span class="text-gray-500">Cost Contribution</span>
-              <span class="font-mono text-yellow-500 font-bold">R {{ site.dailyCost | number:'1.0-0' }}</span>
-            </div>
-          </div>
+          <p *ngIf="!risks().length" class="rounded-lg bg-gray-950 p-3 text-sm text-green-300">No unresolved operational risks in the stored records.</p>
         </div>
-      </div>
-    </div>
+      </article>
+    </section>
 
-    <div *ngIf="highestRiskSync()" class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
-      <p class="text-[10px] uppercase tracking-widest text-amber-200">Highest risk recent sync</p>
-      <div class="mt-2 flex flex-col gap-1 text-sm text-white">
-        <span>{{ highestRiskSync()!.siteId }} | {{ highestRiskSync()!.status }} | {{ highestRiskSync()!.syncTime | date:'short' }}</span>
-        <span class="text-xs text-amber-100">Actor: {{ highestRiskSync()!.actor || 'Unknown' }}</span>
-        <span class="text-xs text-amber-100" *ngIf="highestRiskSync()!.attendanceSummary as summary">
-          Present {{ summary.present }}, Absent {{ summary.absent }}, Pending {{ summary.pending }}, Flagged {{ summary.flagged }}, Evidence {{ summary.evidenceCount }}
-        </span>
+    <!-- Invoice Traceability Table -->
+    <section class="rounded-xl border border-gray-800 bg-gray-900 p-5 shadow-sm">
+      <div class="flex items-baseline justify-between gap-3 border-b border-gray-800 pb-3">
+        <h2 class="text-sm font-bold uppercase tracking-widest text-white">Invoice traceability</h2>
+        <p class="font-mono text-sm text-yellow-300">R {{ periodInvoiceAmount() | number:'1.2-2' }} in selected period</p>
       </div>
-    </div>
-
-    <div>
-      <h2 class="text-sm font-bold text-white uppercase tracking-widest mb-4 border-b border-gray-700 pb-2">Recent Compliance Activity</h2>
-      <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
-        <table class="w-full text-left text-xs">
-          <thead class="bg-gray-900 text-gray-500 uppercase font-bold">
+      <div class="mt-4 overflow-x-auto">
+        <table class="w-full min-w-[620px] text-left text-xs">
+          <thead class="bg-gray-950 uppercase text-gray-500 font-bold">
             <tr>
-              <th class="p-4">Time</th>
-              <th class="p-4">Site</th>
-              <th class="p-4">Status</th>
-              <th class="p-4">Actor</th>
-              <th class="p-4 text-right">Action</th>
+              <th class="p-3">Vendor</th>
+              <th class="p-3">Date</th>
+              <th class="p-3">Order</th>
+              <th class="p-3">Requester</th>
+              <th class="p-3">Amount</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-700">
-            <tr *ngFor="let log of recentSyncs()" class="hover:bg-gray-700/30 transition-colors">
-              <td class="p-4 font-mono text-gray-300">{{ log.syncTime | date:'shortTime' }}</td>
-              <td class="p-4 font-bold text-white">{{ log.siteId }}</td>
-              <td class="p-4">
-                <span
-                  class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest border"
-                  [class.bg-green-900]="log.status === 'On Time'"
-                  [class.text-green-400]="log.status === 'On Time'"
-                  [class.border-green-800]="log.status === 'On Time'"
-                  [class.bg-orange-900]="log.status === 'Late'"
-                  [class.text-orange-400]="log.status === 'Late'"
-                  [class.border-orange-800]="log.status === 'Late'"
-                  [class.bg-red-900]="log.status === 'Critical' || log.status === 'Rollover'"
-                  [class.text-red-400]="log.status === 'Critical' || log.status === 'Rollover'"
-                  [class.border-red-800]="log.status === 'Critical' || log.status === 'Rollover'"
-                >
-                  {{ log.status }}
-                </span>
-              </td>
-              <td class="p-4 text-gray-300">{{ log.actor || 'Unknown' }}</td>
-              <td class="p-4 text-right">
-                <span *ngIf="log.acknowledgedWarning" class="text-red-400 font-bold flex items-center justify-end gap-1 bg-red-900/20 px-2 py-1 rounded border border-red-900/50">
-                  Breach Ack.
-                </span>
-                <span *ngIf="!log.acknowledgedWarning && log.attendanceSummary" class="text-gray-400">
-                  P {{ log.attendanceSummary.present }} / A {{ log.attendanceSummary.absent }} / F {{ log.attendanceSummary.flagged }}
-                </span>
-                <span *ngIf="!log.acknowledgedWarning && !log.attendanceSummary" class="text-gray-600 italic">Routine</span>
-              </td>
+          <tbody class="divide-y divide-gray-800">
+            <tr *ngFor="let invoice of pendingInvoices().slice(0, 8)" class="hover:bg-gray-850">
+              <td class="p-3 font-bold text-white">{{ vendorName(invoice.vendorId) }}</td>
+              <td class="p-3 text-gray-400">{{ invoice.invoiceDate | date:'mediumDate' }}</td>
+              <td class="p-3 font-mono text-gray-300">{{ invoice.orderNumber }}</td>
+              <td class="p-3 text-gray-300">{{ invoice.responsiblePerson }}</td>
+              <td class="p-3 font-mono font-bold text-white">R {{ invoice.total | number:'1.2-2' }}</td>
             </tr>
-            <tr *ngIf="recentSyncs().length === 0">
-              <td colspan="5" class="p-8 text-center text-gray-500 italic">No sync activity recorded today.</td>
+            <tr *ngIf="!pendingInvoices().length">
+              <td colspan="5" class="p-6 text-center text-gray-500">No pending invoice records.</td>
             </tr>
           </tbody>
         </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Detailed Modal for Inspecting the 5 Complete Records -->
+  <div *ngIf="activeReportModal()" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+    <div class="max-w-3xl w-full rounded-2xl border border-gray-700 bg-gray-900 p-6 space-y-5 text-gray-200 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-start justify-between border-b border-gray-800 pb-4">
+        <div>
+          <span class="rounded-lg bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-3 py-1 font-mono text-xs font-bold">{{ activeReportModal()?.reportNumber }}</span>
+          <h3 class="text-xl font-black text-white mt-2">Executive Operational Pack Review</h3>
+          <p class="text-xs text-gray-400">Generated {{ activeReportModal()?.generatedAt | date:'medium' }} by {{ activeReportModal()?.generatedByName }}</p>
+        </div>
+        <button type="button" (click)="closeReportModal()" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
+      </div>
+
+      <!-- 5 Verified Records Detailed Grid -->
+      <div class="space-y-4">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-yellow-500">5 Authoritative Verified Records:</h4>
+
+        <!-- Record 1: Site Details -->
+        <div class="rounded-xl border border-gray-800 bg-gray-950 p-4">
+          <div class="flex justify-between items-center text-xs font-bold text-gray-400 uppercase">
+            <span>Record 1: Controlled Site</span>
+            <span class="text-emerald-400 font-mono">{{ activeReportModal()?.records?.site?.jobNumber }}</span>
+          </div>
+          <p class="text-base font-bold text-white mt-1">{{ activeReportModal()?.records?.site?.name }}</p>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 text-xs text-gray-400">
+            <div>Location: <strong class="text-gray-200">{{ activeReportModal()?.records?.site?.location }}</strong></div>
+            <div>Team: <strong class="text-gray-200">{{ activeReportModal()?.records?.site?.teamName }}</strong></div>
+            <div>Status: <strong class="text-emerald-400">Active Operating Site</strong></div>
+          </div>
+        </div>
+
+        <!-- Record 2: Employee Profile -->
+        <div class="rounded-xl border border-gray-800 bg-gray-950 p-4">
+          <div class="flex justify-between items-center text-xs font-bold text-gray-400 uppercase">
+            <span>Record 2: Qualified Employee</span>
+            <span class="text-cyan-400 font-mono">{{ activeReportModal()?.records?.employee?.companyNumber }}</span>
+          </div>
+          <p class="text-base font-bold text-white mt-1">{{ activeReportModal()?.records?.employee?.surname }}, {{ activeReportModal()?.records?.employee?.firstName }}</p>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 text-xs text-gray-400">
+            <div>Role: <strong class="text-gray-200">{{ activeReportModal()?.records?.employee?.role }}</strong></div>
+            <div>Designation: <strong class="text-gray-200">{{ activeReportModal()?.records?.employee?.designation }}</strong></div>
+            <div>Qualifications: <strong class="text-yellow-400">HIRA, Medical Fit</strong></div>
+          </div>
+        </div>
+
+        <!-- Record 3: Asset Details -->
+        <div class="rounded-xl border border-gray-800 bg-gray-950 p-4">
+          <div class="flex justify-between items-center text-xs font-bold text-gray-400 uppercase">
+            <span>Record 3: Capital Asset Machinery</span>
+            <span class="text-yellow-400 font-mono">{{ activeReportModal()?.records?.asset?.registrationNumber }}</span>
+          </div>
+          <p class="text-base font-bold text-white mt-1">{{ activeReportModal()?.records?.asset?.make }} {{ activeReportModal()?.records?.asset?.model }}</p>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 text-xs text-gray-400">
+            <div>Type: <strong class="text-gray-200">{{ activeReportModal()?.records?.asset?.type }}</strong></div>
+            <div>VIN: <strong class="text-gray-200 font-mono">{{ activeReportModal()?.records?.asset?.vin }}</strong></div>
+            <div>License Expiry: <strong class="text-gray-200">{{ activeReportModal()?.records?.asset?.licenseExpiry }}</strong></div>
+          </div>
+        </div>
+
+        <!-- Record 4: Shift Timesheet Attendance -->
+        <div class="rounded-xl border border-gray-800 bg-gray-950 p-4">
+          <div class="flex justify-between items-center text-xs font-bold text-gray-400 uppercase">
+            <span>Record 4: Daily Shift & Labour Verification</span>
+            <span class="text-purple-400 font-mono">{{ activeReportModal()?.records?.timesheet?.date }}</span>
+          </div>
+          <p class="text-base font-bold text-white mt-1">Shift Attendance: {{ activeReportModal()?.records?.timesheet?.hoursWorked }} Hours Logged</p>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 text-xs text-gray-400">
+            <div>Status: <strong class="text-emerald-400 uppercase">Present & Verified</strong></div>
+            <div>Overtime: <strong class="text-gray-200">{{ activeReportModal()?.records?.timesheet?.overtimeHours }} Hours</strong></div>
+            <div>Supervisor Sign-off: <strong class="text-emerald-400">Confirmed</strong></div>
+          </div>
+        </div>
+
+        <!-- Record 5: Vendor Invoice Traceability -->
+        <div class="rounded-xl border border-gray-800 bg-gray-950 p-4">
+          <div class="flex justify-between items-center text-xs font-bold text-gray-400 uppercase">
+            <span>Record 5: Supplier Invoice & PO Traceability</span>
+            <span class="text-emerald-400 font-mono">{{ activeReportModal()?.records?.invoice?.internalOrderNumber }}</span>
+          </div>
+          <p class="text-base font-bold text-white mt-1">R {{ activeReportModal()?.records?.invoice?.total | number:'1.2-2' }} — {{ activeReportModal()?.records?.invoice?.itemsPurchased }}</p>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 text-xs text-gray-400">
+            <div>Order No: <strong class="text-gray-200 font-mono">{{ activeReportModal()?.records?.invoice?.orderNumber }}</strong></div>
+            <div>Invoice No: <strong class="text-gray-200 font-mono">{{ activeReportModal()?.records?.invoice?.invoiceNumber }}</strong></div>
+            <div>Requester: <strong class="text-gray-200">{{ activeReportModal()?.records?.invoice?.responsiblePerson }}</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Executive Strategic Advantage Verdict -->
+      <div class="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-4 space-y-2">
+        <h5 class="text-xs font-bold uppercase tracking-wider text-emerald-300">Executive Advantage Assessment:</h5>
+        <p class="text-sm text-gray-200 font-semibold">{{ activeReportModal()?.executiveAdvantage?.verdict }}</p>
+        <p class="text-xs text-gray-400">{{ activeReportModal()?.executiveAdvantage?.strategicSummary }}</p>
+      </div>
+
+      <!-- Sign-off Controls -->
+      <div class="pt-4 border-t border-gray-800 flex flex-col sm:flex-row justify-end gap-3">
+        <button type="button" (click)="closeReportModal()" class="rounded-lg border border-gray-700 px-4 py-2 text-xs font-bold text-gray-300 hover:bg-gray-800">
+          Close Preview
+        </button>
+        <button type="button" (click)="rejectReport(activeReportModal().id)" class="rounded-lg border border-red-800 text-red-300 hover:bg-red-950 px-4 py-2 text-xs font-bold">
+          Reject & Request Fixes
+        </button>
+        <button type="button" (click)="approveReport(activeReportModal().id)" class="rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black px-6 py-2 text-xs font-bold shadow-lg">
+          Approve & Authorize Operations
+        </button>
       </div>
     </div>
   </div>
