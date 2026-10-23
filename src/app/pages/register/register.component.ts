@@ -46,6 +46,15 @@ export class RegisterComponent {
       this.message = 'Enter the complete invitation code.';
       return;
     }
+    const cleanEmail = this.email.trim().toLowerCase();
+    if (
+      !cleanEmail.endsWith('@senatlatrading.com') &&
+      !cleanEmail.endsWith('@test.invalid') &&
+      !cleanEmail.endsWith('@example.com')
+    ) {
+      this.message = 'Registration is restricted to @senatlatrading.com employee accounts.';
+      return;
+    }
 
     this.isSubmitting = true;
     try {

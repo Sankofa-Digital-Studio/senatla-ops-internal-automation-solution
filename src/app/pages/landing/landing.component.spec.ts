@@ -48,9 +48,9 @@ describe('LandingComponent', () => {
 
     const dialog = page.querySelector('[role="dialog"]') as HTMLElement;
     expect(dialog).not.toBeNull();
-    expect(dialog.textContent).toContain('site.manager@test.invalid');
-    expect(dialog.textContent).toContain('office.admin@test.invalid');
-    expect(dialog.textContent).toContain('director.exec@test.invalid');
+    expect(dialog.textContent).toContain('site.manager@senatlatrading.com');
+    expect(dialog.textContent).toContain('office.admin@senatlatrading.com');
+    expect(dialog.textContent).toContain('director.exec@senatlatrading.com');
     expect(dialog.textContent).toContain('Shared UAT password');
     expect(dialog.textContent).not.toContain('test-password');
   });

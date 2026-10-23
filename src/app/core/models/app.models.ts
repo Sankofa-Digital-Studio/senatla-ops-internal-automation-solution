@@ -489,7 +489,7 @@ export interface PayrollExportRecord {
   createdAt: string;
 }
 
-export type ApprovalRequestType = 'full_id_payroll_export' | 'user_suspension' | 'asset_return_to_service' | 'vendor_invoice_approval';
+export type ApprovalRequestType = 'full_id_payroll_export' | 'user_suspension' | 'asset_return_to_service' | 'vendor_invoice_approval' | 'director_executive_report';
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'executed';
 
 export interface ApprovalRequest {
@@ -505,6 +505,44 @@ export interface ApprovalRequest {
   createdAt: string;
   reviewedAt?: string | null;
   notes?: string | null;
+}
+
+export interface ExecutiveOperationalReport {
+  id: string;
+  reportNumber: string;
+  generatedAt: string;
+  generatedBy: string;
+  generatedByName: string;
+  status: 'pending_director' | 'approved' | 'rejected';
+  recordsCount: number;
+  records: {
+    site: Site;
+    employee: Employee;
+    asset: VehicleAsset;
+    timesheet: {
+      date: string;
+      employeeId: string;
+      employeeName: string;
+      siteId: string;
+      siteName: string;
+      status: 'present' | 'absent' | 'overtime';
+      hoursWorked: number;
+      overtimeHours: number;
+      supervisorSigned: boolean;
+    };
+    invoice: VendorInvoiceRecord;
+  };
+  executiveAdvantage: {
+    marginIntegrityScore: number;
+    laborHoursSavedPerWeek: number;
+    costTraceabilityStatus: string;
+    complianceConfidence: string;
+    strategicSummary: string;
+    verdict: string;
+  };
+  directorReviewedAt?: string | null;
+  directorReviewedBy?: string | null;
+  directorNotes?: string | null;
 }
 
 export interface SavedAdminView {

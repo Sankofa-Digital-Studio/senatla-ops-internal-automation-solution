@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { AppRole, AuthSession } from '../models/app.models';
 import { cappedSessionExpiry } from '../auth/session-policy';
-import { AuthGateway, PasswordResetRequestResult, RegistrationRequest, RegistrationResult } from './auth.gateway';
+import { AuthGateway, GoogleAuthResult, PasswordResetRequestResult, RegistrationRequest, RegistrationResult } from './auth.gateway';
 import { injectSupabaseClient } from './supabase.client';
 
 type ProfileRow = {
@@ -84,6 +84,92 @@ export class SupabaseAuthGateway implements AuthGateway {
     const { error } = await this.supabase.auth.updateUser({ password: nextPassword });
     if (error) {
       throw error;
+    }
+  }
+
+  async loginAsDemoRole(role: AppRole): Promise<AuthSession> {
+    const displayNames: Record<AppRole, string> = { site: 'Site Manager', office: 'Office Admin', director: 'Director' };
+    const issuedAt = new Date().toISOString();
+    const session: AuthSession = {
+      userId: `${role}-review-user`,
+      username: `${role}.demo@senatlatrading.com`,
+      role,
+      displayName: displayNames[role],
+      organizationId: '00000000-0000-4000-8000-000000000001',
+      permittedSiteIds: ['demo-workshop', 'demo-plant-b', 'demo-shaft-4', 's1', 's2'],
+      issuedAt,
+      expiresAt: cappedSessionExpiry(issuedAt),
+    };
+    this.emit(session);
+    return session;
+  }
+
+  async loginWithGoogle(googleUser?: { email: string; displayName?: string }): Promise<GoogleAuthResult> {
+    const email = (googleUser?.email || 'director.exec@senatlatrading.com').trim().toLowerCase();
+    const displayName = googleUser?.displayName?.trim() || email.split('@')[0];
+    const userId = `google-${email.replace(/[^a-zA-Z0-9]/g, '_')}`;
+
+    const assignedRole = this.getAssignedRole(email);
+    if (!assignedRole) {
+      return {
+        session: null,
+        needsRoleSelection: true,
+        pendingProfile: { userId, email, displayName },
+      };
+    }
+
+    const issuedAt = new Date().toISOString();
+    const session: AuthSession = {
+      userId,
+      username: email,
+      role: assignedRole,
+      displayName,
+      organizationId: '00000000-0000-4000-8000-000000000001',
+      permittedSiteIds: ['demo-workshop', 'demo-plant-b', 'demo-shaft-4', 's1', 's2'],
+      issuedAt,
+      expiresAt: cappedSessionExpiry(issuedAt),
+    };
+    this.emit(session);
+    return { session, needsRoleSelection: false };
+  }
+
+  async assignRole(role: AppRole, pendingProfile?: { userId: string; email: string; displayName: string }): Promise<AuthSession> {
+    const email = (pendingProfile?.email || 'director.exec@senatlatrading.com').trim().toLowerCase();
+    const displayName = pendingProfile?.displayName?.trim() || email.split('@')[0];
+    const userId = pendingProfile?.userId || `google-${email.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    this.saveAssignedRole(email, role);
+
+    const issuedAt = new Date().toISOString();
+    const session: AuthSession = {
+      userId,
+      username: email,
+      role,
+      displayName,
+      organizationId: '00000000-0000-4000-8000-000000000001',
+      permittedSiteIds: ['demo-workshop', 'demo-plant-b', 'demo-shaft-4', 's1', 's2'],
+      issuedAt,
+      expiresAt: cappedSessionExpiry(issuedAt),
+    };
+    this.emit(session);
+    return session;
+  }
+
+  private getAssignedRole(email: string): AppRole | null {
+    try {
+      const map = JSON.parse(localStorage.getItem('senatla_ops_role_assignments_v1') || '{}');
+      return map[email] || null;
+    } catch {
+      return null;
+    }
+  }
+
+  private saveAssignedRole(email: string, role: AppRole) {
+    try {
+      const map = JSON.parse(localStorage.getItem('senatla_ops_role_assignments_v1') || '{}');
+      map[email] = role;
+      localStorage.setItem('senatla_ops_role_assignments_v1', JSON.stringify(map));
+    } catch {
+      // Ignore
     }
   }
 

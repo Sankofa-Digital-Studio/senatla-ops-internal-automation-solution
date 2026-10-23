@@ -1,9 +1,9 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AppRole, AuthSession } from '../models/app.models';
-import { AUTH_GATEWAY, AuthGateway, PasswordResetRequestResult, RegistrationRequest } from '../gateways/auth.gateway';
+import { AUTH_GATEWAY, AuthGateway, GoogleAuthResult, PasswordResetRequestResult, RegistrationRequest } from '../gateways/auth.gateway';
 import { SESSION_EXPIRY_SCHEDULER } from '../auth/session-expiry.scheduler';
-import { sessionHasExpired } from '../auth/session-policy';
+import { cappedSessionExpiry, sessionHasExpired } from '../auth/session-policy';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -43,6 +43,82 @@ export class AuthService {
   async login(username: string, password: string): Promise<AuthSession | null> {
     await this.ensureReady();
     const session = await this.authGateway.login(username, password);
+    this.setSession(session);
+    this.readyState.set(true);
+    return session;
+  }
+
+  async loginAsDemoRole(role: AppRole): Promise<AuthSession> {
+    await this.ensureReady();
+    let session: AuthSession;
+    if (this.authGateway.loginAsDemoRole) {
+      session = await this.authGateway.loginAsDemoRole(role);
+    } else {
+      const displayNames: Record<AppRole, string> = { site: 'Site Manager', office: 'Office Admin', director: 'Director' };
+      const issuedAt = new Date().toISOString();
+      session = {
+        userId: `${role}-review-user`,
+        username: `${role}.demo@senatlatrading.com`,
+        role,
+        displayName: displayNames[role],
+        organizationId: '00000000-0000-4000-8000-000000000001',
+        permittedSiteIds: ['demo-workshop', 'demo-plant-b', 'demo-shaft-4', 's1', 's2'],
+        issuedAt,
+        expiresAt: cappedSessionExpiry(issuedAt),
+      };
+    }
+    this.setSession(session);
+    this.readyState.set(true);
+    return session;
+  }
+
+  async loginWithGoogle(googleUser?: { email: string; displayName?: string }): Promise<GoogleAuthResult> {
+    await this.ensureReady();
+    if (this.authGateway.loginWithGoogle) {
+      const result = await this.authGateway.loginWithGoogle(googleUser);
+      if (result.session) {
+        this.setSession(result.session);
+        this.readyState.set(true);
+      }
+      return result;
+    }
+
+    const email = (googleUser?.email || 'director.exec@senatlatrading.com').trim().toLowerCase();
+    const displayName = googleUser?.displayName?.trim() || email.split('@')[0];
+    return {
+      session: null,
+      needsRoleSelection: true,
+      pendingProfile: {
+        userId: `google-${email.replace(/[^a-zA-Z0-9]/g, '_')}`,
+        email,
+        displayName,
+      },
+    };
+  }
+
+  async assignOperationalRole(
+    role: AppRole,
+    pendingProfile?: { userId: string; email: string; displayName: string },
+  ): Promise<AuthSession> {
+    await this.ensureReady();
+    let session: AuthSession;
+    if (this.authGateway.assignRole) {
+      session = await this.authGateway.assignRole(role, pendingProfile);
+    } else {
+      const email = (pendingProfile?.email || 'director.exec@senatlatrading.com').trim().toLowerCase();
+      const displayName = pendingProfile?.displayName?.trim() || email.split('@')[0];
+      const issuedAt = new Date().toISOString();
+      session = {
+        userId: pendingProfile?.userId || `google-${email.replace(/[^a-zA-Z0-9]/g, '_')}`,
+        username: email,
+        role,
+        displayName: displayName || (role === 'site' ? 'Site Manager' : role === 'office' ? 'Office Admin' : 'Director'),
+        organizationId: '00000000-0000-4000-8000-000000000001',
+        permittedSiteIds: ['demo-workshop', 'demo-plant-b', 'demo-shaft-4', 's1', 's2'],
+        issuedAt,
+        expiresAt: cappedSessionExpiry(issuedAt),
+      };
+    }
     this.setSession(session);
     this.readyState.set(true);
     return session;

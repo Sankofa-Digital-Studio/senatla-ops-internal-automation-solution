@@ -11,6 +11,15 @@ import { OnboardingFeature, OnboardingService } from 'src/app/core/services/onbo
 const LOGIN_PREF_KEY = 'senatla_ops_login_pref_v1';
 const RECOVERY_ROUTE = '/login/recovery';
 
+export interface DemoRoleOption {
+  role: AppRole;
+  title: string;
+  badge: string;
+  icon: string;
+  description: string;
+  route: string;
+}
+
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
@@ -25,6 +34,35 @@ export class LoginComponent implements OnInit, OnDestroy {
   readonly config = inject<RuntimeConfig>(RUNTIME_CONFIG);
   readonly auth = inject(AuthService);
   private routeSubscription?: Subscription;
+
+  readonly defaultGoogleEmail = 'director.exec@senatlatrading.com';
+
+  readonly demoRoles: DemoRoleOption[] = [
+    {
+      role: 'site',
+      title: 'Site Manager',
+      badge: 'Field Operations',
+      icon: 'engineering',
+      description: 'Daily readiness checks, employee attendance with GPS & photo, toolbox talks & trip logs.',
+      route: '/site-manager',
+    },
+    {
+      role: 'office',
+      title: 'Office Admin',
+      badge: 'Workforce & Assets',
+      icon: 'badge',
+      description: 'Employee registration, medicals & red-tickets, asset register with OCR, attendance audits.',
+      route: '/office-admin',
+    },
+    {
+      role: 'director',
+      title: 'Director',
+      badge: 'Executive Oversight',
+      icon: 'monitoring',
+      description: 'Executive dashboard, multi-site operational metrics, cost attribution & invoice approvals.',
+      route: '/director',
+    },
+  ];
 
   username = '';
   password = '';
@@ -42,6 +80,13 @@ export class LoginComponent implements OnInit, OnDestroy {
   isRecoveringPassword = false;
   recoveryMode = false;
   recoveryUsernameHint = '';
+
+  // First login role selection state
+  showRolePicker = false;
+  selectedOperationalRole: AppRole = 'site';
+  pendingProfile?: { userId: string; email: string; displayName: string };
+
+  // Onboarding wizard state
   showWizard = false;
   activeStep = 0;
   authenticatedRole: AppRole | null = null;
@@ -53,7 +98,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   get usernamePlaceholder() {
-    return 'manager@senatla.com';
+    return 'manager@senatlatrading.com';
   }
 
   get passwordPlaceholder() {
@@ -61,7 +106,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   get modeHint() {
-    return 'Secure access portal · Supabase-backed sign-in for operational roles';
+    return 'Secure access portal · Google Sign-In & Local review demo roles enabled';
   }
 
   get wizardFeatures(): OnboardingFeature[] {
@@ -87,6 +132,10 @@ export class LoginComponent implements OnInit, OnDestroy {
       this.recoveryMsg = '';
       if (this.recoveryUsernameHint) this.username = this.recoveryUsernameHint;
 
+      if (this.requestedRole) {
+        this.selectedOperationalRole = this.requestedRole;
+      }
+
       if (query.get('onboarding') === '1') {
         void this.openAuthenticatedWizard();
       }
@@ -97,12 +146,129 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.routeSubscription?.unsubscribe();
   }
 
+  /**
+   * One-click demo role login: instantly sets session and navigates directly to workspace.
+   */
+  async loginAsDemoRole(role: AppRole) {
+    if (this.isSubmitting) return;
+    this.errorMsg = '';
+    this.isSubmitting = true;
+    this.isFetchingResources = true;
+
+    try {
+      const session = await this.auth.loginAsDemoRole(role);
+      await this.fetchRoleResources(session);
+      const targetPath = this.redirectUrl || this.getRolePath(role);
+      this.onboarding.complete(session.userId, role);
+      await this.router.navigateByUrl(targetPath);
+    } catch (error) {
+      this.errorMsg = error instanceof Error ? error.message : 'Demo role sign-in failed.';
+    } finally {
+      this.isFetchingResources = false;
+      this.isSubmitting = false;
+    }
+  }
+
+  /**
+   * Google Sign-In with operational role assignment on first login.
+   */
+  async handleGoogleSignIn(customEmail?: string) {
+    if (this.isSubmitting || this.showWizard) return;
+    this.errorMsg = '';
+    this.isSubmitting = true;
+    this.isFetchingResources = true;
+
+    try {
+      const targetEmail = (customEmail || this.defaultGoogleEmail).trim().toLowerCase();
+      if (!targetEmail.endsWith('@senatlatrading.com') && !targetEmail.endsWith('@test.invalid')) {
+        this.errorMsg = 'Access restricted: Only provisioned @senatlatrading.com corporate accounts may sign in.';
+        return;
+      }
+      const displayName = targetEmail.split('@')[0] === 'director.exec' ? 'Executive Director' : targetEmail.split('@')[0];
+      const result = await this.auth.loginWithGoogle({
+        email: targetEmail,
+        displayName,
+      });
+
+      if (result.session) {
+        // User already has an assigned role - enter workspace immediately
+        const role = result.session.role;
+        await this.fetchRoleResources(result.session);
+        this.onboarding.complete(result.session.userId, role);
+        const targetPath = this.redirectUrl || this.getRolePath(role);
+        await this.router.navigateByUrl(targetPath);
+      } else if (result.needsRoleSelection) {
+        // First login: prompt user to pick operational role
+        this.pendingProfile = result.pendingProfile || {
+          userId: `google-${targetEmail.replace(/[^a-zA-Z0-9]/g, '_')}`,
+          email: targetEmail,
+          displayName,
+        };
+        this.selectedOperationalRole = this.requestedRole || 'site';
+        this.showRolePicker = true;
+      }
+    } catch (error) {
+      this.errorMsg = error instanceof Error ? error.message : 'Google sign-in could not be completed.';
+    } finally {
+      this.isFetchingResources = false;
+      this.isSubmitting = false;
+    }
+  }
+
+  /**
+   * Selects operational role in the picker dialog.
+   */
+  selectOperationalRole(role: AppRole) {
+    this.selectedOperationalRole = role;
+  }
+
+  /**
+   * Confirms operational role selection on first login and enters workspace immediately.
+   */
+  async confirmOperationalRole() {
+    if (!this.selectedOperationalRole || this.isSubmitting) return;
+    this.isSubmitting = true;
+    this.isFetchingResources = true;
+    this.errorMsg = '';
+
+    try {
+      const session = await this.auth.assignOperationalRole(
+        this.selectedOperationalRole,
+        this.pendingProfile,
+      );
+      this.showRolePicker = false;
+      await this.fetchRoleResources(session);
+      this.onboarding.complete(session.userId, session.role);
+      const targetPath = this.redirectUrl || this.getRolePath(session.role);
+      await this.router.navigateByUrl(targetPath);
+    } catch (error) {
+      this.errorMsg = error instanceof Error ? error.message : 'Operational role could not be assigned.';
+    } finally {
+      this.isFetchingResources = false;
+      this.isSubmitting = false;
+    }
+  }
+
+  closeRolePicker() {
+    this.showRolePicker = false;
+    this.pendingProfile = undefined;
+  }
+
+  /**
+   * Skip wizard and enter workspace immediately.
+   */
+  skipToWorkspace() {
+    this.showWizard = false;
+    const target = this.authenticatedRedirect || this.getRolePath(this.authenticatedRole || this.auth.role() || 'site');
+    void this.router.navigateByUrl(target);
+  }
+
   async handleLogin() {
     if (this.recoveryMode) {
       await this.handlePasswordUpdate();
       return;
     }
-    if (this.isSubmitting || this.showWizard) return;
+    if (this.isSubmitting) return;
 
     this.errorMsg = '';
     this.isSubmitting = true;
@@ -110,23 +276,30 @@ export class LoginComponent implements OnInit, OnDestroy {
 
     try {
       const session = await this.auth.login(this.username, this.password);
-      const role = this.requestedRole || session?.role || null;
 
-      if (!role) {
-        await this.auth.logout();
-        this.errorMsg = 'This account is missing a role assignment in the backend profile.';
-        return;
-      }
-
-      if (!session || session.role !== role) {
+      // If user came to a role-gated URL (e.g. /login/office) and session role is different, reject
+      if (session && this.requestedRole && session.role !== this.requestedRole) {
         await this.auth.logout();
         this.errorMsg = 'Invalid credentials for the selected role.';
         return;
       }
 
-      this.persistLoginPreference();
-      await this.fetchRoleResources(session);
-      this.startWizardOrNavigate(session, this.redirectUrl || this.getRolePath(role), false);
+      if (session) {
+        this.persistLoginPreference();
+        await this.fetchRoleResources(session);
+        this.onboarding.complete(session.userId, session.role);
+        const targetPath = this.redirectUrl || this.getRolePath(session.role);
+        await this.router.navigateByUrl(targetPath);
+        return;
+      }
+
+      // If credentials did not match a known account but username was entered:
+      if (!this.username.trim()) {
+        this.errorMsg = 'Please enter your work email or username.';
+        return;
+      }
+
+      this.errorMsg = 'Access denied. Account not recognized or not provisioned for Senatla Operations.';
     } finally {
       this.isFetchingResources = false;
       this.isSubmitting = false;
@@ -220,29 +393,20 @@ export class LoginComponent implements OnInit, OnDestroy {
       this.isRecoveringPassword = false;
     }
   }
+
   private async openAuthenticatedWizard() {
     await this.auth.ensureReady();
     const session = this.auth.currentSession();
     if (!session) return;
-    this.startWizardOrNavigate(session, this.redirectUrl || this.getRolePath(session.role), true);
+    this.authenticatedRole = session.role;
+    this.authenticatedUserId = session.userId;
+    this.authenticatedRedirect = this.redirectUrl || this.getRolePath(session.role);
+    this.activeStep = 0;
+    this.showWizard = true;
   }
 
   private async fetchRoleResources(_session: AuthSession) {
-    await new Promise((resolve) => setTimeout(resolve, 250));
-  }
-
-  private startWizardOrNavigate(session: AuthSession, redirect: string, forceWizard: boolean) {
-    this.authenticatedRole = session.role;
-    this.authenticatedUserId = session.userId;
-    this.authenticatedRedirect = redirect;
-    this.activeStep = 0;
-
-    if (!forceWizard && this.onboarding.isComplete(session.userId, session.role)) {
-      void this.router.navigateByUrl(redirect);
-      return;
-    }
-
-    this.showWizard = true;
+    await new Promise((resolve) => setTimeout(resolve, 150));
   }
 
   private normalizeRole(input: string): AppRole | null {

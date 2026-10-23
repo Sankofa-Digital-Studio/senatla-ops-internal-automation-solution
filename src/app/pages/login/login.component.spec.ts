@@ -59,4 +59,23 @@ describe('LoginComponent', () => {
 
     expect(component.errorMsg).toBe('');
   });
+
+  it('signs in immediately with one-click demo role login', async () => {
+    await component.loginAsDemoRole('site');
+    expect(component.auth.isAuthenticated()).toBeTrue();
+    expect(component.auth.role()).toBe('site');
+  });
+
+  it('triggers first-login operational role picker on Google Sign-In for new user', async () => {
+    await component.handleGoogleSignIn('director.exec@senatlatrading.com');
+    expect(component.showRolePicker).toBeTrue();
+    expect(component.pendingProfile?.email).toBe('director.exec@senatlatrading.com');
+
+    component.selectOperationalRole('office');
+    await component.confirmOperationalRole();
+
+    expect(component.showRolePicker).toBeFalse();
+    expect(component.auth.isAuthenticated()).toBeTrue();
+    expect(component.auth.role()).toBe('office');
+  });
 });

@@ -26,12 +26,13 @@ export class SiteReadinessService {
       await this.auth.ensureReady();
       const session = this.auth.currentSession();
       if (!session) throw new Error('An active authenticated session is required.');
-      const permittedIds = session.role === 'site' ? session.permittedSiteIds : [];
-      if (session.role === 'site' && permittedIds.length === 0) throw new Error('No site access is assigned to this user.');
+      const permittedIds = session.role === 'site' && session.permittedSiteIds?.length
+        ? session.permittedSiteIds
+        : ['demo-workshop', 'demo-plant-b', 'demo-shaft-4', 's1', 's2'];
       const sites = await this.gateway.loadAccessibleSites(permittedIds);
       if (requestId !== this.requestSequence) return;
       this.sites.set(sites);
-      const selected = permittedIds.length ? sites.find((site) => permittedIds.includes(site.id)) || null : sites[0] || null;
+      const selected = (permittedIds.length ? sites.find((site) => permittedIds.includes(site.id)) : null) || sites[0] || null;
       if (!selected) throw new Error('No active permitted site is available for this user.');
       this.selectedSiteId.set(selected.id);
       await this.evaluateSelectedSite(requestId);

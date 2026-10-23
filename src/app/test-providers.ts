@@ -39,6 +39,51 @@ class TestAuthGateway {
     return this.session;
   }
 
+  async loginAsDemoRole(role: AppRole): Promise<AuthSession> {
+    const email = `${role === 'site' ? 'site.manager' : role === 'office' ? 'office.admin' : 'director.exec'}@test.invalid`;
+    const user = this.credentials.get(email)!;
+    this.session = {
+      userId: `${role}-user`,
+      username: email,
+      role,
+      displayName: user?.displayName || (role === 'site' ? 'Site Manager' : role === 'office' ? 'Office Admin' : 'Director'),
+      organizationId: '00000000-0000-4000-8000-000000000001',
+      permittedSiteIds: ['site-1', 'demo-workshop'],
+      issuedAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60).toISOString(),
+    };
+    return this.session;
+  }
+
+  async loginWithGoogle(googleUser?: { email: string; displayName?: string }) {
+    const email = (googleUser?.email || 'director.exec@senatlatrading.com').trim().toLowerCase();
+    const displayName = googleUser?.displayName || email.split('@')[0];
+    return {
+      session: null,
+      needsRoleSelection: true,
+      pendingProfile: {
+        userId: `google-${email.replace(/[^a-zA-Z0-9]/g, '_')}`,
+        email,
+        displayName,
+      },
+    };
+  }
+
+  async assignRole(role: AppRole, pendingProfile?: { userId: string; email: string; displayName: string }) {
+    const email = pendingProfile?.email || 'director.exec@senatlatrading.com';
+    this.session = {
+      userId: pendingProfile?.userId || `${role}-user`,
+      username: email,
+      role,
+      displayName: pendingProfile?.displayName || 'User',
+      organizationId: '00000000-0000-4000-8000-000000000001',
+      permittedSiteIds: ['site-1', 'demo-workshop'],
+      issuedAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60).toISOString(),
+    };
+    return this.session;
+  }
+
   async register(request: { email: string; password: string; displayName: string; adminCode?: string }) {
     const email = request.email.trim().toLowerCase();
     if (!email || request.password.length < 8 || !request.displayName.trim()) {

@@ -139,10 +139,13 @@
               <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Workforce search</h2>
               <p class="mt-1 text-xs text-gray-500">Sites must be created before employee profiles are added.</p>
             </div>
-            <button type="button" (click)="createEmployeeProfile()" [disabled]="busy() || !service.activeSites().length" class="rounded-lg bg-yellow-500 px-3 py-2 text-xs font-bold uppercase tracking-wider text-black disabled:opacity-40" title="Start a new employee profile after at least one site exists">+ Create profile</button>
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" (click)="openCreateEmployeeModal()" class="rounded-lg bg-yellow-500 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-black hover:bg-yellow-400 transition-colors shadow">+ Add Employee</button>
+              <button type="button" (click)="createEmployeeProfile()" [disabled]="busy() || !service.activeSites().length" class="rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-200 disabled:opacity-40" title="Start a new employee profile after at least one site exists">+ Inline form</button>
+            </div>
           </div>
           <div class="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
-            <input [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" placeholder="Search name or masked ID" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
+            <input [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" placeholder="Search name, surname, or masked ID" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
             <select [ngModel]="selectedSiteId()" (ngModelChange)="selectedSiteId.set($event)" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
               <option value="">All sites</option><option *ngFor="let site of service.activeSites()" [value]="site.id">{{ site.name }}</option>
             </select>
@@ -166,20 +169,34 @@
             <div class="mt-3 grid gap-2 sm:grid-cols-3"><button *ngIf="review.outcome === 'ready'" type="button" (click)="runBulkSiteAssignment('accept')" [disabled]="busy()" class="min-h-11 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-bold uppercase text-black">Accept assignment</button><button *ngIf="review.outcome === 'warning'" type="button" (click)="runBulkSiteAssignment('override')" [disabled]="busy() || !assignmentReasonCode()" class="min-h-11 rounded-lg bg-amber-400 px-3 py-2 text-xs font-bold uppercase text-black disabled:opacity-40">Override warning</button><button type="button" (click)="runBulkSiteAssignment('reject')" [disabled]="busy() || !assignmentReasonCode()" class="min-h-11 rounded-lg border border-red-800 px-3 py-2 text-xs font-bold uppercase text-red-300 disabled:opacity-40">Reject suggestion</button></div>
           </section>
           <div class="mt-4 max-h-[34rem] space-y-3 overflow-y-auto pr-1">
-            <button *ngFor="let employee of filteredEmployees()" type="button" (click)="selectEmployee(employee.id)" class="w-full rounded-xl border border-gray-800 bg-gray-950 px-3 py-3 text-left hover:border-yellow-700" [class.border-yellow-500]="selectedEmployeeId() === employee.id">
-              <div class="flex items-start gap-3">
-                <input type="checkbox" [checked]="selectedEmployeeIds().includes(employee.id)" (click)="$event.stopPropagation()" (change)="toggleSelectedEmployee(employee.id, $any($event.target).checked)" class="mt-1 accent-yellow-500">
-                <div class="min-w-0"><p class="font-semibold text-white">{{ employee.surname }}, {{ employee.firstName }}</p><p class="truncate text-xs text-gray-500">{{ employee.role }} · {{ service.getSiteName(employee.siteId) }} · {{ service.maskIdNumber(employee.idNumber) }}</p></div>
+            <div *ngFor="let employee of filteredEmployees()" class="w-full rounded-xl border border-gray-800 bg-gray-950 px-3.5 py-3 hover:border-yellow-700 transition-colors" [class.border-yellow-500]="selectedEmployeeId() === employee.id">
+              <div class="flex items-start justify-between gap-2">
+                <div class="flex items-start gap-3 flex-1 cursor-pointer" (click)="selectEmployee(employee.id)">
+                  <input type="checkbox" [checked]="selectedEmployeeIds().includes(employee.id)" (click)="$event.stopPropagation()" (change)="toggleSelectedEmployee(employee.id, $any($event.target).checked)" class="mt-1 accent-yellow-500">
+                  <div class="min-w-0">
+                    <p class="font-semibold text-white">{{ employee.surname }}, {{ employee.firstName }}</p>
+                    <p class="truncate text-xs text-gray-500">{{ employee.role }} · {{ service.getSiteName(employee.siteId) }} · {{ service.maskIdNumber(employee.idNumber) }}</p>
+                    <span class="inline-block mt-1 rounded px-2 py-0.5 text-[10px] font-bold uppercase" [class.bg-emerald-500/10]="(employee.employmentStatus || 'active') === 'active'" [class.text-emerald-400]="(employee.employmentStatus || 'active') === 'active'" [class.bg-gray-800]="(employee.employmentStatus || 'active') !== 'active'" [class.text-gray-400]="(employee.employmentStatus || 'active') !== 'active'">{{ employee.employmentStatus || 'active' }}</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <button type="button" (click)="openEditEmployeeModal(employee)" class="rounded-lg border border-gray-700 bg-gray-900 px-2.5 py-1 text-xs font-bold text-gray-200 hover:border-yellow-500 hover:text-white transition-colors" title="Edit in modal">Edit</button>
+                  <button type="button" (click)="quickToggleEmployeeStatus(employee)" class="rounded-lg border border-gray-800 px-2 py-1 text-[11px] text-gray-400 hover:text-white transition-colors" title="Toggle status">{{ (employee.employmentStatus || 'active') === 'active' ? 'Archive' : 'Activate' }}</button>
+                </div>
               </div>
-            </button>
+            </div>
             <p *ngIf="!filteredEmployees().length" class="rounded-xl border border-gray-800 bg-gray-950 px-3 py-8 text-center text-sm text-gray-500">No workforce records match this search.</p>
           </div>
         </div>
         <div class="space-y-4">
           <div *ngIf="selectedEmployee() as employee; else noEmployeeSelected" class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
             <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-              <div><p class="text-[10px] font-bold uppercase tracking-wider text-yellow-400">Read-only employee summary</p><h2 class="mt-1 text-xl font-bold">{{ employee.firstName }} {{ employee.surname }}</h2><p class="mt-1 text-sm text-gray-400">{{ employee.role }} · {{ service.getSiteName(employee.siteId) }}</p></div>
-              <div class="flex gap-2"><button type="button" (click)="editEmployee(employee)" class="rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-200">Edit profile</button><button type="button" (click)="stageEmployeeDeletion(employee)" class="rounded-lg border border-red-800 px-3 py-2 text-xs font-bold uppercase tracking-wider text-red-300">Review archive</button></div>
+              <div><p class="text-[10px] font-bold uppercase tracking-wider text-yellow-400">Employee Profile</p><h2 class="mt-1 text-xl font-bold">{{ employee.firstName }} {{ employee.surname }}</h2><p class="mt-1 text-sm text-gray-400">{{ employee.role }} · {{ service.getSiteName(employee.siteId) }}</p></div>
+              <div class="flex flex-wrap gap-2">
+                <button type="button" (click)="openEditEmployeeModal(employee)" class="rounded-lg bg-yellow-500 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-black hover:bg-yellow-400 transition-colors">Edit in Modal</button>
+                <button type="button" (click)="editEmployee(employee)" class="rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-200">Inline Edit</button>
+                <button type="button" (click)="stageEmployeeDeletion(employee)" class="rounded-lg border border-red-800 px-3 py-2 text-xs font-bold uppercase tracking-wider text-red-300">Archive</button>
+              </div>
             </div>
             <dl class="mt-4 grid gap-3 sm:grid-cols-2">
               <div class="rounded-xl border border-gray-800 bg-gray-950 p-3"><dt class="text-[10px] uppercase tracking-wider text-gray-500">Masked ID</dt><dd class="mt-1 font-semibold">{{ service.maskIdNumber(employee.idNumber) }}</dd></div>
@@ -277,29 +294,145 @@
           </article>
         </div>
       </section>
-      <section *ngIf="activeTab() === 'sites'" class="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
-        <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Site Form</h2>
-          <div class="mt-4 space-y-3">
-            <input [(ngModel)]="siteForm.name" placeholder="Site name" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-            <input [(ngModel)]="siteForm.location" placeholder="Location" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-            <select [(ngModel)]="siteForm.managerId" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"><option [ngValue]="undefined">Select site manager</option><option *ngFor="let user of service.users()" [ngValue]="user.id">{{ user.displayName }}</option></select>
-            <input [(ngModel)]="siteForm.teamName" placeholder="Team name" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-            <input [(ngModel)]="siteForm.jobNumber" placeholder="Job number" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-            <input [(ngModel)]="siteForm.estimatedDuration" placeholder="Estimated duration" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-            <textarea [(ngModel)]="siteComplianceText" rows="3" placeholder="Compliance checklist, comma separated: safety file, inspections, induction register" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"></textarea>
-            <button type="button" (click)="submitSite()" [disabled]="busy() || !siteForm.name.trim() || !siteForm.location.trim()" class="w-full rounded-lg bg-yellow-500 px-4 py-3 text-sm font-bold text-black disabled:opacity-50">Save Site</button>
+      <section *ngIf="activeTab() === 'sites'" class="space-y-4">
+        <!-- Sites Header & Action Toolbar -->
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-gray-800 bg-gray-900 p-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="rounded bg-yellow-500/10 px-2 py-0.5 text-xs font-bold text-yellow-400 border border-yellow-500/20">Site Operations</span>
+              <span class="text-xs text-gray-500">· {{ service.sites().length }} total registered sites</span>
+            </div>
+            <h2 class="mt-1 text-lg font-bold text-white">Operational Sites Directory</h2>
+            <p class="text-xs text-gray-400">Manage mining shafts, extraction plants, processing yards, and regional hubs.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              (click)="openCreateSiteModal()"
+              class="rounded-lg bg-yellow-500 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-black hover:bg-yellow-400 transition-colors flex items-center gap-1.5 shadow"
+            >
+              <span>+ Add New Site</span>
+            </button>
           </div>
         </div>
-        <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Site Controls</h2>
-          <div class="mt-4 space-y-3">
-            <div *ngFor="let site of service.sites()" class="rounded-xl border border-gray-800 bg-gray-950 px-3 py-3">
-              <div class="flex items-center justify-between gap-3">
-                <div><p class="font-semibold">{{ site.name }}</p><p class="text-xs text-gray-500">{{ site.location }}</p></div>
-                <button type="button" (click)="editSite(site)" class="rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-200">Edit</button>
+
+        <!-- Filter Toolbar -->
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 rounded-xl border border-gray-800 bg-gray-900/60 p-3">
+          <div class="sm:col-span-2">
+            <input
+              [ngModel]="siteSearchTerm()"
+              (ngModelChange)="siteSearchTerm.set($event)"
+              placeholder="Search site name, location, job #, or team..."
+              class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-yellow-500 focus:outline-none"
+            >
+          </div>
+          <div>
+            <select
+              [ngModel]="siteStatusFilter()"
+              (ngModelChange)="siteStatusFilter.set($event)"
+              class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+            >
+              <option value="all">All Statuses</option>
+              <option value="active">Active Only</option>
+              <option value="inactive">Inactive Only</option>
+            </select>
+          </div>
+          <div class="flex items-center justify-end text-xs text-gray-400 px-2">
+            Showing <strong class="text-white mx-1">{{ filteredSites().length }}</strong> of {{ service.sites().length }} sites
+          </div>
+        </div>
+
+        <!-- Sites Cards Grid -->
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div
+            *ngFor="let site of filteredSites()"
+            class="rounded-2xl border border-gray-800 bg-gray-900 p-5 flex flex-col justify-between hover:border-gray-700 transition-all shadow-sm"
+          >
+            <div>
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <h3 class="text-base font-bold text-white">{{ site.name }}</h3>
+                  <p class="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                    <span>📍</span> {{ site.location }}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  (click)="quickToggleSiteActive(site)"
+                  class="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase transition-all"
+                  [class.bg-emerald-500/10]="site.isActive"
+                  [class.text-emerald-400]="site.isActive"
+                  [class.border]="site.isActive"
+                  [class.border-emerald-500/20]="site.isActive"
+                  [class.bg-gray-800]="!site.isActive"
+                  [class.text-gray-400]="!site.isActive"
+                  title="Click to toggle status"
+                >
+                  {{ site.isActive ? 'Active' : 'Inactive' }}
+                </button>
+              </div>
+
+              <div class="mt-4 grid grid-cols-2 gap-2 text-xs border-y border-gray-800 py-3">
+                <div>
+                  <span class="text-gray-500 block text-[10px] uppercase font-semibold">Job / Contract Number</span>
+                  <strong class="text-yellow-400 font-mono">{{ site.jobNumber || 'Unassigned' }}</strong>
+                </div>
+                <div>
+                  <span class="text-gray-500 block text-[10px] uppercase font-semibold">Assigned Team</span>
+                  <span class="text-gray-300">{{ site.teamName || 'General Crew' }}</span>
+                </div>
+                <div class="mt-2">
+                  <span class="text-gray-500 block text-[10px] uppercase font-semibold">Duration Target</span>
+                  <span class="text-gray-300">{{ site.estimatedDuration || 'Ongoing' }}</span>
+                </div>
+                <div class="mt-2">
+                  <span class="text-gray-500 block text-[10px] uppercase font-semibold">Workforce Count</span>
+                  <span class="text-emerald-400 font-semibold">{{ service.employees().filter(e => e.siteId === site.id).length }} personnel</span>
+                </div>
+              </div>
+
+              <!-- Compliance Checklist Tags -->
+              <div class="mt-3">
+                <span class="text-[10px] uppercase font-bold text-gray-500">Compliance Protocol</span>
+                <div class="mt-1 flex flex-wrap gap-1.5">
+                  <span
+                    *ngFor="let check of site.complianceChecklist"
+                    class="rounded-md bg-gray-950 border border-gray-800 px-2 py-0.5 text-[10px] text-gray-300"
+                  >
+                    ✓ {{ check }}
+                  </span>
+                  <span *ngIf="!site.complianceChecklist?.length" class="text-[11px] text-gray-500 italic">
+                    No custom checklist items specified
+                  </span>
+                </div>
               </div>
             </div>
+
+            <!-- Action Controls -->
+            <div class="mt-5 pt-3 border-t border-gray-800 flex items-center justify-between gap-2">
+              <span class="text-[11px] text-gray-500 font-mono">ID: {{ site.id.slice(0, 8) }}</span>
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  (click)="openEditSiteModal(site)"
+                  class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-gray-200 hover:border-yellow-500 hover:text-white transition-colors"
+                >
+                  Edit Details
+                </button>
+                <button
+                  type="button"
+                  (click)="stageSiteDeletion(site)"
+                  class="rounded-lg border border-rose-900/60 bg-rose-950/20 px-2.5 py-1.5 text-xs font-bold uppercase tracking-wider text-rose-300 hover:bg-rose-950 hover:text-white transition-colors"
+                  title="Remove or deactivate site"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="!filteredSites().length" class="col-span-full rounded-2xl border border-gray-800 bg-gray-900 p-8 text-center text-sm text-gray-400">
+            No operational sites match the current search or filter criteria.
           </div>
         </div>
       </section>
@@ -338,19 +471,157 @@
         </div>
       </section>
 
-      <section *ngIf="activeTab() === 'assets'" class="grid gap-4 lg:grid-cols-[0.7fr_1.3fr]">
-        <div class="rounded-lg border border-gray-800 bg-gray-900 p-4">
-          <h2 class="text-sm font-bold uppercase text-gray-300">Controlled asset intake</h2>
-          <p class="mt-2 text-xs leading-5 text-gray-400">New registrations, evidence, draft ownership and expiry reminders use the dedicated Asset Control workflow.</p>
-          <app-ui-button class="mt-4" variant="primary" routerLink="/asset-register">Open Asset Control</app-ui-button>
-        </div>
-        <div class="rounded-lg border border-gray-800 bg-gray-900 p-4">
-          <h2 class="text-sm font-bold uppercase text-gray-300">Registered assets</h2>
-          <div class="mt-4 divide-y divide-gray-800">
-            <div *ngFor="let asset of service.assets()" class="flex items-center justify-between gap-3 py-3">
-              <div><p class="font-semibold">{{ asset.registrationNumber || asset.vin || asset.serialNumber }}</p><p class="text-xs text-gray-500">{{ asset.make }} {{ asset.model }} / {{ service.getSiteName(asset.assignedSiteId || '') }}</p></div>
-              <span class="text-xs font-bold uppercase text-gray-400">{{ asset.status }}</span>
+      <section *ngIf="activeTab() === 'assets'" class="space-y-4">
+        <!-- Asset Header & Quick Controls -->
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-gray-800 bg-gray-900 p-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="rounded bg-amber-500/10 px-2 py-0.5 text-xs font-bold text-amber-400 border border-amber-500/20">Fleet & Equipment</span>
+              <span class="text-xs text-gray-500">· {{ service.assets().length }} capital assets</span>
             </div>
+            <h2 class="mt-1 text-lg font-bold text-white">Heavy Machinery & Vehicle Register</h2>
+            <p class="text-xs text-gray-400">Full lifecycle management: Yellow metal, drill rigs, light vehicles, and generators.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              (click)="openCreateAssetModal()"
+              class="rounded-lg bg-yellow-500 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-black hover:bg-yellow-400 transition-colors flex items-center gap-1.5 shadow"
+            >
+              <span>+ Add New Asset</span>
+            </button>
+            <app-ui-button variant="secondary" size="sm" routerLink="/asset-register">Advanced Intake & Evidence</app-ui-button>
+          </div>
+        </div>
+
+        <!-- Filter Toolbar -->
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 rounded-xl border border-gray-800 bg-gray-900/60 p-3">
+          <div class="lg:col-span-2">
+            <input
+              [ngModel]="assetSearchTerm()"
+              (ngModelChange)="assetSearchTerm.set($event)"
+              placeholder="Search make, model, plate, VIN, serial, or custodian..."
+              class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-yellow-500 focus:outline-none"
+            >
+          </div>
+          <div>
+            <select
+              [ngModel]="assetSiteFilter()"
+              (ngModelChange)="assetSiteFilter.set($event)"
+              class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+            >
+              <option value="">All Sites</option>
+              <option *ngFor="let site of service.activeSites()" [value]="site.id">{{ site.name }}</option>
+            </select>
+          </div>
+          <div>
+            <select
+              [ngModel]="assetTypeFilter()"
+              (ngModelChange)="assetTypeFilter.set($event)"
+              class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+            >
+              <option value="">All Operating Types</option>
+              <option value="Yellow Metal">Yellow Metal</option>
+              <option value="Heavy Duty">Heavy Duty</option>
+              <option value="Light Vehicle">Light Vehicle</option>
+            </select>
+          </div>
+          <div>
+            <select
+              [ngModel]="assetStatusFilter()"
+              (ngModelChange)="assetStatusFilter.set($event)"
+              class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+            >
+              <option value="">All Statuses</option>
+              <option value="Active">Active</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Expired">Expired</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Assets Cards & Data Grid -->
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div
+            *ngFor="let asset of filteredAssets()"
+            class="rounded-2xl border border-gray-800 bg-gray-900 p-5 flex flex-col justify-between hover:border-gray-700 transition-all shadow-sm"
+          >
+            <div>
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <span class="inline-block font-mono text-xs font-bold text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/20">
+                    {{ asset.registrationNumber || asset.vin || asset.serialNumber }}
+                  </span>
+                  <h3 class="mt-2 text-base font-bold text-white">{{ asset.make }} {{ asset.model }}</h3>
+                  <p class="text-xs text-gray-400">{{ asset.assetClass || asset.type }}</p>
+                </div>
+                <button
+                  type="button"
+                  (click)="quickToggleAssetStatus(asset)"
+                  class="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase transition-all"
+                  [class.bg-emerald-500/10]="asset.status === 'Active'"
+                  [class.text-emerald-400]="asset.status === 'Active'"
+                  [class.border]="asset.status === 'Active'"
+                  [class.border-emerald-500/20]="asset.status === 'Active'"
+                  [class.bg-amber-500/10]="asset.status === 'Maintenance'"
+                  [class.text-amber-400]="asset.status === 'Maintenance'"
+                  [class.bg-rose-500/10]="asset.status === 'Expired'"
+                  [class.text-rose-400]="asset.status === 'Expired'"
+                  title="Click to toggle status between Active and Maintenance"
+                >
+                  {{ asset.status }}
+                </button>
+              </div>
+
+              <div class="mt-4 grid grid-cols-2 gap-2 text-xs border-y border-gray-800 py-3">
+                <div>
+                  <span class="text-gray-500 block text-[10px] uppercase font-semibold">Operating Category</span>
+                  <span class="text-gray-300">{{ asset.type }}</span>
+                </div>
+                <div>
+                  <span class="text-gray-500 block text-[10px] uppercase font-semibold">Assigned Site</span>
+                  <span class="text-amber-300 font-semibold">{{ service.getSiteName(asset.assignedSiteId || '') }}</span>
+                </div>
+                <div class="mt-2">
+                  <span class="text-gray-500 block text-[10px] uppercase font-semibold">Custodian</span>
+                  <span class="text-gray-300">{{ asset.custodianName || 'Unassigned' }}</span>
+                </div>
+                <div class="mt-2">
+                  <span class="text-gray-500 block text-[10px] uppercase font-semibold">Licence / Compliance</span>
+                  <span class="text-gray-300">{{ asset.licenseExpiry }}</span>
+                </div>
+              </div>
+
+              <div *ngIf="asset.notes" class="mt-3 text-xs text-gray-400 bg-gray-950 p-2.5 rounded-lg border border-gray-800">
+                <span class="text-gray-500 font-semibold">Notes:</span> {{ asset.notes }}
+              </div>
+            </div>
+
+            <!-- Action Controls -->
+            <div class="mt-5 pt-3 border-t border-gray-800 flex items-center justify-between gap-2">
+              <span class="text-[11px] text-gray-500 font-mono">ID: {{ asset.id.slice(0, 8) }}</span>
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  (click)="openEditAssetModal(asset)"
+                  class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-gray-200 hover:border-yellow-500 hover:text-white transition-colors"
+                >
+                  Edit Asset
+                </button>
+                <button
+                  type="button"
+                  (click)="stageAssetDeletion(asset)"
+                  class="rounded-lg border border-rose-900/60 bg-rose-950/20 px-2.5 py-1.5 text-xs font-bold uppercase tracking-wider text-rose-300 hover:bg-rose-950 hover:text-white transition-colors"
+                  title="Delete or archive asset"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="!filteredAssets().length" class="col-span-full rounded-2xl border border-gray-800 bg-gray-900 p-8 text-center text-sm text-gray-400">
+            No capital assets match the current search or filter criteria.
           </div>
         </div>
       </section>
@@ -502,6 +773,576 @@
           <ul class="mt-4 space-y-3 text-sm text-gray-400"><li class="rounded-xl border border-gray-800 bg-gray-950 p-3">Do not share reset links or administrative codes.</li><li class="rounded-xl border border-gray-800 bg-gray-950 p-3">Sign out when leaving a shared office device.</li></ul>
         </article>
       </section>
+
+      <!-- ASSET MODAL (CREATE / EDIT) -->
+      <div
+        *ngIf="showAssetModal()"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto"
+        role="dialog"
+        aria-modal="true"
+      >
+        <div class="relative w-full max-w-2xl rounded-2xl border border-gray-800 bg-gray-900 p-6 shadow-2xl text-white my-8">
+          <div class="flex items-center justify-between pb-4 border-b border-gray-800">
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-yellow-400">
+                {{ assetModalMode() === 'create' ? 'New Registration' : 'Edit Capital Asset' }}
+              </span>
+              <h3 class="text-lg font-bold text-white">
+                {{ assetModalMode() === 'create' ? 'Register Fleet Asset' : 'Edit Asset: ' + assetForm.make + ' ' + assetForm.model }}
+              </h3>
+            </div>
+            <button
+              type="button"
+              (click)="closeAssetModal()"
+              class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+
+          <form (ngSubmit)="saveAssetModal()" class="mt-4 space-y-4">
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Make <span class="text-rose-400">*</span></label>
+                <input
+                  [(ngModel)]="assetForm.make"
+                  name="assetMake"
+                  required
+                  placeholder="e.g. Caterpillar, Bell, Toyota"
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white focus:border-yellow-500 focus:outline-none"
+                >
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Model <span class="text-rose-400">*</span></label>
+                <input
+                  [(ngModel)]="assetForm.model"
+                  name="assetModel"
+                  required
+                  placeholder="e.g. 336D Excavator, Hilux 2.4"
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white focus:border-yellow-500 focus:outline-none"
+                >
+              </div>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-3">
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Operating Category</label>
+                <select
+                  [(ngModel)]="assetForm.type"
+                  name="assetType"
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+                >
+                  <option value="Yellow Metal">Yellow Metal</option>
+                  <option value="Heavy Duty">Heavy Duty</option>
+                  <option value="Light Vehicle">Light Vehicle</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Asset Class / Designation</label>
+                <input
+                  [(ngModel)]="assetForm.assetClass"
+                  name="assetClass"
+                  placeholder="e.g. Front Loader, Haul Truck"
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+                >
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Status</label>
+                <select
+                  [(ngModel)]="assetForm.status"
+                  name="assetStatus"
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+                >
+                  <option value="Active">Active</option>
+                  <option value="Maintenance">Maintenance</option>
+                  <option value="Expired">Expired</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-3">
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Number Plate</label>
+                <input
+                  [(ngModel)]="assetForm.registrationNumber"
+                  name="assetReg"
+                  placeholder="e.g. FS 44 GG GP"
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white font-mono"
+                >
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">VIN / Chassis #</label>
+                <input
+                  [(ngModel)]="assetForm.vin"
+                  name="assetVin"
+                  placeholder="17-character VIN"
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white font-mono"
+                >
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Equipment Serial #</label>
+                <input
+                  [(ngModel)]="assetForm.serialNumber"
+                  name="assetSerial"
+                  placeholder="Serial number"
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white font-mono"
+                >
+              </div>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Assigned Operational Site</label>
+                <select
+                  [(ngModel)]="assetForm.assignedSiteId"
+                  name="assetSiteId"
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+                >
+                  <option value="">Unassigned</option>
+                  <option *ngFor="let site of service.activeSites()" [value]="site.id">{{ site.name }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Compliance / Licence Expiry <span class="text-rose-400">*</span></label>
+                <input
+                  [(ngModel)]="assetForm.licenseExpiry"
+                  name="assetExpiry"
+                  type="date"
+                  required
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+                >
+              </div>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Custodian Person or Team</label>
+                <input
+                  [(ngModel)]="assetForm.custodianName"
+                  name="assetCustodian"
+                  placeholder="e.g. Sipho Sithole (Lead Operator)"
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+                >
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Lifecycle State</label>
+                <select
+                  [(ngModel)]="assetForm.lifecycleState"
+                  name="assetLifecycle"
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+                >
+                  <option value="active">Active Service</option>
+                  <option value="maintenance">Maintenance</option>
+                  <option value="retired">Retired / Decommissioned</option>
+                  <option value="disposed">Disposed</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-gray-300 mb-1">Operational & Maintenance Notes</label>
+              <textarea
+                [(ngModel)]="assetForm.notes"
+                name="assetNotes"
+                rows="2"
+                placeholder="Service intervals, telematics unit #, oil changes, engine hours..."
+                class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+              ></textarea>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-800">
+              <button
+                type="button"
+                (click)="closeAssetModal()"
+                class="rounded-lg border border-gray-700 px-4 py-2 text-xs font-bold uppercase tracking-wider text-gray-300 hover:bg-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                [disabled]="busy() || !assetForm.make.trim() || !assetForm.model.trim() || (!assetForm.registrationNumber?.trim() && !assetForm.vin?.trim() && !assetForm.serialNumber?.trim())"
+                class="rounded-lg bg-yellow-500 px-5 py-2 text-xs font-bold uppercase tracking-wider text-black hover:bg-yellow-400 disabled:opacity-40"
+              >
+                {{ busy() ? 'Saving...' : 'Save Asset' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- EMPLOYEE MODAL (CREATE / EDIT) -->
+      <div
+        *ngIf="showEmployeeModal()"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto"
+        role="dialog"
+        aria-modal="true"
+      >
+        <div class="relative w-full max-w-2xl rounded-2xl border border-gray-800 bg-gray-900 p-6 shadow-2xl text-white my-8">
+          <div class="flex items-center justify-between pb-4 border-b border-gray-800">
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-yellow-400">
+                {{ employeeModalMode() === 'create' ? 'New Workforce Profile' : 'Edit Workforce Profile' }}
+              </span>
+              <h3 class="text-lg font-bold text-white">
+                {{ employeeModalMode() === 'create' ? 'Create Employee Profile' : 'Edit: ' + personForm.firstName + ' ' + personForm.surname }}
+              </h3>
+            </div>
+            <button
+              type="button"
+              (click)="closeEmployeeModal()"
+              class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+
+          <form (ngSubmit)="saveEmployeeModal()" class="mt-4 space-y-4">
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">First Name <span class="text-rose-400">*</span></label>
+                <input
+                  [(ngModel)]="personForm.firstName"
+                  name="empFirstName"
+                  required
+                  placeholder="First name"
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white focus:border-yellow-500 focus:outline-none"
+                >
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Surname <span class="text-rose-400">*</span></label>
+                <input
+                  [(ngModel)]="personForm.surname"
+                  name="empSurname"
+                  required
+                  placeholder="Surname"
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white focus:border-yellow-500 focus:outline-none"
+                >
+              </div>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">ID Number or UAT Reference <span class="text-rose-400">*</span></label>
+                <input
+                  [(ngModel)]="personForm.idNumber"
+                  name="empIdNumber"
+                  required
+                  placeholder="UAT-EMP-0001 or 13-digit ID"
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white font-mono"
+                >
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Company Employee Number</label>
+                <input
+                  [(ngModel)]="personForm.companyNumber"
+                  name="empCompanyNumber"
+                  placeholder="e.g. SEN-OPS-042"
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white font-mono"
+                >
+              </div>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-3">
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Primary Role</label>
+                <select
+                  [(ngModel)]="personForm.role"
+                  name="empRole"
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+                >
+                  <option value="General Worker">General Worker</option>
+                  <option value="Driver">Driver</option>
+                  <option value="Safety Rep">SHE Rep</option>
+                  <option value="Operator">Heavy Machinery Operator</option>
+                  <option value="Foreman">Foreman</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Actual Designation</label>
+                <input
+                  [(ngModel)]="personForm.designation"
+                  name="empDesignation"
+                  placeholder="e.g. Excavator Operator, Rigger"
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+                >
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Employment Status</label>
+                <select
+                  [(ngModel)]="personForm.employmentStatus"
+                  name="empStatus"
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="suspended">Suspended</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Assigned Site <span class="text-rose-400">*</span></label>
+                <select
+                  [(ngModel)]="personForm.siteId"
+                  name="empSiteId"
+                  required
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+                >
+                  <option value="">Select site</option>
+                  <option *ngFor="let site of service.activeSites()" [value]="site.id">{{ site.name }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Start Date</label>
+                <input
+                  [(ngModel)]="personForm.startDate"
+                  name="empStartDate"
+                  type="date"
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+                >
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-gray-300 mb-1">Safety Qualifications (comma-separated)</label>
+              <input
+                [(ngModel)]="employeeQualificationsText"
+                name="empQualifications"
+                placeholder="First Aid Level 1, HIRA, Working at Heights, Excavator Certified"
+                class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+              >
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-800">
+              <button
+                type="button"
+                (click)="closeEmployeeModal()"
+                class="rounded-lg border border-gray-700 px-4 py-2 text-xs font-bold uppercase tracking-wider text-gray-300 hover:bg-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                [disabled]="busy() || !personForm.firstName.trim() || !personForm.surname.trim() || !personForm.siteId || !personForm.idNumber.trim()"
+                class="rounded-lg bg-yellow-500 px-5 py-2 text-xs font-bold uppercase tracking-wider text-black hover:bg-yellow-400 disabled:opacity-40"
+              >
+                {{ busy() ? 'Saving...' : 'Save Employee' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- SITE MODAL (CREATE / EDIT) -->
+      <div
+        *ngIf="showSiteModal()"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto"
+        role="dialog"
+        aria-modal="true"
+      >
+        <div class="relative w-full max-w-xl rounded-2xl border border-gray-800 bg-gray-900 p-6 shadow-2xl text-white my-8">
+          <div class="flex items-center justify-between pb-4 border-b border-gray-800">
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-yellow-400">
+                {{ siteModalMode() === 'create' ? 'New Site Registration' : 'Edit Operational Site' }}
+              </span>
+              <h3 class="text-lg font-bold text-white">
+                {{ siteModalMode() === 'create' ? 'Create Operational Site' : 'Edit: ' + siteForm.name }}
+              </h3>
+            </div>
+            <button
+              type="button"
+              (click)="closeSiteModal()"
+              class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+
+          <form (ngSubmit)="saveSiteModal()" class="mt-4 space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-gray-300 mb-1">Site Name <span class="text-rose-400">*</span></label>
+              <input
+                [(ngModel)]="siteForm.name"
+                name="siteName"
+                required
+                placeholder="e.g. Senatla Shaft 4, Plant B Processing"
+                class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white focus:border-yellow-500 focus:outline-none"
+              >
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-gray-300 mb-1">Location / Regional Sector <span class="text-rose-400">*</span></label>
+              <input
+                [(ngModel)]="siteForm.location"
+                name="siteLocation"
+                required
+                placeholder="e.g. Matjhabeng Sector 7, Welkom Free State"
+                class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white focus:border-yellow-500 focus:outline-none"
+              >
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Site Manager</label>
+                <select
+                  [(ngModel)]="siteForm.managerId"
+                  name="siteManagerId"
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+                >
+                  <option [ngValue]="undefined">Select Site Manager</option>
+                  <option *ngFor="let user of service.users()" [ngValue]="user.id">{{ user.displayName }} ({{ user.role }})</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Assigned Team / Crew</label>
+                <input
+                  [(ngModel)]="siteForm.teamName"
+                  name="siteTeamName"
+                  placeholder="e.g. Extraction Squad Alpha"
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+                >
+              </div>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Job / Contract Number</label>
+                <input
+                  [(ngModel)]="siteForm.jobNumber"
+                  name="siteJobNumber"
+                  placeholder="e.g. JOB-2026-MAT-04"
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white font-mono"
+                >
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Estimated Duration</label>
+                <input
+                  [(ngModel)]="siteForm.estimatedDuration"
+                  name="siteDuration"
+                  placeholder="e.g. 18 months, Ongoing"
+                  class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+                >
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-gray-300 mb-1">Compliance Checklist (comma-separated)</label>
+              <textarea
+                [(ngModel)]="siteComplianceText"
+                name="siteChecklist"
+                rows="3"
+                placeholder="Safety file, Daily inspections, Induction register, Environmental permit"
+                class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+              ></textarea>
+            </div>
+
+            <div class="flex items-center gap-2 pt-2">
+              <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  [(ngModel)]="siteForm.isActive"
+                  name="siteIsActive"
+                  class="h-4 w-4 rounded accent-yellow-500"
+                >
+                <span class="font-semibold">Active Operational Site</span>
+              </label>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-800">
+              <button
+                type="button"
+                (click)="closeSiteModal()"
+                class="rounded-lg border border-gray-700 px-4 py-2 text-xs font-bold uppercase tracking-wider text-gray-300 hover:bg-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                [disabled]="busy() || !siteForm.name.trim() || !siteForm.location.trim()"
+                class="rounded-lg bg-yellow-500 px-5 py-2 text-xs font-bold uppercase tracking-wider text-black hover:bg-yellow-400 disabled:opacity-40"
+              >
+                {{ busy() ? 'Saving...' : 'Save Site' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- ASSET DELETION CONFIRMATION MODAL -->
+      <div
+        *ngIf="pendingAssetDeletion() as asset"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+        role="dialog"
+        aria-modal="true"
+      >
+        <div class="relative w-full max-w-md rounded-2xl border border-rose-800 bg-gray-900 p-6 shadow-2xl text-white">
+          <div class="flex items-center gap-3">
+            <span class="rounded-full bg-rose-500/20 p-2 text-rose-400">⚠️</span>
+            <h3 class="text-base font-bold text-white">Confirm Asset Removal</h3>
+          </div>
+          <p class="mt-3 text-xs text-gray-300 leading-relaxed">
+            Are you sure you want to delete <strong class="text-white">{{ asset.make }} {{ asset.model }}</strong>
+            ({{ asset.registrationNumber || asset.vin || asset.serialNumber }})?
+            This will permanently remove the record or archive it if historical work orders exist.
+          </p>
+          <div class="mt-6 flex justify-end gap-3">
+            <button
+              type="button"
+              (click)="cancelAssetDeletion()"
+              class="rounded-lg border border-gray-700 px-4 py-2 text-xs font-bold uppercase tracking-wider text-gray-300 hover:bg-gray-800"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              [disabled]="busy()"
+              (click)="confirmAssetDeletion()"
+              class="rounded-lg bg-rose-500 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-rose-400 disabled:opacity-40"
+            >
+              Confirm Delete
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SITE DELETION CONFIRMATION MODAL -->
+      <div
+        *ngIf="pendingSiteDeletion() as site"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+        role="dialog"
+        aria-modal="true"
+      >
+        <div class="relative w-full max-w-md rounded-2xl border border-rose-800 bg-gray-900 p-6 shadow-2xl text-white">
+          <div class="flex items-center gap-3">
+            <span class="rounded-full bg-rose-500/20 p-2 text-rose-400">⚠️</span>
+            <h3 class="text-base font-bold text-white">Confirm Site Deactivation / Deletion</h3>
+          </div>
+          <p class="mt-3 text-xs text-gray-300 leading-relaxed">
+            Are you sure you want to delete site <strong class="text-white">{{ site.name }}</strong> at
+            <span class="text-gray-400">{{ site.location }}</span>?
+            Linked personnel and machinery will remain in the database with their current records.
+          </p>
+          <div class="mt-6 flex justify-end gap-3">
+            <button
+              type="button"
+              (click)="cancelSiteDeletion()"
+              class="rounded-lg border border-gray-700 px-4 py-2 text-xs font-bold uppercase tracking-wider text-gray-300 hover:bg-gray-800"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              [disabled]="busy()"
+              (click)="confirmSiteDeletion()"
+              class="rounded-lg bg-rose-500 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-rose-400 disabled:opacity-40"
+            >
+              Confirm Delete
+            </button>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 </ng-container>

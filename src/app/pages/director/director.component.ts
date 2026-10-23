@@ -21,6 +21,32 @@ export class DirectorComponent {
   readonly pendingInvoiceAmount = computed(() => this.pendingInvoices().reduce((total, invoice) => total + invoice.total, 0));
   readonly periodInvoiceAmount = computed(() => this.office.vendorInvoices().filter((invoice) => this.inPeriod(invoice.invoiceDate)).reduce((total, invoice) => total + invoice.total, 0));
   readonly pendingApprovals = computed(() => this.office.approvals().filter((request) => request.status === 'pending' && request.requestType !== 'full_id_payroll_export'));
+  readonly pendingExecutiveReports = computed(() => this.office.directorReports().filter((r) => r.status === 'pending_director'));
+  readonly approvedExecutiveReports = computed(() => this.office.directorReports().filter((r) => r.status === 'approved'));
+  readonly activeReportModal = signal<any | null>(null);
+  readonly directorNotes = signal<string>('');
+  readonly feedback = signal<string>('');
+
+  openReportModal(report: any) {
+    this.activeReportModal.set(report);
+    this.directorNotes.set('');
+  }
+
+  closeReportModal() {
+    this.activeReportModal.set(null);
+  }
+
+  async approveReport(reportId: string) {
+    await this.office.approveDirectorReport(reportId, this.directorNotes());
+    this.feedback.set('Executive operational report approved. Real-time cost & workforce margin locked.');
+    this.closeReportModal();
+  }
+
+  async rejectReport(reportId: string) {
+    await this.office.rejectDirectorReport(reportId, this.directorNotes());
+    this.feedback.set('Executive report returned to Office Admin for revisions.');
+    this.closeReportModal();
+  }
   readonly assetSummary = computed(() => {
     const assets = this.office.assets();
     const blocked = assets.filter((asset) => this.assetState(asset) === 'blocked').length;

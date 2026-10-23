@@ -15,6 +15,8 @@ export class AppComponent {
   readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   readonly showDebugControls = !environment.production;
+  readonly isDirector = computed(() => this.auth.role() === 'director');
+
   readonly workspaceLink = computed(() => {
     const role = this.auth.role();
     if (role === 'site') return { label: 'Site workspace', path: '/site-manager' };

@@ -18,7 +18,7 @@
     </div>
 
     <header class="site-header flex items-center justify-between gap-4">
-      <a routerLink="/landing" class="flex items-center gap-3" aria-label="Senatla Ops home">
+      <a routerLink="/landing" (click)="scrollToTop($event)" class="flex items-center gap-3" aria-label="Senatla Ops home">
         <span class="brand-mark grid place-items-center rounded-2xl bg-lime-300 text-lg font-black text-slate-950 shadow-xl">S</span>
         <span>
           <span class="block text-xs font-semibold uppercase tracking-[0.32em] text-lime-200">Senatla Ops</span>
@@ -27,23 +27,21 @@
       </a>
 
       <nav class="desktop-menu" aria-label="Primary navigation">
-        <a href="#capabilities">Capabilities</a>
-        <a href="#assurance">Assurance</a>
-        <a href="https://github.com/Sankofa-Digital-Studio/senatla-ops/releases/download/dev-latest/senatla-ops-dev.apk" download>Android APK</a>
+        <a href="#capabilities" (click)="scrollTo('capabilities', $event)">Capabilities</a>
+        <a href="#assurance" (click)="scrollTo('assurance', $event)">Assurance</a>
+        <a href="https://github.com/Sankofa-Digital-Studio/senatla-ops/releases/download/dev-latest/senatla-ops-dev.apk" download target="_blank" rel="noopener noreferrer">Android APK</a>
         <button type="button" *ngIf="isLocalMode()" (click)="showTestCredentials()">Test users</button>
-        <a routerLink="/register" class="nav-register">Register</a>
-        <a routerLink="/login" class="nav-login">Login</a>
+        <a routerLink="/login" class="nav-login">Sign In</a>
       </nav>
 
       <details class="mobile-menu">
         <summary aria-label="Open navigation menu"><span></span><span></span><span></span></summary>
         <nav aria-label="Mobile navigation">
-          <a href="#capabilities">Capabilities</a>
-          <a href="#assurance">Assurance</a>
-          <a href="https://github.com/Sankofa-Digital-Studio/senatla-ops/releases/download/dev-latest/senatla-ops-dev.apk" download>Android APK</a>
+          <a href="#capabilities" (click)="scrollTo('capabilities', $event)">Capabilities</a>
+          <a href="#assurance" (click)="scrollTo('assurance', $event)">Assurance</a>
+          <a href="https://github.com/Sankofa-Digital-Studio/senatla-ops/releases/download/dev-latest/senatla-ops-dev.apk" download target="_blank" rel="noopener noreferrer">Android APK</a>
           <button type="button" *ngIf="isLocalMode()" (click)="showTestCredentials()">Test users</button>
-          <a routerLink="/register">Register</a>
-          <a routerLink="/login">Login</a>
+          <a routerLink="/login">Sign In</a>
         </nav>
       </details>
     </header>
@@ -58,20 +56,29 @@
           </div>
           <button type="button" class="credential-modal__close" aria-label="Close test users dialog" (click)="hideTestCredentials()">Close</button>
         </header>
-        <p class="credential-modal__note">Use these accounts only for UAT/local review. They mirror the seeded local review gateway and should not be treated as production credentials.</p>
+        <p class="credential-modal__note">Use these accounts for fast local review with seeded datasets. You can also sign in with one click on the main login page.</p>
         <div class="credential-table" role="table" aria-label="Test user credentials and roles">
           <div class="credential-table__row credential-table__row--head" role="row">
             <span role="columnheader">Role</span>
             <span role="columnheader">Email</span>
             <span role="columnheader">Password</span>
-            <span role="columnheader">Route</span>
+            <span role="columnheader">Action</span>
           </div>
           <div class="credential-table__row" role="row" *ngFor="let account of testCredentials">
             <strong role="cell">{{ account.role }}</strong>
             <code role="cell">{{ account.email }}</code>
             <span role="cell">{{ account.passwordHint }}</span>
-            <span role="cell">{{ account.path }}</span>
+            <span role="cell">
+              <button type="button" (click)="quickLaunchRole(account.roleKey)" class="rounded-full bg-lime-300 px-3 py-1 text-[11px] font-black uppercase text-slate-950 hover:bg-lime-200">
+                Launch
+              </button>
+            </span>
           </div>
+        </div>
+        <div class="mt-4 pt-3 border-t border-white/10 text-center">
+          <a routerLink="/login" (click)="hideTestCredentials()" class="text-xs font-bold text-lime-200 hover:text-lime-100">
+            Open Main Login Page (Google Sign-In & One-Click Logins) &rarr;
+          </a>
         </div>
       </section>
     </div>
@@ -88,8 +95,8 @@
           Senatla Ops connects field activity, workforce controls, asset evidence, and approvals in one secure operating system built for accountable teams.
         </p>
         <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-          <a routerLink="/register" class="inline-flex items-center justify-center rounded-full bg-lime-300 px-7 py-4 text-sm font-black uppercase tracking-[0.18em] text-slate-950 shadow-2xl transition hover:bg-lime-200">Create account</a>
-          <a routerLink="/login" class="inline-flex items-center justify-center rounded-full border border-white/15 px-7 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white/80 transition hover:border-white/40 hover:text-white">Secure login</a>
+          <a routerLink="/login" class="inline-flex items-center justify-center rounded-full bg-lime-300 px-7 py-4 text-sm font-black uppercase tracking-[0.18em] text-slate-950 shadow-2xl transition hover:bg-lime-200">Employee Sign In</a>
+          <a routerLink="/register" class="inline-flex items-center justify-center rounded-full border border-white/15 px-7 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white/80 transition hover:border-white/40 hover:text-white">Redeem Invitation</a>
         </div>
       </div>
 
