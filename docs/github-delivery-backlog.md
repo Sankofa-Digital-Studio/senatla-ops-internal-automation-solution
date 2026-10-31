@@ -1,62 +1,82 @@
 # Senatla Ops GitHub Delivery Backlog
 
-Updated: 6 August 2026
+Updated 31 October 2026
 
-Issues are grouped by outcome and ordered by dependency. P0 issues form Gate 0/A/B and must complete before feature claims or a production deployment. Do not paste immutable Vercel preview URLs into durable docs, tickets or acceptance records as the canonical target; they go stale, create duplicate validation paths and can keep reviewers using old deployments. Use the latest GitHub deployment record, a branch alias when configured, or the production alias after promotion.
+This backlog converts the repository audit into implementation-ready work. The broad issues remain as outcome epics; the new tasks define smaller delivery boundaries with acceptance criteria, dependencies, estimates, owners, milestones, and board fields.
 
-## Execution priorities
+## Current delivery state
 
-| Order | Priority | Bundle | Issue outcome | Dependency | Stale URL/resource control |
-|---:|---|---|---|---|---|
-| 1 | P0 | Deployment hygiene | Remove stale preview URLs from active handoff notes and issue comments; keep only the latest successful deployment evidence | None | Prevents reviewers testing old immutable previews and wasting deployment resources |
-| 2 | P0 | Environment boundary | Confirm Vercel preview/prod env vars generate non-blank Supabase runtime config and fail fast when missing | 1 | Blocks broken previews before they consume QA time |
-| 3 | P0 | Quality | Keep deterministic lint, type-check, build, unit and runtime-config gates passing in CI | 1-2 | Stops invalid artifacts before new previews are trusted |
-| 4 | P0 | Data security | Prove single-owner Supabase migrations, role-negative RLS and server-enforced auth contracts | 2-3 | Avoids promoting UI-only success over real data safety |
-| 5 | P0 | Browser QA | Capture desktop and 390 px evidence only against the latest successful deployment URL for the commit under review | 3-4 | Avoids duplicate QA runs against superseded previews |
-| 6 | P0 | Baseline release | Split, review and land the current security/release foundation with rollback notes | 1-5 | One reviewed artifact becomes the baseline, not multiple stale previews |
-| 7 | P0 | Requirements | Resolve client field, role, retention and pilot decisions | None; blocks schema freeze | Prevents building unsupported screens and storage paths |
-| 8 | P1 | Field operations | Complete attendance, safety and idempotent daily sync | 4, 6, 7 | Reuse existing outbox/retry contracts; no duplicate queue logic |
-| 9 | P1 | Workforce control | Complete workforce, issue, payroll and maker-checker contracts | 4, 6, 7 | Keep audit and approval paths shared across roles |
-| 10 | P1 | Asset pilot | Complete identity, CSV, custody, hierarchy and QR lookup | 4, 6, 7 | Use controlled CSV dry-run before writes to reduce bad data cleanup |
-| 11 | P1 | Maintenance | Complete pre-start, defect, work order and return-to-service flow | 10 | Reuse asset/work-order evidence instead of parallel maintenance state |
-| 12 | P1 | Executive evidence | Reconcile every dashboard metric to persisted source records | 8-11 | Avoid derived dashboards becoming a second source of truth |
-| 13 | P1 | Resilience | Complete private evidence, offline outbox and recovery behavior | 8, 10, 11 | Keep failed/pending recovery visible without silent deletion |
-| 14 | P2 | Artifact automation | Version and automate client/engineering artifact generation | 6-7 | Regenerate docs from source instead of preserving stale links manually |
-| 15 | P0 | Production readiness | Backup/restore, monitoring, performance, security regression and UAT | 8-14 | Promote one validated artifact and retire obsolete preview references |
+- All repository issues are assigned to OhhttooeXCIV. The existing Sankofa-Digital-XCIV assignment remains on issues 19 and 20.
+- Issues 4 through 20 and tasks 86 through 97 are on the [Senatla Ops board](https://github.com/orgs/Sankofa-Digital-Studio/projects/2).
+- Repository milestones now separate governance, operational foundations, controlled pilot work, UAT and release, and reusable foundations.
+- The board uses corrected Target Date, Delivery Stage, Risk Category, and Client Decision fields.
+- Pull request 82 is classified as P0 Security work in Code Review because technical review, database proof, and deployment evidence remain incomplete.
 
-## Deployment URL handling
+## Delivery roadmap
 
-| Rule | Operational reason | Enforcement point |
+| Milestone | Purpose | Exit evidence |
 |---|---|---|
-| Treat Vercel preview URLs as immutable evidence, not stable entry points | Every push creates a new artifact; old URLs can still render old code | PR description and issue comments must name the commit SHA with the preview URL |
-| Do not reuse a preview URL after a newer commit is pushed | Reviewers may validate a known-bad build and report fixed errors again | Latest GitHub deployment for the SHA is the source of truth |
-| Prefer a branch alias or production alias for repeated human QA when configured | One stable entry point reduces stale bookmarks and repeated resource use | Vercel project settings / deployment handoff |
-| Keep stale preview URLs out of durable docs | Docs should describe how to find the latest deployment, not freeze a temporary URL | Documentation review checklist |
-| If a stale URL was shared, post a superseding note instead of deleting evidence | Preserves audit trail while redirecting testers to the current artifact | GitHub issue or PR comment |
+| M0 Governance and Access | Align branch rules, identity, data boundaries, deployment access, and client decisions | Protected release path, access proof, negative security tests, and recorded decisions |
+| M1 Operational Foundations | Complete site-day, workforce, offline recovery, private evidence, and document controls | Persisted workflows, retry evidence, auditable operations, and reproducible artifacts |
+| M2 Controlled Pilot | Complete asset, inspection, maintenance, and source-backed analytics | Clean pilot import, safety blocks, independent approvals, and reconciled metrics |
+| M3 UAT and Release | Prove recovery, role journeys, production mapping, and operational acceptance | Desktop and mobile evidence, restore rehearsal, approved commit, rollback target, and sign-off |
+| M4 Reuse and Scale | Extract reusable architecture and delivery workflows | Domain-neutral packages, consumer example, adoption checklist, and versioned reusable gates |
 
-## Project board design
+## Implementation-ready tasks
 
-Recommended project: **Senatla Ops Release Programme**
+| Issue | Priority | Parent | Task | Estimate | Stage |
+|---|---|---|---|---:|---|
+| [86](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/86) | P1 | 10 | Persist site setup, trips, safety, signature, and attendance as one idempotent site-day record | 3 to 5 days | M1 |
+| [87](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/87) | P0 | 4 | Make dev the integration default and protect main releases | 0.5 to 1 day | M0 |
+| [88](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/88) | P0 | 7 | Verify Vercel runtime configuration and authenticated preview smoke tests | 1 to 2 days | M0 |
+| [89](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/89) | P1 | 11 | Enforce issue ownership, SLA, and immutable status history in PostgreSQL | 3 to 4 days | M1 |
+| [90](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/90) | P1 | 13 | Convert failed pre-start inspections into defects and asset safety blocks | 5 to 8 days | M2 |
+| [91](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/91) | P1 | 12 | Stage asset CSV imports with conflict reporting before writes | 4 to 6 days | M2 |
+| [92](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/92) | P1 | 14 | Replace hard-coded executive claims with source-backed metric definitions | 3 to 5 days | M2 |
+| [93](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/93) | P1 | 13 | Enforce independent return-to-service approval at the database boundary | 2 to 4 days | M2 |
+| [94](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/94) | P1 | 15 | Replace inline and free-text evidence with private storage objects | 4 to 6 days | M1 |
+| [95](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/95) | P2 | 16 | Generate and verify all approved documents from one command | 3 to 5 days | M1 |
+| [96](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/96) | P0 | 17 | Add desktop and 390 px release journeys for every operational role | 4 to 7 days | M3 |
+| [97](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/97) | P1 | 20 | Publish a reusable Sankofa application quality workflow | 2 to 4 days | M4 |
 
-Columns/statuses:
+## Critical execution sequence
 
-1. Intake
-2. Ready
-3. Active
-4. Review
-5. Verification
-6. Released
+1. Complete issue 87 so new work targets dev and main remains a reviewed production branch.
+2. Resolve issue 88 to prove hosted runtime configuration and controlled QA access.
+3. Complete issues 86, 89, 94, and 95 as the operational foundation.
+4. Complete issues 90, 91, 92, and 93 for the controlled pilot.
+5. Run issue 96 after the dependent role workflows are stable.
+6. Complete issue 97 after the Senatla-specific gate is stable enough to extract without weakening it.
 
-Recommended fields: Priority, Bundle, Release Gate, Owner, Target iteration and Evidence status.
+## Definition of done
 
-## Definition of done for every issue
+- A focused pull request links to the issue.
+- Acceptance criteria are demonstrated, not only described.
+- New mutations create the required audit evidence.
+- Authorization changes include role-negative and cross-site tests.
+- Rendered changes have desktop and 390 px proof against the reviewed commit.
+- Schema changes have clean reset and database-contract evidence.
+- Deployment changes record the approved commit, environment, current deployment, and rollback target.
+- Durable documents do not depend on an old immutable preview URL.
+- The public Senatla Trading website remains untouched.
 
-- Linked pull request with a focused change set.
-- Acceptance criteria demonstrated, not only described.
-- Audit behavior verified for new mutations.
-- Role-negative security tests for authorization changes.
-- Desktop and 390 px proof for rendered changes against the latest deployment for the reviewed SHA.
-- Migration/reset evidence for schema changes.
-- Documentation and rollback notes updated.
-- No durable documentation or acceptance note depends on an old immutable Vercel preview URL.
-- Public Senatla Trading website remains untouched.
+## Commercial viability review
+
+The current market already contains mature maintenance and fleet products. [MaintainX](https://www.getmaintainx.com/use-cases/work-order-management) covers mobile work orders, evidence, templates, and approvals. [Fleetio](https://www.fleetio.com/features/asset-management-software) covers asset records, assignment, utilization, and total cost. [HCSS Equipment360](https://www.hcss.com/equipment360/what-is-equipment360/) covers equipment maintenance, work orders, schedules, and mechanic capture.
+
+Senatla Ops should not reproduce a broad CMMS or fleet suite. Its viable boundary is a source-linked operational record for one operating company: people, safety, attendance, payroll control, site synchronization, assets, maintenance, maker-checker decisions, and audit evidence share one authorization and audit model. The differentiator is the explainable operational heartbeat, where a manager can trace an outcome to the actor, site, time, approval, and source record.
+
+## Three-pass review
+
+### Pass 1 Repository gaps
+
+The first pass found broad epics, incomplete board coverage, inconsistent repository metadata, narrow cross-role browser proof, and unfinished persistence boundaries for site-day, inspection, evidence, and reporting workflows.
+
+### Pass 2 Duplication challenge
+
+Authentication, negative RLS contracts, deterministic verification, attendance retry, readiness confirmation, and parts of the offline outbox already exist. New issues for those features would duplicate closed or active work.
+
+### Pass 3 Reconciled backlog
+
+The final tasks target observable remaining boundaries: live GitHub configuration, hosted deployment proof, missing persisted fields, mutable history, controlled import, absent inspection and safety-block contracts, database-enforced return approval, private evidence representation, source-backed metrics, reproducible documents, cross-role UAT, and reusable CI.
+

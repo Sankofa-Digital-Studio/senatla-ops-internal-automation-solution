@@ -1,8 +1,8 @@
 {
   "name": "senatla-ops",
   "version": "0.5.0",
-  "author": "Ionic Framework",
-  "homepage": "https://ionicframework.com/",
+  "author": "Sankofa Digital Studio",
+  "homepage": "https://senatla-ops.vercel.app",
   "scripts": {
     "ng": "ng",
     "predev": "node scripts/write-runtime-config.mjs",
@@ -93,7 +93,7 @@
     "tailwindcss": "^3.4.17",
     "typescript": "~6.0.3"
   },
-  "description": "An Ionic project",
+  "description": "Internal operations control platform for Senatla Trading",
   "allowScripts": {
     "@parcel/watcher@2.6.0": true,
     "cypress@15.20.0": true,
