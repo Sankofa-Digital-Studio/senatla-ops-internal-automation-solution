@@ -54,7 +54,7 @@
     "@capacitor/keyboard": "8.0.5",
     "@capacitor/local-notifications": "^8.2.1",
     "@capacitor/status-bar": "8.0.3",
-    "@ionic/angular": "^8.0.0",
+    "@ionic/angular": "^8.8.19",
     "@supabase/supabase-js": "2.112.2",
     "ionicons": "^7.0.0",
     "rxjs": "~7.8.0",
