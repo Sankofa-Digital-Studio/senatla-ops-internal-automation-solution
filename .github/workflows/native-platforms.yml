@@ -91,7 +91,7 @@ jobs:
           name: senatla-ops-dev-apk
           path: artifacts
       - name: Publish current dev APK
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: dev-latest
           name: Senatla Ops dev APK
