@@ -39,6 +39,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   isFetchingResources = false;
   isRecoveringPassword = false;
   recoveryMode = false;
+  forcedPasswordChange = false;
   recoveryUsernameHint = '';
 
   // Onboarding wizard state
@@ -83,9 +84,11 @@ export class LoginComponent implements OnInit, OnDestroy {
       this.redirectUrl = this.sanitizeRedirect(query.get('redirect'));
       this.errorMsg = '';
       this.recoveryMode = this.isRecoveryRoute(query);
+      this.forcedPasswordChange = query.get('forced') === '1';
       this.recoveryUsernameHint = query.get('mock_user')?.trim().toLowerCase() || '';
       this.recoveryMsg = '';
       if (this.recoveryUsernameHint) this.username = this.recoveryUsernameHint;
+      if (this.forcedPasswordChange) void this.prepareForcedPasswordChange();
 
       if (query.get('onboarding') === '1') {
         void this.openAuthenticatedWizard();
@@ -119,6 +122,12 @@ export class LoginComponent implements OnInit, OnDestroy {
 
     try {
       const session = await this.auth.login(this.username, this.password);
+
+      if (session?.mustChangePassword) {
+        this.recoveryUsernameHint = session.username;
+        await this.router.navigate(['/login/recovery'], { queryParams: { forced: '1' } });
+        return;
+      }
 
       // If user came to a role-gated URL (e.g. /login/office) and session role is different, reject
       if (session && this.requestedRole && session.role !== this.requestedRole) {
@@ -211,6 +220,10 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   async handlePasswordUpdate() {
     if (this.isRecoveringPassword || this.showWizard) return;
+    if (this.forcedPasswordChange && !this.auth.currentSession()) {
+      this.errorMsg = 'Sign in with the temporary password before choosing a new password.';
+      return;
+    }
     if (this.recoveryPassword.trim().length < 8) {
       this.errorMsg = 'Choose a password with at least 8 characters.';
       return;
@@ -274,9 +287,21 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   private isRecoveryRoute(query: import('@angular/router').ParamMap) {
     if (this.router.url.split('?')[0] === RECOVERY_ROUTE) return true;
+    if (query.get('forced') === '1') return true;
     if (query.get('type') === 'recovery') return true;
     if (typeof window === 'undefined') return false;
     const hash = window.location.hash || '';
     return hash.includes('type=recovery') || hash.includes('access_token=');
+  }
+
+  private async prepareForcedPasswordChange() {
+    await this.auth.ensureReady();
+    const session = this.auth.currentSession();
+    if (!session?.mustChangePassword) {
+      await this.router.navigate(['/login']);
+      return;
+    }
+    this.recoveryUsernameHint = session.username;
+    this.username = session.username;
   }
 }

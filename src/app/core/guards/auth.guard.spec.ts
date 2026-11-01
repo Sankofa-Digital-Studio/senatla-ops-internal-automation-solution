@@ -57,4 +57,18 @@ describe('roleCanActivate', () => {
     expect(result).toBeTrue();
     expect(auth.isAuthenticated()).toBeTrue();
   });
+
+  it('blocks every workspace until a temporary password is replaced', async () => {
+    const auth = TestBed.inject(AuthService);
+    const router = TestBed.inject(Router);
+    await auth.login('thosontula+temporary@gmail.com', 'temporary-password');
+
+    const result = await TestBed.runInInjectionContext(() =>
+      roleCanActivate('site')({} as never, { url: '/site-manager' } as never),
+    );
+
+    expect(result).not.toBeTrue();
+    expect(router.serializeUrl(result as never)).toBe('/login/recovery?forced=1');
+    expect(auth.isAuthenticated()).toBeTrue();
+  });
 });

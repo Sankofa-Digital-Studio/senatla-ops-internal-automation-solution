@@ -33,6 +33,10 @@ async function hasAccess(expectedRole?: RoleRequirement, requestedUrl: string = 
   const router = inject(Router);
   await auth.ensureReady();
 
+  if (auth.requiresPasswordChange()) {
+    return router.createUrlTree(['/login/recovery'], { queryParams: { forced: '1' } });
+  }
+
   if (!auth.canAccess()) {
     return getLoginTree(router, expectedRole, requestedUrl, preferredLoginRole);
   }

@@ -11,10 +11,11 @@ import { CostAttributionGateway, COST_ATTRIBUTION_GATEWAY } from './core/gateway
 class TestAuthGateway {
   private session: AuthSession | null = null;
   private pendingResetEmail = '';
-  private readonly credentials = new Map<string, { password: string; role: AppRole; displayName: string }>([
+  private readonly credentials = new Map<string, { password: string; role: AppRole; displayName: string; mustChangePassword?: boolean }>([
     ['thosontula+site@gmail.com', { password: 'test-password', role: 'site', displayName: 'Site Manager' }],
     ['thosontula+office@gmail.com', { password: 'test-password', role: 'office', displayName: 'Office Admin' }],
     ['thosontula+director@gmail.com', { password: 'test-password', role: 'director', displayName: 'Director' }],
+    ['thosontula+temporary@gmail.com', { password: 'temporary-password', role: 'site', displayName: 'Temporary User', mustChangePassword: true }],
   ]);
 
   async loadSession(): Promise<AuthSession | null> {
@@ -34,6 +35,7 @@ class TestAuthGateway {
       permittedSiteIds: user.role === 'site' ? ['site-1'] : [],
       issuedAt: new Date().toISOString(),
       expiresAt: new Date(Date.now() + 1000 * 60 * 60).toISOString(),
+      mustChangePassword: user.mustChangePassword === true,
     };
 
     return this.session;
@@ -55,7 +57,7 @@ class TestAuthGateway {
     const normalizedEmail = (usernameHint || this.pendingResetEmail).trim().toLowerCase();
     const user = this.credentials.get(normalizedEmail);
     if (!user) throw new Error('Recovery session unavailable.');
-    this.credentials.set(normalizedEmail, { ...user, password: nextPassword.trim() });
+    this.credentials.set(normalizedEmail, { ...user, password: nextPassword.trim(), mustChangePassword: false });
     this.pendingResetEmail = '';
     this.session = null;
   }

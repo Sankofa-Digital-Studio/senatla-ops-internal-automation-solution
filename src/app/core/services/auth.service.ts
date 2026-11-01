@@ -21,6 +21,7 @@ export class AuthService {
   readonly isAuthenticated = computed(() => !!this.currentSession());
   readonly role = computed<AppRole | null>(() => this.currentSession()?.role ?? null);
   readonly displayName = computed(() => this.currentSession()?.displayName ?? 'Guest');
+  readonly requiresPasswordChange = computed(() => this.currentSession()?.mustChangePassword === true);
 
   constructor() {
     this.authGateway.subscribeToSession?.((session) => {

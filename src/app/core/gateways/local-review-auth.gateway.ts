@@ -61,6 +61,7 @@ export class LocalReviewAuthGateway implements AuthGateway {
       permittedSiteIds: account.permittedSiteIds,
       issuedAt,
       expiresAt: cappedSessionExpiry(issuedAt),
+      mustChangePassword: false,
     };
 
     this.persistSession(session);

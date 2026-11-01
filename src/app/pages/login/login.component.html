@@ -54,7 +54,9 @@
 
       <div class="space-y-6 rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-2xl backdrop-blur-sm sm:p-7">
         <form (ngSubmit)="handleLogin()" class="space-y-4">
-          <div *ngIf="recoveryMode" class="rounded-xl border border-lime-500/30 bg-lime-500/10 p-3 text-xs text-lime-100">Create a new password for your operational account. The recovery link is single-use.</div>
+          <div *ngIf="recoveryMode" class="rounded-xl border border-lime-500/30 bg-lime-500/10 p-3 text-xs text-lime-100">
+            {{ forcedPasswordChange ? 'Your temporary password must be replaced before any workspace can open.' : 'Create a new password for your operational account. The recovery link is single-use.' }}
+          </div>
           <div>
             <label for="login-username" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">{{ usernameLabel }}</label>
             <input id="login-username" type="email" [(ngModel)]="username" name="username" [readonly]="recoveryMode && !!recoveryUsernameHint" autocomplete="username" class="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm text-white focus:border-lime-300 focus:outline-none" [placeholder]="usernamePlaceholder">

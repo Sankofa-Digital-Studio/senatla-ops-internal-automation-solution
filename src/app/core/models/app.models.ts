@@ -176,6 +176,7 @@ export interface AuthSession {
   permittedSiteIds: string[];
   issuedAt: string;
   expiresAt: string;
+  mustChangePassword?: boolean;
 }
 
 export interface Issue {

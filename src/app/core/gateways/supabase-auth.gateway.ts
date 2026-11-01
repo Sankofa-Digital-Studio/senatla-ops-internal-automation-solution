@@ -65,6 +65,26 @@ export class SupabaseAuthGateway implements AuthGateway {
     if (error) {
       throw error;
     }
+
+    const { data: sessionData, error: sessionError } = await this.supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (sessionError || !accessToken) {
+      throw new Error('Password changed, but the authenticated session could not be verified. Sign in again to continue.');
+    }
+
+    const response = await fetch('/api/auth/password-change-complete', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({})) as { error?: string };
+      throw new Error(payload.error || 'Password changed, but account activation could not be completed.');
+    }
+
+    const { error: refreshError } = await this.supabase.auth.refreshSession();
+    if (refreshError) {
+      throw new Error('Password changed. Sign in again to refresh account access.');
+    }
   }
 
   async logout(): Promise<void> {
@@ -117,6 +137,7 @@ export class SupabaseAuthGateway implements AuthGateway {
         session.user.last_sign_in_at || session.user.created_at,
         session.expires_at ? new Date(session.expires_at * 1000).toISOString() : undefined,
       ),
+      mustChangePassword: session.user.app_metadata?.['must_change_password'] === true,
     };
   }
 

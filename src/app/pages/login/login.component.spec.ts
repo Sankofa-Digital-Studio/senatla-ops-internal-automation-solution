@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { resetTestStorage, TEST_APP_PROVIDERS } from '../../test-providers';
 import { LoginComponent } from './login.component';
 
@@ -58,6 +59,16 @@ describe('LoginComponent', () => {
     await component.handleLogin();
 
     expect(component.errorMsg).toBe('');
+  });
+
+  it('routes temporary-password users into the forced password form', async () => {
+    component.username = 'thosontula+temporary@gmail.com';
+    component.password = 'temporary-password';
+
+    await component.handleLogin();
+
+    expect(TestBed.inject(Router).url).toBe('/login/recovery?forced=1');
+    expect(component.auth.requiresPasswordChange()).toBeTrue();
   });
 
   it('renders only email and password authentication controls', () => {
