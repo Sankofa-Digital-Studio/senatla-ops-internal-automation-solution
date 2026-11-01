@@ -4,7 +4,7 @@ import { AppRole, AuthSession } from '../models/app.models';
 import { AUTH_GATEWAY, AuthGateway, PasswordResetRequestResult } from '../gateways/auth.gateway';
 import { SESSION_EXPIRY_SCHEDULER } from '../auth/session-expiry.scheduler';
 import { cappedSessionExpiry, sessionHasExpired } from '../auth/session-policy';
-import { isAllowedAccessEmail, normalizeAccessEmail, requireAllowedAccessEmail } from '../auth/access-email-policy';
+import { isAllowedAccessEmail, isPermanentDeveloperEmail, normalizeAccessEmail, requireAllowedAccessEmail } from '../auth/access-email-policy';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -13,13 +13,23 @@ export class AuthService {
   private readonly expiryScheduler = inject(SESSION_EXPIRY_SCHEDULER);
   private readonly sessionState = signal<AuthSession | null>(null);
   private readonly readyState = signal(false);
+  private readonly switchedRoleState = signal<AppRole | null>(null);
   private restorePromise: Promise<void> | null = null;
   private cancelExpiryTimer: (() => void) | null = null;
 
   readonly session = computed(() => this.currentSession());
   readonly isReady = this.readyState.asReadonly();
   readonly isAuthenticated = computed(() => !!this.currentSession());
-  readonly role = computed<AppRole | null>(() => this.currentSession()?.role ?? null);
+  readonly isDeveloper = computed(() => isPermanentDeveloperEmail(this.currentSession()?.username ?? ''));
+  readonly storedRole = computed<AppRole | null>(() => this.currentSession()?.role ?? null);
+  readonly role = computed<AppRole | null>(() => {
+    const session = this.currentSession();
+    if (!session) return null;
+    if (this.isDeveloper() && this.switchedRoleState()) {
+      return this.switchedRoleState();
+    }
+    return session.role;
+  });
   readonly displayName = computed(() => this.currentSession()?.displayName ?? 'Guest');
   readonly requiresPasswordChange = computed(() => this.currentSession()?.mustChangePassword === true);
 
@@ -65,9 +75,22 @@ export class AuthService {
     await this.authGateway.logout();
   }
 
+  switchWorkspace(role: AppRole) {
+    const session = this.currentSession();
+    if (!session) throw new Error('No active session.');
+    if (!isPermanentDeveloperEmail(session.username)) {
+      throw new Error('Cross-workspace switching is restricted to the authorized developer account.');
+    }
+    this.switchedRoleState.set(role);
+  }
+
+  resetWorkspace() {
+    this.switchedRoleState.set(null);
+  }
+
   canAccess(role?: AppRole) {
     const session = this.currentSession();
-    return !!session && (!role || session.role === role);
+    return !!session && (!role || this.role() === role);
   }
 
   validateSession() {
@@ -85,7 +108,10 @@ export class AuthService {
   private setSession(session: AuthSession | null) {
     this.clearExpiryTimer();
     this.sessionState.set(session);
-    if (!session) return;
+    if (!session) {
+      this.switchedRoleState.set(null);
+      return;
+    }
 
     const delay = new Date(session.expiresAt).getTime() - Date.now();
     if (delay <= 0) {

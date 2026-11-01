@@ -177,6 +177,7 @@ export interface AuthSession {
   issuedAt: string;
   expiresAt: string;
   mustChangePassword?: boolean;
+  activeRole?: AppRole;
 }
 
 export interface Issue {

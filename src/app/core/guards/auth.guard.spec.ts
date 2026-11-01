@@ -30,6 +30,7 @@ describe('roleCanActivate', () => {
     expect(result).not.toBeTrue();
     expect(router.serializeUrl(result as never)).toBe('/login/office?redirect=%2Fasset-register');
   });
+
   it('permits only the authenticated role', async () => {
     const auth = TestBed.inject(AuthService);
     await auth.login('thosontula+office@gmail.com', 'test-password');
@@ -70,5 +71,43 @@ describe('roleCanActivate', () => {
     expect(result).not.toBeTrue();
     expect(router.serializeUrl(result as never)).toBe('/login/recovery?forced=1');
     expect(auth.isAuthenticated()).toBeTrue();
+  });
+
+  it('allows exact developer thosontula@gmail.com to switch workspaces while keeping stored role', async () => {
+    const auth = TestBed.inject(AuthService);
+    await auth.login('thosontula@gmail.com', 'test-password');
+
+    expect(auth.isDeveloper()).toBeTrue();
+    expect(auth.storedRole()).toBe('director');
+
+    const siteResult = await TestBed.runInInjectionContext(() =>
+      roleCanActivate('site')({} as never, { url: '/site-manager' } as never),
+    );
+    expect(siteResult).toBeTrue();
+    expect(auth.role()).toBe('site');
+    expect(auth.storedRole()).toBe('director'); // Stored role remains untouched
+
+    const officeResult = await TestBed.runInInjectionContext(() =>
+      roleCanActivate('office')({} as never, { url: '/office-admin' } as never),
+    );
+    expect(officeResult).toBeTrue();
+    expect(auth.role()).toBe('office');
+    expect(auth.storedRole()).toBe('director');
+  });
+
+  it('blocks developer aliases from cross-workspace switching (anti-escalation)', async () => {
+    const auth = TestBed.inject(AuthService);
+    await auth.login('thosontula+site@gmail.com', 'test-password');
+
+    expect(auth.isDeveloper()).toBeFalse();
+    expect(() => auth.switchWorkspace('office')).toThrowError(
+      'Cross-workspace switching is restricted to the authorized developer account.',
+    );
+
+    const officeResult = await TestBed.runInInjectionContext(() =>
+      roleCanActivate('office')({} as never, { url: '/office-admin' } as never),
+    );
+    expect(officeResult).not.toBeTrue();
+    expect(auth.isAuthenticated()).toBeFalse(); // Logged out
   });
 });

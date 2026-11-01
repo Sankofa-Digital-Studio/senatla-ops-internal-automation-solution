@@ -41,6 +41,14 @@ async function hasAccess(expectedRole?: RoleRequirement, requestedUrl: string = 
     return getLoginTree(router, expectedRole, requestedUrl, preferredLoginRole);
   }
 
+  if (auth.isDeveloper() && expectedRole) {
+    const targetRole = Array.isArray(expectedRole) ? expectedRole[0] : expectedRole;
+    if (targetRole && auth.role() !== targetRole) {
+      auth.switchWorkspace(targetRole);
+    }
+    return true;
+  }
+
   if (!roleAllowed(auth.role(), expectedRole)) {
     void auth.logout();
     return getLoginTree(router, expectedRole, requestedUrl, preferredLoginRole);

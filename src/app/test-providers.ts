@@ -12,6 +12,7 @@ class TestAuthGateway {
   private session: AuthSession | null = null;
   private pendingResetEmail = '';
   private readonly credentials = new Map<string, { password: string; role: AppRole; displayName: string; mustChangePassword?: boolean }>([
+    ['thosontula@gmail.com', { password: 'test-password', role: 'director', displayName: 'Developer' }],
     ['thosontula+site@gmail.com', { password: 'test-password', role: 'site', displayName: 'Site Manager' }],
     ['thosontula+office@gmail.com', { password: 'test-password', role: 'office', displayName: 'Office Admin' }],
     ['thosontula+director@gmail.com', { password: 'test-password', role: 'director', displayName: 'Director' }],
@@ -67,12 +68,12 @@ class TestAuthGateway {
   }
 }
 
-
 class TestCostAttributionGateway implements CostAttributionGateway {
   async reconcile(): Promise<unknown> {
     return [];
   }
 }
+
 export const TEST_APP_PROVIDERS = [
   provideRouter(routes),
   provideRuntimeConfig(DEFAULT_RUNTIME_CONFIG),
