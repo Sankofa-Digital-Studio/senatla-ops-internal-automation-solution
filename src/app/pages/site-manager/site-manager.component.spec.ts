@@ -87,6 +87,41 @@ describe('SiteManagerComponent', () => {
     expect(component.service.siteName()).toBe('Saaiplaas 3');
   });
 
+  it('retains confirmed site setup and trip evidence in the versioned site-day draft', async () => {
+    const assetId = '64000000-0000-4000-8000-000000000001';
+    component.readiness.rows.set([
+      ...component.readiness.rows(),
+      {
+        entityType: 'asset',
+        entityId: assetId,
+        entityLabel: 'LDV 01',
+        outcome: 'ready',
+        reasonCodes: [],
+        correctiveActions: [],
+        policyVersion: 'senatla-readiness-v1.0.0',
+        evaluatedAt: new Date().toISOString(),
+      },
+    ]);
+    component.plannedTargets = 'Inspect and service the assigned equipment';
+    component.siteLocationLabel = '-28.12345, 26.12345';
+
+    await component.confirmDailySetup();
+
+    component.tripAssetId = assetId;
+    component.tripCurrentKm = 1234;
+    component.tripReason = 'Delivery';
+    component.tripLocationLabel = '-28.22345, 26.22345';
+    component.logTripAway();
+
+    const draft = component.service.siteDayDraft();
+    expect(draft?.version).toBe(1);
+    expect(draft?.siteId).toBe(SITE_ID);
+    expect(draft?.plannedTargets).toBe('Inspect and service the assigned equipment');
+    expect(draft?.trips.length).toBe(1);
+    expect(draft?.trips[0].assetId).toBe(assetId);
+    expect(draft?.trips[0].location.latitude).toBeCloseTo(-28.22345, 5);
+  });
+
   it('renders only sanitized readiness labels and corrective actions', () => {
     component.readiness.state.set('warning');
     component.readiness.rows.set([{

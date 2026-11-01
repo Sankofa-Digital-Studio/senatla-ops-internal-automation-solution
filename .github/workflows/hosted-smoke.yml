@@ -1,0 +1,94 @@
+name: Senatla Ops hosted deployment smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_url:
+        description: Exact Vercel deployment URL to verify
+        required: true
+        type: string
+      expected_commit:
+        description: Full reviewed Git commit SHA
+        required: true
+        type: string
+      environment:
+        description: Vercel environment recorded in runtime config
+        required: true
+        type: choice
+        options: [preview, production]
+      rollback_commit:
+        description: Reviewed rollback commit SHA
+        required: true
+        type: string
+      responsible_owner:
+        description: Person responsible for release and rollback
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  hosted-smoke:
+    runs-on: ubuntu-latest
+    environment: hosted-qa
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.15.0
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Validate protected QA inputs
+        env:
+          QA_EMAIL: ${{ secrets.SENATLA_HOSTED_QA_EMAIL }}
+          QA_PASSWORD: ${{ secrets.SENATLA_HOSTED_QA_PASSWORD }}
+        run: |
+          test -n "$QA_EMAIL" || { echo "SENATLA_HOSTED_QA_EMAIL is required." >&2; exit 1; }
+          test -n "$QA_PASSWORD" || { echo "SENATLA_HOSTED_QA_PASSWORD is required." >&2; exit 1; }
+      - id: smoke
+        name: Run protected hosted smoke
+        continue-on-error: true
+        run: npm run test:hosted
+        env:
+          CI: true
+          SENATLA_HOSTED_URL: ${{ inputs.deployment_url }}
+          SENATLA_EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+          SENATLA_EXPECTED_ENVIRONMENT: ${{ inputs.environment }}
+          SENATLA_HOSTED_QA_EMAIL: ${{ secrets.SENATLA_HOSTED_QA_EMAIL }}
+          SENATLA_HOSTED_QA_PASSWORD: ${{ secrets.SENATLA_HOSTED_QA_PASSWORD }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      - name: Write sanitized deployment evidence
+        if: always()
+        env:
+          DEPLOYMENT_URL: ${{ inputs.deployment_url }}
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+          DEPLOYMENT_ENVIRONMENT: ${{ inputs.environment }}
+          ROLLBACK_COMMIT: ${{ inputs.rollback_commit }}
+          RESPONSIBLE_OWNER: ${{ inputs.responsible_owner }}
+          SMOKE_RESULT: ${{ steps.smoke.outcome }}
+        run: |
+          mkdir -p output/deployment-evidence
+          jq -n \
+            --arg deploymentUrl "$DEPLOYMENT_URL" \
+            --arg environment "$DEPLOYMENT_ENVIRONMENT" \
+            --arg expectedCommit "$EXPECTED_COMMIT" \
+            --arg rollbackCommit "$ROLLBACK_COMMIT" \
+            --arg responsibleOwner "$RESPONSIBLE_OWNER" \
+            --arg result "$SMOKE_RESULT" \
+            --arg verifiedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{deploymentUrl:$deploymentUrl,environment:$environment,expectedCommit:$expectedCommit,rollbackCommit:$rollbackCommit,responsibleOwner:$responsibleOwner,result:$result,verifiedAt:$verifiedAt}' \
+            > output/deployment-evidence/hosted-smoke.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hosted-deployment-evidence
+          path: |
+            output/deployment-evidence
+            output/playwright/hosted-results
+          if-no-files-found: error
+          retention-days: 30
+      - name: Enforce smoke result
+        if: steps.smoke.outcome != 'success'
+        run: exit 1

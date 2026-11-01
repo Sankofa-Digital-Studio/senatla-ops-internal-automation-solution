@@ -66,6 +66,19 @@ describe('LoginComponent', () => {
     expect(component.auth.role()).toBe('site');
   });
 
+  it('hides and rejects simulated authentication outside local review mode', async () => {
+    component.config.api.mode = 'supabase';
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('One-Click Demo Role Logins');
+    expect(fixture.nativeElement.textContent).not.toContain('Sign in with Google Workspace');
+    await expectAsync(component.auth.loginAsDemoRole('office')).toBeRejectedWithError(
+      /disabled outside local review mode/,
+    );
+
+    component.config.api.mode = 'local';
+  });
+
   it('triggers first-login operational role picker on Google Sign-In for new user', async () => {
     await component.handleGoogleSignIn('director.exec@senatlatrading.com');
     expect(component.showRolePicker).toBeTrue();

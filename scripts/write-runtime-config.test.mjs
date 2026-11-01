@@ -1,5 +1,6 @@
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import test from 'node:test';
@@ -8,7 +9,7 @@ import assert from 'node:assert/strict';
 const scriptPath = resolve(dirname(fileURLToPath(import.meta.url)), 'write-runtime-config.mjs');
 
 async function runGenerator(env) {
-  const cwd = await mkdtemp(resolve('/tmp', 'senatla-runtime-config-'));
+  const cwd = await mkdtemp(resolve(tmpdir(), 'senatla-runtime-config-'));
 
   try {
     const result = await new Promise((resolveResult) => {
@@ -45,6 +46,8 @@ test('runtime config generator and Vercel rewrites stay aligned', async () => {
     SENATLA_API_MODE: 'supabase',
     NEXT_PUBLIC_SUPABASE_URL: ' https://example.supabase.co ',
     NEXT_PUBLIC_SUPABASE_ANON_KEY: ' anon-key ',
+    VERCEL_GIT_COMMIT_SHA: 'abc123',
+    VERCEL_ENV: 'preview',
   });
 
   try {
@@ -54,6 +57,8 @@ test('runtime config generator and Vercel rewrites stay aligned', async () => {
     assert.equal(parsed.api.mode, 'supabase');
     assert.equal(parsed.api.supabaseUrl, 'https://example.supabase.co');
     assert.equal(parsed.api.supabaseAnonKey, 'anon-key');
+    assert.equal(parsed.build.commitSha, 'abc123');
+    assert.equal(parsed.build.environment, 'preview');
   } finally {
     await rm(supabaseAliasResult.cwd, { recursive: true, force: true });
   }
@@ -73,13 +78,45 @@ test('runtime config generator and Vercel rewrites stay aligned', async () => {
   const hostedBuildResult = await runGenerator({ VERCEL: '1' });
   try {
     assert.notEqual(hostedBuildResult.code, 0);
-    assert.match(hostedBuildResult.stderr, /Supabase authentication requires SENATLA_SUPABASE_URL/);
+    assert.match(hostedBuildResult.stderr, /Hosted Vercel builds require SENATLA_API_MODE=supabase/);
     await assert.rejects(
       readFile(resolve(hostedBuildResult.cwd, 'src/assets/runtime-config.json'), 'utf8'),
       (error) => error?.code === 'ENOENT',
     );
   } finally {
     await rm(hostedBuildResult.cwd, { recursive: true, force: true });
+  }
+
+  const hostedMissingCredentialsResult = await runGenerator({
+    VERCEL: '1',
+    SENATLA_API_MODE: 'supabase',
+  });
+  try {
+    assert.notEqual(hostedMissingCredentialsResult.code, 0);
+    assert.match(hostedMissingCredentialsResult.stderr, /Supabase authentication requires SENATLA_SUPABASE_URL/);
+  } finally {
+    await rm(hostedMissingCredentialsResult.cwd, { recursive: true, force: true });
+  }
+
+  const hostedLocalResult = await runGenerator({
+    VERCEL: '1',
+    SENATLA_API_MODE: 'local',
+    SENATLA_SUPABASE_URL: 'https://example.supabase.co',
+    SENATLA_SUPABASE_ANON_KEY: 'anon-key',
+  });
+  try {
+    assert.notEqual(hostedLocalResult.code, 0);
+    assert.match(hostedLocalResult.stderr, /Hosted Vercel builds require SENATLA_API_MODE=supabase/);
+  } finally {
+    await rm(hostedLocalResult.cwd, { recursive: true, force: true });
+  }
+
+  const invalidModeResult = await runGenerator({ SENATLA_API_MODE: 'review' });
+  try {
+    assert.notEqual(invalidModeResult.code, 0);
+    assert.match(invalidModeResult.stderr, /SENATLA_API_MODE must be either local or supabase/);
+  } finally {
+    await rm(invalidModeResult.cwd, { recursive: true, force: true });
   }
 
   const config = JSON.parse(await readFile(resolve('vercel.json'), 'utf8'));

@@ -1,5 +1,5 @@
 import { InjectionToken } from '@angular/core';
-import { AdminAuditEvent, AttendanceAuditEvent, AttendanceDeliveryPayload, AttendanceQueueSubmission, Employee, FinancialType, Group, Issue, SafetyTalkRecord, Site, SyncRecord } from '../models/app.models';
+import { AdminAuditEvent, AttendanceAuditEvent, AttendanceDeliveryPayload, AttendanceQueueSubmission, Employee, FinancialType, Group, Issue, SafetyTalkRecord, Site, SiteDayDraft, SyncRecord } from '../models/app.models';
 
 export interface AppStateSnapshot {
   siteName: string;
@@ -12,6 +12,7 @@ export interface AppStateSnapshot {
   syncHistory: SyncRecord[];
   lastSyncTime: string | null;
   safetyTalks: SafetyTalkRecord[];
+  siteDayDraft?: SiteDayDraft | null;
 }
 
 export interface AppStateGateway {

@@ -18,6 +18,12 @@ import { AuthService } from './auth.service';
 import { validateAssetRegistration } from '../validation/asset-registration-rules';
 import { ScanCoordinator } from '../scanning/scan-coordinator';
 import { ScanError } from '../scanning/scan-contract';
+import {
+  ExtractedAssetFields,
+  OcrQualityAssessment,
+  evaluateOcrQuality,
+  extractStructuredFields,
+} from '../scanning/ocr-quality-evaluator';
 
 const LOCAL_DRAFTS_KEY = 'senatla.asset-registration.v1';
 const LOCAL_EVENTS_KEY = 'senatla.asset-registration.events.v1';
@@ -336,7 +342,56 @@ export class AssetRegistrationService {
   }
 
   parseOcrText(raw: string): AssetRegistrationEvidence['extractedFields'] {
-    return this.parseRegistrationText(raw.slice(0, 8_000));
+    return extractStructuredFields(raw.slice(0, 8_000));
+  }
+
+  evaluateEvidenceQuality(evidence: AssetRegistrationEvidence): OcrQualityAssessment {
+    return evaluateOcrQuality(evidence.extractedFields, evidence.evidenceType, evidence.ocrConfidence);
+  }
+
+  async enhanceEvidenceWithCloud(evidence: AssetRegistrationEvidence): Promise<AssetRegistrationEvidence> {
+    if (this.supabase && evidence.storagePath) {
+      try {
+        const { data, error } = await this.supabase.functions.invoke('ocr-enhance', {
+          body: {
+            evidenceId: evidence.id,
+            storagePath: evidence.storagePath,
+            evidenceType: evidence.evidenceType,
+          },
+        });
+        if (!error && data?.extractedFields && Object.keys(data.extractedFields).length) {
+          const enhanced = extractStructuredFields(JSON.stringify(data.extractedFields));
+          const updated: AssetRegistrationEvidence = {
+            ...evidence,
+            extractedFields: { ...evidence.extractedFields, ...enhanced },
+            rawExtraction: data.rawExtraction || evidence.rawExtraction,
+            extractionState: 'review_required',
+          };
+          this.evidenceState.update((items) => items.map((item) => item.id === evidence.id ? updated : item));
+          this.persistLocal();
+          await this.recordEvent('asset_registration_evidence_enhanced', evidence.draftId, {
+            evidenceId: evidence.id,
+            enhancedBy: data.enhancedBy || 'gemini-2.5-flash',
+            detectedFields: Object.keys(enhanced),
+          });
+          return updated;
+        }
+      } catch (err) {
+        console.warn('Cloud OCR enhancement fallback to local extractor', err);
+      }
+    }
+
+    // Local / offline fallback: multi-pass structured domain extraction
+    const raw = evidence.rawExtraction || '';
+    const enhanced = extractStructuredFields(raw);
+    const updated: AssetRegistrationEvidence = {
+      ...evidence,
+      extractedFields: { ...evidence.extractedFields, ...enhanced },
+      extractionState: Object.keys(enhanced).length ? 'review_required' : evidence.extractionState,
+    };
+    this.evidenceState.update((items) => items.map((item) => item.id === evidence.id ? updated : item));
+    this.persistLocal();
+    return updated;
   }
 
   applyExtractedFields(asset: VehicleAsset, fields: AssetRegistrationEvidence['extractedFields']): VehicleAsset {

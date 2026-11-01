@@ -75,10 +75,15 @@ describe('LocalAppStateGateway', () => {
   });
   it('returns one delivery result for repeated attendance idempotency keys', async () => {
     const payload = {
+      version: 1 as const,
       siteId: 'site-1', workDate: '2026-08-10',
+      plannedTargets: 'Complete planned maintenance safely',
+      siteLocation: { latitude: -28.12345, longitude: 26.12345 },
+      trips: [],
       rows: [{ employeeId: 'employee-1', status: 'present' as const }],
       summary: { present: 1, absent: 0, pending: 0, flagged: 0, evidenceCount: 0 },
       timingStatus: 'On Time' as const, acknowledgedWarning: false, safetyTopic: 'Start safe',
+      signatureEvidenceReference: `sha256:${'a'.repeat(64)}`,
     };
 
     const first = await gateway.submitAttendance(payload, 'attendance:site-1:2026-08-10');

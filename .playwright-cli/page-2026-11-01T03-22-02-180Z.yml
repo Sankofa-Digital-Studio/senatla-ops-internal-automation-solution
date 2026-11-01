@@ -1,0 +1,70 @@
+- generic [ref=e6]:
+  - status "Preparing the Senatla Ops welcome page" [ref=e7]:
+    - img "A team placing a cornerstone together at sunrise" [ref=e8]
+    - generic [ref=e10]:
+      - paragraph [ref=e11]: Senatla means a rock
+      - heading "Built together, on a sure foundation." [level=1] [ref=e12]
+      - paragraph [ref=e13]: “The stone the builders rejected has become the chief cornerstone.” Psalm 118:22
+  - generic [ref=e16]:
+    - generic [ref=e21]:
+      - link "Senatla Ops home" [ref=e22] [cursor=pointer]:
+        - /url: /landing
+        - generic [ref=e23]: S
+        - generic [ref=e24]:
+          - generic [ref=e25]: Senatla Ops
+          - generic [ref=e26]: Built together, on a sure foundation
+      - navigation "Primary navigation" [ref=e27]:
+        - link "Capabilities" [ref=e28] [cursor=pointer]:
+          - /url: "#capabilities"
+        - link "Assurance" [ref=e29] [cursor=pointer]:
+          - /url: "#assurance"
+        - link "Android APK" [ref=e30] [cursor=pointer]:
+          - /url: https://github.com/Sankofa-Digital-Studio/senatla-ops/releases/download/dev-latest/senatla-ops-dev.apk
+        - link "Sign In" [ref=e31] [cursor=pointer]:
+          - /url: /login
+    - main [ref=e32]:
+      - generic [ref=e33]:
+        - paragraph [ref=e34]: Clear operations. Confident decisions.
+        - heading "Command every moving part before it becomes a blocker." [level=2] [ref=e35]
+        - paragraph [ref=e36]: Senatla Ops connects field activity, workforce controls, asset evidence, and approvals in one secure operating system built for accountable teams.
+        - generic [ref=e37]:
+          - link "Employee Sign In" [ref=e38] [cursor=pointer]:
+            - /url: /login
+          - link "Redeem Invitation" [ref=e39] [cursor=pointer]:
+            - /url: /register
+      - complementary "Senatla meaning" [ref=e40]:
+        - img "Teamwork placing a cornerstone" [ref=e41]
+        - generic [ref=e42]:
+          - paragraph [ref=e43]: One foundation. Shared responsibility.
+          - generic [ref=e44]: Senatla means a rock - the work is stronger when it is placed together.
+    - region [ref=e45]:
+      - generic [ref=e46]:
+        - paragraph [ref=e47]: Capabilities
+        - heading "Useful control, where the work happens." [level=2] [ref=e48]
+      - generic [ref=e49]:
+        - article [ref=e50]:
+          - heading "Evidence-ready asset control" [level=3] [ref=e51]
+          - paragraph [ref=e52]: Capture identifiers, documents, images, verification decisions, and accountable handovers in one asset record.
+        - article [ref=e53]:
+          - heading "Focused daily workflows" [level=3] [ref=e54]
+          - paragraph [ref=e55]: Give each person a smaller, role-appropriate workspace without losing the operational context that leaders need.
+        - article [ref=e56]:
+          - heading "Approval visibility" [level=3] [ref=e57]
+          - paragraph [ref=e58]: Keep vendor invoices, onboarding, and operational requests visible until a named person makes the next decision.
+    - region [ref=e59]:
+      - generic [ref=e60]:
+        - paragraph [ref=e61]: Assurance
+        - heading "Trust is designed into the workflow." [level=2] [ref=e62]
+      - generic [ref=e63]:
+        - article [ref=e64]:
+          - strong [ref=e65]: Human review before commitment
+          - generic [ref=e66]: OCR assists registration; it never silently approves an asset record.
+        - article [ref=e67]:
+          - strong [ref=e68]: Access matched to responsibility
+          - generic [ref=e69]: Role-aware routes and approval paths keep sensitive actions accountable.
+        - article [ref=e70]:
+          - strong [ref=e71]: Short, deliberate sessions
+          - generic [ref=e72]: For security, inactive workspaces require a fresh login after ten minutes.
+    - generic [ref=e73]:
+      - generic [ref=e74]: © 2026 Senatla Ops
+      - generic [ref=e75]: Secure operations, designed to scale.

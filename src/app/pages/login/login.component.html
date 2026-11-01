@@ -222,7 +222,7 @@
       <div class="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 sm:p-7 shadow-2xl backdrop-blur-sm space-y-6">
 
         <!-- SECTION 1: ONE-CLICK DEMO ROLE LOGINS -->
-        <div class="rounded-2xl border border-lime-400/30 bg-slate-950/80 p-4">
+        <div *ngIf="config.api.mode === 'local'" class="rounded-2xl border border-lime-400/30 bg-slate-950/80 p-4">
           <div class="flex items-center justify-between mb-3">
             <span class="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.18em] text-lime-300">
               <span class="text-sm">⚡</span> One-Click Demo Role Logins
@@ -251,7 +251,7 @@
         </div>
 
         <!-- DIVIDER -->
-        <div class="relative flex items-center justify-center">
+        <div *ngIf="config.api.mode === 'local'" class="relative flex items-center justify-center">
           <div class="w-full border-t border-slate-800"></div>
           <span class="absolute bg-slate-900 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-500">
             or sign in with
@@ -259,7 +259,7 @@
         </div>
 
         <!-- SECTION 2: GOOGLE SIGN-IN -->
-        <div class="space-y-2.5">
+        <div *ngIf="config.api.mode === 'local'" class="space-y-2.5">
           <!-- Main Google Button -->
           <button
             type="button"
@@ -282,7 +282,7 @@
         </div>
 
         <!-- DIVIDER -->
-        <div class="relative flex items-center justify-center">
+        <div *ngIf="config.api.mode === 'local'" class="relative flex items-center justify-center">
           <div class="w-full border-t border-slate-800"></div>
           <span class="absolute bg-slate-900 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-500">
             or work credentials

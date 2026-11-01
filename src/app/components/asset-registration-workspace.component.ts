@@ -12,6 +12,7 @@ import {
 import { AssetFormComponent } from './asset-form.component';
 import { UiButtonComponent } from './ui-button.component';
 import { UiFeedbackComponent } from './ui-feedback.component';
+import { evaluateOcrQuality } from '../core/scanning/ocr-quality-evaluator';
 
 export interface AssetEvidenceFileSelection {
   file: File;
@@ -56,7 +57,10 @@ export interface AssetEvidenceFileSelection {
           <article *ngFor="let item of evidence">
             <button *ngIf="item.previewUrl" type="button" class="preview-button" (click)="zoomedEvidence = item" [attr.aria-label]="'View ' + evidenceLabel(item.evidenceType)"><img [src]="item.previewUrl" [alt]="evidenceLabel(item.evidenceType)"></button>
             <div><strong>{{ evidenceLabel(item.evidenceType) }}</strong><small>{{ item.fileName }} · {{ provenanceLabel(item) }}</small><span [class.needs-review]="item.extractionState === 'review_required'">{{ extractionLabel(item) }}</span><dl *ngIf="extractedEntries(item).length" class="extracted-fields"><div *ngFor="let field of extractedEntries(item)"><dt>{{ fieldLabel(field[0]) }}</dt><dd>{{ field[1] }}</dd></div></dl></div>
-            <app-ui-button *ngIf="item.extractionState === 'review_required'" size="sm" variant="secondary" [busy]="busy" (pressed)="extractionRequested.emit(item)">Apply values</app-ui-button>
+            <div class="evidence-actions">
+              <app-ui-button *ngIf="item.extractionState === 'review_required'" size="sm" variant="secondary" [busy]="busy" (pressed)="extractionRequested.emit(item)">Apply values</app-ui-button>
+              <app-ui-button *ngIf="isEnhanceAvailable(item)" size="sm" variant="ghost" [busy]="busy" (pressed)="enhanceRequested.emit(item)">Enhance with Cloud OCR</app-ui-button>
+            </div>
           </article>
         </div>
       </section>
@@ -203,6 +207,7 @@ export class AssetRegistrationWorkspaceComponent {
   @Output() readonly captureRequested = new EventEmitter<AssetEvidenceType>();
   @Output() readonly fileSelected = new EventEmitter<AssetEvidenceFileSelection>();
   @Output() readonly extractionRequested = new EventEmitter<AssetRegistrationEvidence>();
+  @Output() readonly enhanceRequested = new EventEmitter<AssetRegistrationEvidence>();
   @Output() readonly manualExtractionRequested = new EventEmitter<string>();
   @Output() readonly completionRequested = new EventEmitter<void>();
   @Output() readonly detailsVerifiedChange = new EventEmitter<boolean>();
@@ -235,6 +240,20 @@ export class AssetRegistrationWorkspaceComponent {
     if (evidence.extractionState === 'pending') return 'Saved for manual review';
     if (evidence.extractionState === 'applied') return 'Values applied';
     return 'Attached';
+  }
+
+  isEnhanceAvailable(evidence: AssetRegistrationEvidence): boolean {
+    if (evidence.extractionState === 'applied' || !['licence_disc', 'registration_document', 'purchase_invoice', 'number_plate'].includes(evidence.evidenceType)) {
+      return false;
+    }
+    const quality = evaluateOcrQuality(evidence.extractedFields, evidence.evidenceType, evidence.ocrConfidence);
+    return quality.requiresCloudEnhance;
+  }
+
+  qualityLabel(evidence: AssetRegistrationEvidence): string {
+    const quality = evaluateOcrQuality(evidence.extractedFields, evidence.evidenceType, evidence.ocrConfidence);
+    if (!quality.requiresCloudEnhance) return 'High confidence';
+    return quality.reasons[0] || 'Enhancement recommended';
   }
 
   applyManualOcrText() {

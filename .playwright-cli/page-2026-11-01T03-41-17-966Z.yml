@@ -1,0 +1,57 @@
+- main [ref=f3e74]:
+  - generic [ref=f3e75]:
+    - generic [ref=f3e76]:
+      - generic [ref=f3e77]: S
+      - heading "Senatla Ops" [level=1] [ref=f3e78]
+      - paragraph [ref=f3e79]: Built together, on a sure foundation
+    - generic [ref=f3e80]:
+      - generic [ref=f3e81]:
+        - generic [ref=f3e82]:
+          - generic [ref=f3e83]:
+            - generic [ref=f3e84]: ⚡
+            - text: One-Click Demo Role Logins
+          - generic [ref=f3e85]: Local Review
+        - paragraph [ref=f3e86]: "Select any operational role for instantaneous, one-click access with seeded demo data:"
+        - generic [ref=f3e87]:
+          - button "👷 Site Manager Field Operations" [ref=f3e88] [cursor=pointer]:
+            - generic [ref=f3e89]: 👷
+            - generic [ref=f3e90]: Site Manager
+            - generic [ref=f3e91]: Field Operations
+          - button "🏢 Office Admin Workforce & Assets" [ref=f3e92] [cursor=pointer]:
+            - generic [ref=f3e93]: 🏢
+            - generic [ref=f3e94]: Office Admin
+            - generic [ref=f3e95]: Workforce & Assets
+          - button "👔 Director Executive Oversight" [ref=f3e96] [cursor=pointer]:
+            - generic [ref=f3e97]: 👔
+            - generic [ref=f3e98]: Director
+            - generic [ref=f3e99]: Executive Oversight
+      - generic [ref=f3e100]: or sign in with
+      - generic [ref=f3e103]:
+        - button "Sign in with Google Workspace" [ref=f3e104] [cursor=pointer]
+        - paragraph [ref=f3e111]: Corporate accounts (@senatlatrading.com) only.
+      - generic [ref=f3e112]: or work credentials
+      - generic [ref=f3e115]:
+        - generic [ref=f3e116]:
+          - generic [ref=f3e117]: Work Email
+          - textbox "Work Email" [ref=f3e118]:
+            - /placeholder: manager@senatlatrading.com
+        - generic [ref=f3e119]:
+          - generic [ref=f3e120]: Password
+          - textbox "Password" [ref=f3e121]:
+            - /placeholder: Enter account password
+        - generic [ref=f3e122]:
+          - generic [ref=f3e123] [cursor=pointer]:
+            - checkbox "Show password" [ref=f3e124]
+            - generic [ref=f3e125]: Show password
+          - generic [ref=f3e126] [cursor=pointer]:
+            - checkbox "Save work email on this device" [ref=f3e127]
+            - generic [ref=f3e128]: Save work email on this device
+        - button "Sign In" [ref=f3e129] [cursor=pointer]
+      - generic [ref=f3e130]:
+        - button "Forgot password?" [ref=f3e131] [cursor=pointer]
+        - generic [ref=f3e132]:
+          - link "Redeem Invitation" [ref=f3e133] [cursor=pointer]:
+            - /url: /register
+          - generic [ref=f3e134]: •
+          - link "Back to Landing" [ref=f3e135] [cursor=pointer]:
+            - /url: /landing

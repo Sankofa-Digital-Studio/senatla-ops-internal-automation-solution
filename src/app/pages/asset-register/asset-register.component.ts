@@ -209,6 +209,20 @@ export class AssetRegisterComponent {
   }
 
 
+  async enhanceEvidence(evidence: AssetRegistrationEvidence) {
+    this.saveError.set('');
+    this.registrationBusy.set(true);
+    try {
+      await this.registration.enhanceEvidenceWithCloud(evidence);
+      this.detailsVerified.set(false);
+      this.registrationMessage.set('Cloud enhancement complete. Review detected fields and apply when verified.');
+    } catch (error) {
+      this.saveError.set(error instanceof Error ? error.message : 'Unable to enhance evidence.');
+    } finally {
+      this.registrationBusy.set(false);
+    }
+  }
+
   async applyExtraction(evidence: AssetRegistrationEvidence) {
     this.registrationBusy.set(true);
     try {
