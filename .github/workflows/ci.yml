@@ -16,8 +16,8 @@ jobs:
   application:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24.15.0
           cache: npm
@@ -26,7 +26,7 @@ jobs:
         env:
           SENATLA_API_MODE: local
           SENATLA_AUTH_REVIEW_BYPASS: "false"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: senatla-ops-web
           path: www
@@ -35,8 +35,8 @@ jobs:
   supabase:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24.15.0
           cache: npm
@@ -90,19 +90,19 @@ jobs:
   responsive-layout:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24.15.0
           cache: npm
       - run: npm ci
       - name: Start isolated Supabase browser database
-        run: npx --yes supabase@2.107.0 start -x realtime,storage-api,imgproxy,studio
-      - run: npx --yes supabase@2.107.0 db reset --local
+        run: npx --yes supabase@2.114.0 start -x realtime,storage-api,imgproxy,studio
+      - run: npx --yes supabase@2.114.0 db reset --local
       - name: Export local browser-test connection
         shell: bash
         run: |
-          npx --yes supabase@2.107.0 status -o env > /tmp/supabase.env
+          npx --yes supabase@2.114.0 status -o env > /tmp/supabase.env
           source /tmp/supabase.env
           echo "SENATLA_API_MODE=supabase" >> "$GITHUB_ENV"
           echo "SENATLA_SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
@@ -113,11 +113,11 @@ jobs:
         env:
           CI: true
       - if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: responsive-layout-evidence
           path: output/playwright
           if-no-files-found: error
           retention-days: 14
       - if: always()
-        run: npx --yes supabase@2.107.0 stop --no-backup
+        run: npx --yes supabase@2.114.0 stop --no-backup
