@@ -161,11 +161,10 @@ See [Contributing](CONTRIBUTING.md) and the [GitHub delivery backlog](docs/githu
 - [Release checklist](docs/release-checklist.md)
 - [Artifact register](docs/artifact-register.md)
 - [OCR device UAT](docs/ocr-device-uat.md)
+## Release policy
+
+GitHub Issues authorize work. Feature pull requests target `dev`; reviewed releases promote `dev` through `preview` to `main`. CI, database validation, desktop/mobile browser proof, and rollback notes are required before production release. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License and access
 
 No open-source license is granted by this repository. Use and distribution are controlled by Sankofa Digital Studio and Senatla Trading.
-
-## Delivery workflow
-
-GitHub Issues authorize work. Feature pull requests target `dev`; reviewed releases promote `dev` through `preview` to `main`. CI, database validation, desktop/mobile browser proof, and rollback notes are required before production release. See [CONTRIBUTING.md](CONTRIBUTING.md).
