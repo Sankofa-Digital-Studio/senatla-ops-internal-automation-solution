@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Senatla Ops Front End Audit</title>
+  <style>
+    :root { color-scheme: dark; --bg:#070b14; --surface:#111827; --surface-2:#182231; --line:#334155; --text:#f8fafc; --muted:#a7b1bf; --accent:#bef264; --warn:#fbbf24; --good:#6ee7b7; }
+    * { box-sizing: border-box; }
+    html { background: var(--bg); scroll-behavior: smooth; }
+    body { margin: 0; color: var(--text); background: radial-gradient(circle at 10% 0, #243316 0, transparent 28rem), var(--bg); font: 16px/1.6 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    a { color: var(--accent); }
+    a:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+    header, main, footer { width: min(72rem, calc(100% - 2rem)); margin-inline: auto; }
+    header { padding: clamp(2rem, 7vw, 5rem) 0 2rem; }
+    .kicker { margin: 0 0 .5rem; color: var(--accent); font-size: .78rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
+    h1 { max-width: 14ch; margin: 0; font-size: clamp(2.4rem, 8vw, 5rem); line-height: .98; letter-spacing: -.04em; }
+    .lede { max-width: 48rem; color: var(--muted); font-size: 1.08rem; }
+    nav { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.5rem; }
+    nav a { display: inline-flex; min-height: 44px; align-items: center; border: 1px solid var(--line); border-radius: 999px; padding: .55rem 1rem; text-decoration: none; }
+    section { margin: 1rem 0; border: 1px solid var(--line); border-radius: 1rem; background: color-mix(in srgb, var(--surface) 94%, transparent); padding: clamp(1rem, 3vw, 2rem); }
+    h2 { margin-top: 0; font-size: clamp(1.5rem, 4vw, 2.25rem); line-height: 1.15; }
+    h3 { margin-bottom: .25rem; }
+    p, li { max-width: 72ch; }
+    .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: .75rem; }
+    .metric { border: 1px solid var(--line); border-radius: .8rem; background: var(--surface-2); padding: 1rem; }
+    .metric strong { display: block; color: var(--accent); font-size: 1.45rem; }
+    .metric span { color: var(--muted); font-size: .85rem; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; min-width: 42rem; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid var(--line); padding: .8rem; text-align: left; vertical-align: top; }
+    th { color: var(--accent); font-size: .76rem; letter-spacing: .1em; text-transform: uppercase; }
+    .status { color: var(--good); font-weight: 800; }
+    .risk { color: var(--warn); }
+    footer { padding: 2rem 0 3rem; color: var(--muted); font-size: .85rem; }
+    @media (max-width: 560px) { header, main, footer { width: min(100% - 1rem, 72rem); } section { border-radius: .75rem; } .table-wrap { margin-inline: -.75rem; padding-inline: .75rem; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  </style>
+</head>
+<body>
+  <header>
+    <p class="kicker">1 November 2026</p>
+    <h1>Senatla Ops Front End Audit</h1>
+    <p class="lede">A focused review of public entry, navigation, routes, loading states, image rendering, responsive behaviour, scrolling, and accessibility. High-impact fixes were implemented and verified.</p>
+    <nav aria-label="Audit sections"><a href="#outcome">Outcome</a><a href="#findings">Findings</a><a href="#routes">Routes</a><a href="#verification">Verification</a></nav>
+  </header>
+  <main>
+    <section id="outcome">
+      <h2>Outcome</h2>
+      <div class="metrics">
+        <div class="metric"><strong>0</strong><span>dead public CTAs found</span></div>
+        <div class="metric"><strong>1,050 ms</strong><span>artificial wait removed</span></div>
+        <div class="metric"><strong>44 px</strong><span>minimum landing navigation target</span></div>
+        <div class="metric"><strong>0</strong><span>broken landing images</span></div>
+      </div>
+      <p>The updated front page has a persistent H1, a non-interactive loader tied to real work, explicit image dimensions, one document-level vertical scroller, and no horizontal overflow at 390 by 844. Gmail now requires an operational session and retains the requested return URL during sign-in.</p>
+    </section>
+    <section id="findings">
+      <h2>Findings and fixes</h2>
+      <h3>High priority</h3>
+      <ul><li>Guarded the internal Gmail route with existing authentication checks.</li><li>Removed the 900 ms landing delay and 150 ms simulated resource delay.</li></ul>
+      <h3>Accessibility and consistency</h3>
+      <ul><li>Changed the persistent hero heading to H1 and hid inactive content from assistive technology during loading.</li><li>Associated login labels with their inputs and removed the irrelevant recovery-mode password toggle.</li><li>Raised desktop landing targets from 40 to 44 pixels and gave the mobile menu explicit button semantics.</li></ul>
+      <h3>Scrolling and images</h3>
+      <ul><li>Removed competing public-page and application-shell vertical scrollers.</li><li>Enabled route scroll restoration and anchor navigation.</li><li>Added intrinsic image dimensions, high fetch priority for the welcome image, lazy loading below the fold, and asynchronous decoding.</li></ul>
+      <p class="risk"><strong>Residual risk:</strong> authenticated modal focus management and full role-specific keyboard journeys need deterministic seeded accounts. The product has no carousel or swiper component in this version; swipe navigation would be a new evidence-lightbox feature.</p>
+    </section>
+    <section id="routes">
+      <h2>CTA and route matrix</h2>
+      <div class="table-wrap"><table><thead><tr><th>Source</th><th>Target</th><th>Result</th></tr></thead><tbody>
+        <tr><td>Capabilities</td><td>#capabilities</td><td class="status">Valid</td></tr>
+        <tr><td>Assurance</td><td>#assurance</td><td class="status">Valid</td></tr>
+        <tr><td>Employee Sign In</td><td>/login</td><td class="status">Valid</td></tr>
+        <tr><td>Redeem Invitation</td><td>/register</td><td class="status">Valid</td></tr>
+        <tr><td>Role workspace</td><td>Role-specific route</td><td class="status">Valid</td></tr>
+        <tr><td>Gmail</td><td>/gmail</td><td class="status">Authenticated</td></tr>
+        <tr><td>Unknown path</td><td>/landing</td><td class="status">Fallback</td></tr>
+      </tbody></table></div>
+    </section>
+    <section id="verification">
+      <h2>Three-pass verification</h2>
+      <ol><li><strong>Baseline:</strong> live desktop and mobile review confirmed working CTAs and images, then isolated missing heading semantics, small targets, and avoidable delay.</li><li><strong>Implementation:</strong> TypeScript, lint, production build, and focused browser flows passed after the fixes. The full inherited browser unit suite remains at 138 of 142: one pre-existing login-mode assertion and three SiteReadiness tests without a <code>RUNTIME_CONFIG</code> provider fail outside this pass.</li><li><strong>Challenge:</strong> mobile remeasurement exposed an unnecessary stable scrollbar gutter; it was restricted to tablet and desktop widths.</li></ol>
+      <p>Updated mobile evidence: no clipped headings or CTAs, no undersized visible controls, no broken images, no horizontal overflow, and only the document as a vertical scroller.</p>
+    </section>
+  </main>
+  <footer>Senatla Ops front-end audit · Sankofa Digital Studio delivery evidence</footer>
+</body>
+</html>

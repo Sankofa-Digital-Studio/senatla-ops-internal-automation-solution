@@ -1,4 +1,4 @@
-<div class="login-shell flex h-full flex-col items-center justify-center overflow-auto bg-slate-950 p-4 sm:p-6 text-white">
+<main class="login-shell flex min-h-full flex-col items-center justify-center bg-slate-950 p-4 sm:p-6 text-white">
   <!-- Fetching resources overlay -->
   <div *ngIf="isFetchingResources" class="fixed inset-0 z-[100] grid place-items-center bg-slate-950/85 p-6 backdrop-blur">
     <div class="w-full max-w-sm rounded-3xl border border-lime-300/20 bg-slate-900 p-7 text-center shadow-2xl">
@@ -296,8 +296,9 @@
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">{{ usernameLabel }}</label>
+            <label for="login-username" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">{{ usernameLabel }}</label>
             <input
+              id="login-username"
               type="text"
               [(ngModel)]="username"
               name="username"
@@ -309,8 +310,9 @@
           </div>
 
           <div *ngIf="!recoveryMode">
-            <label class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">Password</label>
+            <label for="login-password" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">Password</label>
             <input
+              id="login-password"
               [type]="showPassword ? 'text' : 'password'"
               [(ngModel)]="password"
               name="password"
@@ -322,8 +324,9 @@
 
           <div *ngIf="recoveryMode" class="grid gap-3">
             <div>
-              <label class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">New password</label>
+              <label for="recovery-password" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">New password</label>
               <input
+                id="recovery-password"
                 [type]="showRecoveryPassword ? 'text' : 'password'"
                 [(ngModel)]="recoveryPassword"
                 name="recoveryPassword"
@@ -333,8 +336,9 @@
               >
             </div>
             <div>
-              <label class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">Confirm password</label>
+              <label for="recovery-password-confirmation" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">Confirm password</label>
               <input
+                id="recovery-password-confirmation"
                 [type]="showRecoveryPassword ? 'text' : 'password'"
                 [(ngModel)]="confirmRecoveryPassword"
                 name="confirmRecoveryPassword"
@@ -346,7 +350,7 @@
           </div>
 
           <div class="grid gap-2 rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-xs text-slate-300">
-            <label class="flex items-center gap-2 cursor-pointer">
+            <label *ngIf="!recoveryMode" class="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" [(ngModel)]="showPassword" name="showPassword" class="accent-lime-300 rounded">
               <span>Show password</span>
             </label>
@@ -397,4 +401,4 @@
       </div>
     </div>
   </ng-template>
-</div>
+</main>

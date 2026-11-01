@@ -9,13 +9,22 @@ html, body, app-root {
   background: #030712;
 }
 
+html {
+  overflow-x: hidden;
+}
+
+@media (min-width: 768px) {
+  html { scrollbar-gutter: stable; }
+}
+
 app-root {
   display: block;
   min-height: 100dvh;
 }
 body {
   @apply bg-gray-900 text-gray-200 font-sans antialiased;
-  overscroll-behavior: none; /* App-like feel */
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
 }
 
 /* Custom Scrollbar for Dashboard feel */

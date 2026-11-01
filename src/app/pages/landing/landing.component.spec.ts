@@ -24,6 +24,14 @@ describe('LandingComponent', () => {
     expect(text).not.toContain('director');
   });
 
+  it('keeps one semantic page heading and a non-interactive preparation status', () => {
+    const page = fixture.nativeElement as HTMLElement;
+    expect(page.querySelector('.hero-copy h1')?.textContent).toContain('Command every moving part');
+    const loader = page.querySelector('.cornerstone-loader') as HTMLElement;
+    expect(loader.getAttribute('role')).toBe('status');
+    expect(loader.querySelector('button, a')).toBeNull();
+  });
+
   it('provides distinct in-page destinations for capabilities and assurance', () => {
     const page = fixture.nativeElement as HTMLElement;
     expect(page.querySelector('a[href="#capabilities"]')).not.toBeNull();

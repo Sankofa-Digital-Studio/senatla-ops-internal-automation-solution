@@ -33,16 +33,12 @@ export class LandingComponent implements OnInit {
   }
 
   async ngOnInit() {
-    const startedAt = Date.now();
     await this.auth.ensureReady();
-    const remaining = Math.max(0, 900 - (Date.now() - startedAt));
-    setTimeout(() => {
-      this.landingReady.set(true);
-      if (typeof window !== 'undefined' && window.location.hash) {
-        const id = window.location.hash.replace('#', '');
-        setTimeout(() => this.scrollTo(id), 50);
-      }
-    }, remaining);
+    this.landingReady.set(true);
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const id = window.location.hash.replace('#', '');
+      requestAnimationFrame(() => this.scrollTo(id));
+    }
   }
 
   scrollTo(elementId: string, event?: Event) {

@@ -1,6 +1,6 @@
-<section class="landing-shell min-h-full overflow-auto text-white" [attr.aria-busy]="!landingReady()">
+<section class="landing-shell min-h-full text-white" [attr.aria-busy]="!landingReady()">
   <div *ngIf="!landingReady()" class="cornerstone-loader" role="status" aria-live="polite" aria-label="Preparing the Senatla Ops welcome page">
-    <img src="assets/images/cornerstone-welcome.png" alt="A team placing a cornerstone together at sunrise">
+    <img src="assets/images/cornerstone-welcome.png" alt="" width="1536" height="1024" fetchpriority="high" decoding="async">
     <div class="cornerstone-loader__veil"></div>
     <div class="cornerstone-loader__content">
       <p class="cornerstone-loader__eyebrow">Senatla means a rock</p>
@@ -10,7 +10,7 @@
     </div>
   </div>
 
-  <div class="landing-frame relative isolate mx-auto flex min-h-full w-full flex-col px-5 py-6">
+  <div class="landing-frame relative isolate mx-auto flex min-h-full w-full flex-col px-5 py-6" [attr.inert]="!landingReady() ? '' : null" [attr.aria-hidden]="!landingReady()">
     <div class="ambient-layer absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
       <div class="ambient-orb ambient-orb--lime"></div>
       <div class="ambient-orb ambient-orb--amber"></div>
@@ -35,8 +35,8 @@
       </nav>
 
       <details class="mobile-menu">
-        <summary aria-label="Open navigation menu"><span></span><span></span><span></span></summary>
-        <nav aria-label="Mobile navigation">
+        <summary role="button" aria-label="Open navigation menu" aria-controls="mobile-navigation"><span></span><span></span><span></span></summary>
+        <nav id="mobile-navigation" aria-label="Mobile navigation">
           <a href="#capabilities" (click)="scrollTo('capabilities', $event)">Capabilities</a>
           <a href="#assurance" (click)="scrollTo('assurance', $event)">Assurance</a>
           <a href="https://github.com/Sankofa-Digital-Studio/senatla-ops/releases/download/dev-latest/senatla-ops-dev.apk" download target="_blank" rel="noopener noreferrer">Android APK</a>
@@ -88,9 +88,9 @@
         <p class="eyebrow mb-6 inline-flex rounded-full border border-lime-300/30 bg-lime-300/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-lime-100">
           Clear operations. Confident decisions.
         </p>
-        <h2 class="hero-title font-black leading-[0.94] tracking-tight text-white">
+        <h1 class="hero-title font-black leading-[0.94] tracking-tight text-white">
           Command every moving part before it becomes a blocker.
-        </h2>
+        </h1>
         <p class="hero-summary mt-6 max-w-2xl leading-8 text-white/70">
           Senatla Ops connects field activity, workforce controls, asset evidence, and approvals in one secure operating system built for accountable teams.
         </p>
@@ -101,7 +101,7 @@
       </div>
 
       <aside class="cornerstone-card rounded-[2rem] border border-white/10 bg-white/[0.06] p-5 shadow-2xl backdrop-blur" aria-label="Senatla meaning">
-        <img src="assets/images/cornerstone-welcome.png" alt="Teamwork placing a cornerstone" loading="lazy">
+        <img src="assets/images/cornerstone-welcome.png" alt="Teamwork placing a cornerstone" width="1536" height="1024" loading="lazy" decoding="async">
         <div class="cornerstone-card__copy">
           <p>One foundation. Shared responsibility.</p>
           <span>Senatla means a rock - the work is stronger when it is placed together.</span>
