@@ -1,3 +1,5 @@
+import { createClient } from '@supabase/supabase-js';
+
 export function buildAdminUsersHandler({ createAdminClient }) {
   return async function handler(req, res) {
     if (req.method !== 'POST' && req.method !== 'PATCH') {
@@ -28,14 +30,18 @@ export function buildAdminUsersHandler({ createAdminClient }) {
     }
 
     const actorId = authUserData.user.id;
+    const actorEmail = `${authUserData.user.email || ''}`.trim().toLowerCase();
     const { data: profile, error: profileError } = await adminClient
       .from('profiles')
       .select('role, is_active, organization_id, display_name')
       .eq('id', actorId)
       .maybeSingle();
 
-    if (profileError || profile?.role !== 'office' || !profile.is_active || !profile.organization_id) {
-      res.status(403).json({ error: 'Only active office admins can manage users.' });
+    const hasFullControl = profile?.role === 'director' || actorEmail === 'thosontula@gmail.com';
+    const isOfficeAdmin = profile?.role === 'office';
+
+    if (profileError || !profile?.is_active || !profile?.organization_id || (!isOfficeAdmin && !hasFullControl)) {
+      res.status(403).json({ error: 'Only authorized administrators and directors can manage users.' });
       return;
     }
 
@@ -43,12 +49,42 @@ export function buildAdminUsersHandler({ createAdminClient }) {
       const payload = req.body || {};
       const email = normalizeEmail(payload.email);
       const displayName = `${payload.displayName || ''}`.trim();
-      const role = 'site';
+      const requestedRole = payload.role || 'site';
 
-      if (!email || !displayName) {
+      if (!email || !displayName || !isAppRole(requestedRole)) {
         res.status(400).json({ error: 'Email and display name are required.' });
         return;
       }
+
+      if (requestedRole === 'director' && !hasFullControl) {
+        const { data: requestData, error: requestError } = await adminClient
+          .from('approval_requests')
+          .insert({
+            request_type: 'director_creation',
+            status: 'pending',
+            requested_by: actorId,
+            requested_by_name: profile.display_name || 'Office Admin',
+            organization_id: profile.organization_id,
+            payload: { email, displayName, role: 'director' },
+          })
+          .select()
+          .maybeSingle();
+
+        if (requestError) {
+          res.status(500).json({ error: requestError.message || 'Unable to submit director creation request.' });
+          return;
+        }
+
+        await recordAuthEvent(adminClient, profile, actorId, null, 'director_creation_requested', { email, displayName });
+        res.status(202).json({
+          pendingApproval: true,
+          requestId: requestData?.id,
+          message: 'Director creation request submitted for Director approval.',
+        });
+        return;
+      }
+
+      const role = requestedRole;
 
       const { data: invitedUserData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email);
       if (inviteError || !invitedUserData.user?.id) {
@@ -86,6 +122,85 @@ export function buildAdminUsersHandler({ createAdminClient }) {
 
     const payload = req.body || {};
     const action = payload.action;
+
+    if (action === 'approve_director') {
+      if (!hasFullControl) {
+        res.status(403).json({ error: 'Only Directors and the developer can approve Director creation requests.' });
+        return;
+      }
+
+      const requestId = `${payload.requestId || ''}`.trim();
+      if (!requestId) {
+        res.status(400).json({ error: 'requestId is required to approve director creation.' });
+        return;
+      }
+
+      const { data: approvalReq, error: approvalErr } = await adminClient
+        .from('approval_requests')
+        .select('*')
+        .eq('id', requestId)
+        .eq('organization_id', profile.organization_id)
+        .maybeSingle();
+
+      if (approvalErr || !approvalReq || approvalReq.request_type !== 'director_creation' || approvalReq.status !== 'pending') {
+        res.status(404).json({ error: 'Pending director creation request not found.' });
+        return;
+      }
+
+      const { email: reqEmail, displayName: reqDisplayName } = approvalReq.payload || {};
+      const normalizedEmail = normalizeEmail(reqEmail);
+      if (!normalizedEmail || !reqDisplayName) {
+        res.status(400).json({ error: 'Invalid director creation request payload.' });
+        return;
+      }
+
+      const { data: invitedUserData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(normalizedEmail);
+      if (inviteError || !invitedUserData.user?.id) {
+        res.status(400).json({ error: inviteError?.message || 'Unable to invite user.' });
+        return;
+      }
+
+      const newProfile = {
+        id: invitedUserData.user.id,
+        username: normalizedEmail,
+        display_name: reqDisplayName,
+        role: 'director',
+        is_active: true,
+        organization_id: profile.organization_id,
+      };
+      const { error: upsertError } = await adminClient.from('profiles').upsert(newProfile);
+      if (upsertError) {
+        res.status(400).json({ error: upsertError.message });
+        return;
+      }
+
+      const reviewedAt = new Date().toISOString();
+      await adminClient
+        .from('approval_requests')
+        .update({
+          status: 'approved',
+          reviewed_by: actorId,
+          reviewed_by_name: profile.display_name || 'Director',
+          reviewed_at: reviewedAt,
+        })
+        .eq('id', requestId);
+
+      await recordAuthEvent(adminClient, profile, actorId, invitedUserData.user.id, 'director_created', { role: 'director', requestId });
+      res.status(200).json({
+        ok: true,
+        user: {
+          id: newProfile.id,
+          username: normalizedEmail,
+          displayName: reqDisplayName,
+          role: 'director',
+          isActive: true,
+          createdAt: invitedUserData.user.created_at,
+        },
+        message: 'Director creation approved and user invited.',
+      });
+      return;
+    }
+
     const userId = `${payload.userId || ''}`.trim();
     if (!userId || !action) {
       res.status(400).json({ error: 'Lifecycle action and userId are required.' });
@@ -134,6 +249,11 @@ export function buildAdminUsersHandler({ createAdminClient }) {
         return;
       }
 
+      if (!hasFullControl && (targetProfile.role === 'director' || role === 'director')) {
+        res.status(403).json({ error: 'Office administrators cannot modify Director accounts or elevate users to Director.' });
+        return;
+      }
+
       const { error: authUpdateError } = await adminClient.auth.admin.updateUserById(userId, { email });
       if (authUpdateError) {
         res.status(400).json({ error: authUpdateError.message });
@@ -165,6 +285,11 @@ export function buildAdminUsersHandler({ createAdminClient }) {
     }
     if (action === 'suspend' && userId === actorId) {
       res.status(400).json({ error: 'Office administrators cannot suspend their own account.' });
+      return;
+    }
+
+    if (!hasFullControl && targetProfile.role === 'director') {
+      res.status(403).json({ error: 'Office administrators cannot modify Director accounts.' });
       return;
     }
 

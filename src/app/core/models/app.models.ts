@@ -540,7 +540,7 @@ export interface PayrollExportRecord {
   createdAt: string;
 }
 
-export type ApprovalRequestType = 'full_id_payroll_export' | 'user_suspension' | 'asset_return_to_service' | 'vendor_invoice_approval' | 'director_executive_report';
+export type ApprovalRequestType = 'full_id_payroll_export' | 'user_suspension' | 'asset_return_to_service' | 'vendor_invoice_approval' | 'director_executive_report' | 'director_creation';
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'executed';
 
 export interface ApprovalRequest {

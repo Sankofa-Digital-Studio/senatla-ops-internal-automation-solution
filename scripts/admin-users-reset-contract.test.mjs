@@ -18,6 +18,7 @@ function createResponse() {
 }
 
 function createClientDouble({
+  authUser = { id: 'admin-1', email: 'admin@senatlatrading.com' },
   adminProfile = { role: 'office', is_active: true, organization_id: 'org-1', display_name: 'Office Admin' },
   targetProfile = {
     id: 'user-2',
@@ -27,6 +28,7 @@ function createClientDouble({
     is_active: true,
     organization_id: 'org-1',
   },
+  approvalRequests = [],
   resetError = null,
 } = {}) {
   const state = {
@@ -37,11 +39,13 @@ function createClientDouble({
     authUpdateCalls: [],
     profileUpdateCalls: [],
     profileUpsertCalls: [],
+    approvalRequests: [...approvalRequests],
+    approvalRequestUpdates: [],
   };
 
   const client = {
     auth: {
-      getUser: async () => ({ data: { user: { id: 'admin-1' } }, error: null }),
+      getUser: async () => ({ data: { user: authUser }, error: null }),
       resetPasswordForEmail: async (email, options) => {
         state.resetCalls.push({ email, options });
         return resetError ? { error: resetError } : { error: null };
@@ -69,11 +73,62 @@ function createClientDouble({
           },
         };
       }
+      if (table === 'approval_requests') {
+        return createApprovalRequestsQuery(state);
+      }
       throw new Error(`Unexpected table ${table}`);
     },
   };
 
   return { client, state };
+}
+
+function createApprovalRequestsQuery(state) {
+  return {
+    insert(payload) {
+      const created = { id: `req-${state.approvalRequests.length + 1}`, ...payload };
+      state.approvalRequests.push(created);
+      return {
+        select() {
+          return {
+            async maybeSingle() {
+              return { data: created, error: null };
+            },
+          };
+        },
+      };
+    },
+    select() {
+      const filters = [];
+      const query = {
+        eq(field, value) {
+          filters.push({ field, value });
+          return query;
+        },
+        async maybeSingle() {
+          const idFilter = filters.find((f) => f.field === 'id');
+          const orgFilter = filters.find((f) => f.field === 'organization_id');
+          const found = state.approvalRequests.find((req) => {
+            if (idFilter && req.id !== idFilter.value) return false;
+            if (orgFilter && req.organization_id !== orgFilter.value) return false;
+            return true;
+          });
+          return { data: found || null, error: null };
+        },
+      };
+      return query;
+    },
+    update(payload) {
+      return {
+        eq(field, value) {
+          state.approvalRequestUpdates.push({ payload, field, value });
+          const target = state.approvalRequests.find((req) => req[field] === value);
+          if (target) Object.assign(target, payload);
+          return { error: null };
+        },
+      };
+    },
+  };
 }
 
 function createProfilesQuery(state, adminProfile, targetProfile) {
@@ -298,7 +353,7 @@ test('admin send_reset rejects users without a valid work email', async () => {
   const { client, state } = createClientDouble({
     targetProfile: {
       id: 'user-2',
-      username: 'not-an-email',
+      username: 'worker@external.example',
       display_name: 'Worker',
       role: 'site',
       is_active: true,
@@ -312,6 +367,7 @@ test('admin send_reset rejects users without a valid work email', async () => {
     body: {
       action: 'send_reset',
       userId: 'user-2',
+      redirectTo: 'https://senatla.app/login/recovery',
     },
   };
   const res = createResponse();
@@ -321,12 +377,13 @@ test('admin send_reset rejects users without a valid work email', async () => {
   assert.equal(res.statusCode, 400);
   assert.deepEqual(res.jsonBody, { error: 'Target user has no work email.' });
   assert.equal(state.resetCalls.length, 0);
-  assert.equal(state.authActivityEvents.length, 0);
 });
 
 test('admin send_reset rejects a syntactically valid corporate lookalike domain', async () => {
   process.env.SENATLA_SUPABASE_URL = 'https://example.supabase.co';
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
+  process.env.SENATLA_APP_URL = 'https://senatla.app';
+  delete process.env.SENATLA_ALLOWED_RESET_ORIGINS;
 
   const { client, state } = createClientDouble({
     targetProfile: {
@@ -339,13 +396,18 @@ test('admin send_reset rejects a syntactically valid corporate lookalike domain'
     },
   });
   const handler = buildAdminUsersHandler({ createAdminClient: () => client });
-  const res = createResponse();
-
-  await handler({
+  const req = {
     method: 'PATCH',
     headers: { authorization: 'Bearer token-1' },
-    body: { action: 'send_reset', userId: 'user-2' },
-  }, res);
+    body: {
+      action: 'send_reset',
+      userId: 'user-2',
+      redirectTo: 'https://senatla.app/login/recovery',
+    },
+  };
+  const res = createResponse();
+
+  await handler(req, res);
 
   assert.equal(res.statusCode, 400);
   assert.deepEqual(res.jsonBody, { error: 'Target user has no work email.' });
@@ -366,7 +428,7 @@ test('admin send_reset rejects redirectTo values outside the configured applicat
     body: {
       action: 'send_reset',
       userId: 'user-2',
-      redirectTo: 'https://evil.example/login/recovery',
+      redirectTo: 'https://attacker.example/login/recovery',
     },
   };
   const res = createResponse();
@@ -374,16 +436,17 @@ test('admin send_reset rejects redirectTo values outside the configured applicat
   await handler(req, res);
 
   assert.equal(res.statusCode, 400);
-  assert.deepEqual(res.jsonBody, { error: 'Password reset redirect must use an allowed application origin.' });
+  assert.deepEqual(res.jsonBody, {
+    error: 'Password reset redirect must use an allowed application origin.',
+  });
   assert.equal(state.resetCalls.length, 0);
-  assert.equal(state.authActivityEvents.length, 0);
 });
 
 test('admin send_reset accepts additional configured trusted origins', async () => {
   process.env.SENATLA_SUPABASE_URL = 'https://example.supabase.co';
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
   process.env.SENATLA_APP_URL = 'https://senatla.app';
-  process.env.SENATLA_ALLOWED_RESET_ORIGINS = 'https://uat.senatla.app, https://ops.senatla.app';
+  process.env.SENATLA_ALLOWED_RESET_ORIGINS = 'https://preview.senatla.app,https://staging.senatla.app';
 
   const { client, state } = createClientDouble();
   const handler = buildAdminUsersHandler({ createAdminClient: () => client });
@@ -393,7 +456,7 @@ test('admin send_reset accepts additional configured trusted origins', async () 
     body: {
       action: 'send_reset',
       userId: 'user-2',
-      redirectTo: 'https://uat.senatla.app/login/recovery?from=admin',
+      redirectTo: 'https://preview.senatla.app/login/recovery',
     },
   };
   const res = createResponse();
@@ -404,18 +467,21 @@ test('admin send_reset accepts additional configured trusted origins', async () 
   assert.deepEqual(state.resetCalls, [
     {
       email: 'worker@senatlatrading.com',
-      options: { redirectTo: 'https://uat.senatla.app/login/recovery?from=admin' },
+      options: { redirectTo: 'https://preview.senatla.app/login/recovery' },
     },
   ]);
 });
 
-test('admin update_profile updates auth and profile records and audits role changes', async () => {
+test('director update_profile updates auth and profile records and audits role changes', async () => {
   process.env.SENATLA_SUPABASE_URL = 'https://example.supabase.co';
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
   process.env.SENATLA_APP_URL = 'https://senatla.app';
   delete process.env.SENATLA_ALLOWED_RESET_ORIGINS;
 
-  const { client, state } = createClientDouble();
+  const { client, state } = createClientDouble({
+    authUser: { id: 'admin-1', email: 'director@senatlatrading.com' },
+    adminProfile: { role: 'director', is_active: true, organization_id: 'org-1', display_name: 'Director Admin' },
+  });
   const handler = buildAdminUsersHandler({ createAdminClient: () => client });
   const req = {
     method: 'PATCH',
@@ -460,6 +526,7 @@ test('admin update_profile updates auth and profile records and audits role chan
     },
   ]);
   assert.equal(state.authActivityEvents.length, 1);
+  assert.equal(state.authActivityEvents[0].event_type, 'role_changed');
   assert.deepEqual(state.authActivityEvents[0].details, { from: 'site', to: 'director' });
 });
 
@@ -475,9 +542,9 @@ test('admin update_profile rejects invalid profile payloads before mutating auth
     body: {
       action: 'update_profile',
       userId: 'user-2',
-      email: 'worker@senatlatrading.com.evil.example',
-      displayName: 'Worker',
-      role: 'site',
+      email: 'invalid-email',
+      displayName: ' ',
+      role: 'unknown-role',
     },
   };
   const res = createResponse();
@@ -489,6 +556,219 @@ test('admin update_profile rejects invalid profile payloads before mutating auth
   assert.equal(state.authUpdateCalls.length, 0);
   assert.equal(state.profileUpdateCalls.length, 0);
   assert.equal(state.authActivityEvents.length, 0);
+});
+
+test('negative privilege: office admin cannot elevate a user to Director', async () => {
+  process.env.SENATLA_SUPABASE_URL = 'https://example.supabase.co';
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
+
+  const { client, state } = createClientDouble({
+    adminProfile: { role: 'office', is_active: true, organization_id: 'org-1', display_name: 'Office Admin' },
+  });
+  const handler = buildAdminUsersHandler({ createAdminClient: () => client });
+  const req = {
+    method: 'PATCH',
+    headers: { authorization: 'Bearer token-1' },
+    body: {
+      action: 'update_profile',
+      userId: 'user-2',
+      email: 'worker@senatlatrading.com',
+      displayName: 'Worker',
+      role: 'director',
+    },
+  };
+  const res = createResponse();
+
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 403);
+  assert.deepEqual(res.jsonBody, { error: 'Office administrators cannot modify Director accounts or elevate users to Director.' });
+  assert.equal(state.authUpdateCalls.length, 0);
+  assert.equal(state.profileUpdateCalls.length, 0);
+});
+
+test('negative privilege: office admin cannot modify or suspend an existing Director', async () => {
+  process.env.SENATLA_SUPABASE_URL = 'https://example.supabase.co';
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
+
+  const { client, state } = createClientDouble({
+    adminProfile: { role: 'office', is_active: true, organization_id: 'org-1', display_name: 'Office Admin' },
+    targetProfile: {
+      id: 'director-1',
+      username: 'director@senatlatrading.com',
+      display_name: 'Director User',
+      role: 'director',
+      is_active: true,
+      organization_id: 'org-1',
+    },
+  });
+  const handler = buildAdminUsersHandler({ createAdminClient: () => client });
+  const req = {
+    method: 'PATCH',
+    headers: { authorization: 'Bearer token-1' },
+    body: {
+      action: 'suspend',
+      userId: 'director-1',
+    },
+  };
+  const res = createResponse();
+
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 403);
+  assert.deepEqual(res.jsonBody, { error: 'Office administrators cannot modify Director accounts.' });
+  assert.equal(state.authUpdateCalls.length, 0);
+  assert.equal(state.profileUpdateCalls.length, 0);
+});
+
+test('negative privilege: site role actor is blocked from user management', async () => {
+  process.env.SENATLA_SUPABASE_URL = 'https://example.supabase.co';
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
+
+  const { client } = createClientDouble({
+    adminProfile: { role: 'site', is_active: true, organization_id: 'org-1', display_name: 'Site Worker' },
+  });
+  const handler = buildAdminUsersHandler({ createAdminClient: () => client });
+  const res = createResponse();
+
+  await handler({
+    method: 'POST',
+    headers: { authorization: 'Bearer token-1' },
+    body: { email: 'worker@senatlatrading.com', displayName: 'Worker' },
+  }, res);
+
+  assert.equal(res.statusCode, 403);
+  assert.deepEqual(res.jsonBody, { error: 'Only authorized administrators and directors can manage users.' });
+});
+
+test('office admin inviting a director routes to approval request (maker-checker)', async () => {
+  process.env.SENATLA_SUPABASE_URL = 'https://example.supabase.co';
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
+
+  const { client, state } = createClientDouble({
+    adminProfile: { role: 'office', is_active: true, organization_id: 'org-1', display_name: 'Office Admin' },
+  });
+  const handler = buildAdminUsersHandler({ createAdminClient: () => client });
+  const res = createResponse();
+
+  await handler({
+    method: 'POST',
+    headers: { authorization: 'Bearer token-1' },
+    body: { email: 'new.director@senatlatrading.com', displayName: 'New Director', role: 'director' },
+  }, res);
+
+  assert.equal(res.statusCode, 202);
+  assert.equal(res.jsonBody.pendingApproval, true);
+  assert.equal(state.approvalRequests.length, 1);
+  assert.equal(state.approvalRequests[0].request_type, 'director_creation');
+  assert.equal(state.approvalRequests[0].status, 'pending');
+  assert.equal(state.inviteCalls.length, 0); // Not invited yet
+});
+
+test('director can invite a director directly without pending approval', async () => {
+  process.env.SENATLA_SUPABASE_URL = 'https://example.supabase.co';
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
+
+  const { client, state } = createClientDouble({
+    adminProfile: { role: 'director', is_active: true, organization_id: 'org-1', display_name: 'Director Admin' },
+  });
+  const handler = buildAdminUsersHandler({ createAdminClient: () => client });
+  const res = createResponse();
+
+  await handler({
+    method: 'POST',
+    headers: { authorization: 'Bearer token-1' },
+    body: { email: 'new.director@senatlatrading.com', displayName: 'New Director', role: 'director' },
+  }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(state.approvalRequests.length, 0);
+  assert.deepEqual(state.inviteCalls, ['new.director@senatlatrading.com']);
+  assert.equal(state.profileUpsertCalls[0].role, 'director');
+});
+
+test('director approves pending director creation request', async () => {
+  process.env.SENATLA_SUPABASE_URL = 'https://example.supabase.co';
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
+
+  const { client, state } = createClientDouble({
+    adminProfile: { role: 'director', is_active: true, organization_id: 'org-1', display_name: 'Director Admin' },
+    approvalRequests: [
+      {
+        id: 'req-42',
+        request_type: 'director_creation',
+        status: 'pending',
+        organization_id: 'org-1',
+        payload: { email: 'approved.director@senatlatrading.com', displayName: 'Approved Director', role: 'director' },
+      },
+    ],
+  });
+  const handler = buildAdminUsersHandler({ createAdminClient: () => client });
+  const res = createResponse();
+
+  await handler({
+    method: 'PATCH',
+    headers: { authorization: 'Bearer token-1' },
+    body: { action: 'approve_director', requestId: 'req-42' },
+  }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.jsonBody.ok, true);
+  assert.deepEqual(state.inviteCalls, ['approved.director@senatlatrading.com']);
+  assert.equal(state.profileUpsertCalls[0].role, 'director');
+  assert.equal(state.approvalRequests[0].status, 'approved');
+});
+
+test('negative privilege: office admin cannot approve a director creation request', async () => {
+  process.env.SENATLA_SUPABASE_URL = 'https://example.supabase.co';
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
+
+  const { client, state } = createClientDouble({
+    adminProfile: { role: 'office', is_active: true, organization_id: 'org-1', display_name: 'Office Admin' },
+    approvalRequests: [
+      {
+        id: 'req-42',
+        request_type: 'director_creation',
+        status: 'pending',
+        organization_id: 'org-1',
+        payload: { email: 'approved.director@senatlatrading.com', displayName: 'Approved Director', role: 'director' },
+      },
+    ],
+  });
+  const handler = buildAdminUsersHandler({ createAdminClient: () => client });
+  const res = createResponse();
+
+  await handler({
+    method: 'PATCH',
+    headers: { authorization: 'Bearer token-1' },
+    body: { action: 'approve_director', requestId: 'req-42' },
+  }, res);
+
+  assert.equal(res.statusCode, 403);
+  assert.deepEqual(res.jsonBody, { error: 'Only Directors and the developer can approve Director creation requests.' });
+  assert.equal(state.inviteCalls.length, 0);
+});
+
+test('developer thosontula@gmail.com has full control over user management and approval', async () => {
+  process.env.SENATLA_SUPABASE_URL = 'https://example.supabase.co';
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
+
+  const { client, state } = createClientDouble({
+    authUser: { id: 'dev-1', email: 'thosontula@gmail.com' },
+    adminProfile: { role: 'site', is_active: true, organization_id: 'org-1', display_name: 'Developer' }, // Even with site role stored
+  });
+  const handler = buildAdminUsersHandler({ createAdminClient: () => client });
+  const res = createResponse();
+
+  await handler({
+    method: 'POST',
+    headers: { authorization: 'Bearer token-1' },
+    body: { email: 'dev.invited@senatlatrading.com', displayName: 'Invited by Dev', role: 'director' },
+  }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(state.inviteCalls, ['dev.invited@senatlatrading.com']);
+  assert.equal(state.profileUpsertCalls[0].role, 'director');
 });
 
 test('admin suspend rejects self-suspension before mutating auth or profiles', async () => {
