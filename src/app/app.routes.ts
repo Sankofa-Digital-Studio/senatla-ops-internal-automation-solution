@@ -13,7 +13,7 @@ export const routes: Routes = [
   },
   {
     path: 'register',
-    loadComponent: () => import('./pages/register/register.component').then((m) => m.RegisterComponent),
+    redirectTo: 'login',
   },
   {
     path: 'login',
@@ -56,12 +56,6 @@ export const routes: Routes = [
     canMatch: [roleCanMatch()],
     canActivate: [roleCanActivate()],
     loadComponent: () => import('./pages/profile-settings/profile-settings.component').then((m) => m.ProfileSettingsComponent),
-  },
-  {
-    path: 'gmail',
-    canMatch: [roleCanMatch()],
-    canActivate: [roleCanActivate()],
-    loadComponent: () => import('./pages/gmail-communications/gmail-communications.component').then((m) => m.GmailCommunicationsComponent),
   },
   {
     path: '**',

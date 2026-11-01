@@ -216,7 +216,7 @@
 
 .credential-table__row {
   display: grid;
-  grid-template-columns: minmax(7rem, .9fr) minmax(12rem, 1.3fr) minmax(8rem, .9fr) minmax(7rem, .8fr);
+  grid-template-columns: minmax(7rem, .9fr) minmax(12rem, 1.3fr) minmax(8rem, .9fr);
   gap: .75rem;
   align-items: center;
   border: 1px solid rgba(255,255,255,.1);

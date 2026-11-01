@@ -68,9 +68,9 @@ describe('LandingComponent', () => {
     expect(page.querySelector('.cornerstone-loader')).not.toBeNull();
     expect(page.textContent).toContain('Senatla means a rock');
   });
-  it('offers public registration and login navigation', () => {
+  it('offers login without exposing public registration', () => {
     const links = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('a')).map((link) => link.getAttribute('href'));
-    expect(links).toContain('/register');
+    expect(links).not.toContain('/register');
     expect(links).toContain('/login');
   });
 });

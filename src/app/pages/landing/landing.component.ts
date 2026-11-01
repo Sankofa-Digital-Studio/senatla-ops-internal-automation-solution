@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { Router, RouterModule } from '@angular/router';
-import { AppRole } from '../../core/models/app.models';
+import { RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { RUNTIME_CONFIG } from '../../core/config/runtime-config';
 
@@ -13,24 +12,16 @@ import { RUNTIME_CONFIG } from '../../core/config/runtime-config';
   imports: [CommonModule, RouterModule],
 })
 export class LandingComponent implements OnInit {
-  private readonly router = inject(Router);
   readonly auth = inject(AuthService);
   readonly runtimeConfig = inject(RUNTIME_CONFIG);
   readonly landingReady = signal(false);
   readonly testCredentialsVisible = signal(false);
   readonly isLocalMode = computed(() => this.runtimeConfig.api.mode === 'local');
   readonly testCredentials = [
-    { role: 'Site Manager', roleKey: 'site' as AppRole, email: 'site.manager@senatlatrading.com', passwordHint: 'Shared UAT password', path: '/site-manager' },
-    { role: 'Office Admin', roleKey: 'office' as AppRole, email: 'office.admin@senatlatrading.com', passwordHint: 'Shared UAT password', path: '/office-admin' },
-    { role: 'Director', roleKey: 'director' as AppRole, email: 'director.exec@senatlatrading.com', passwordHint: 'Shared UAT password', path: '/director' },
+    { role: 'Site Manager', email: 'site.manager@senatlatrading.com', passwordHint: 'Shared UAT password' },
+    { role: 'Office Admin', email: 'office.admin@senatlatrading.com', passwordHint: 'Shared UAT password' },
+    { role: 'Director', email: 'director.exec@senatlatrading.com', passwordHint: 'Shared UAT password' },
   ];
-
-  async quickLaunchRole(role: AppRole) {
-    this.hideTestCredentials();
-    await this.auth.loginAsDemoRole(role);
-    const path = role === 'site' ? '/site-manager' : role === 'office' ? '/office-admin' : '/director';
-    await this.router.navigateByUrl(path);
-  }
 
   async ngOnInit() {
     await this.auth.ensureReady();

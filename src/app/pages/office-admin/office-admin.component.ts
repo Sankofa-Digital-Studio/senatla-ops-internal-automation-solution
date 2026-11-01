@@ -3,7 +3,6 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { TimesheetSummaryComponent } from '../../components/timesheet-summary.component';
-import { AdminInvitationManagerComponent } from '../../components/admin-invitation-manager/admin-invitation-manager.component';
 import { UiButtonComponent } from '../../components/ui-button.component';
 import { UiFeedbackComponent } from '../../components/ui-feedback.component';
 import { UiTabNavComponent } from '../../components/ui-tab-nav.component';
@@ -49,7 +48,7 @@ const COST_PERIOD_END_EXCLUSIVE = new Date(new Date().getFullYear(), new Date().
   templateUrl: './office-admin.component.html',
   styleUrls: ['./office-admin.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe, DecimalPipe, RouterLink, TimesheetSummaryComponent, AdminInvitationManagerComponent, UiButtonComponent, UiFeedbackComponent, UiTabNavComponent],
+  imports: [CommonModule, FormsModule, DatePipe, DecimalPipe, RouterLink, TimesheetSummaryComponent, UiButtonComponent, UiFeedbackComponent, UiTabNavComponent],
 })
 export class OfficeAdminComponent {
   readonly service = inject(OfficeAdminService);

@@ -25,8 +25,6 @@ class EmptyRemoteStateGateway implements AppStateGateway {
 class AnonymousAuthGateway {
   async loadSession() { return null; }
   async login() { return null; }
-  async register() { return { success: false, confirmationRequired: false, adminGranted: false }; }
-  async redeemAdminCode() { return false; }
   async logout() {}
 }
 

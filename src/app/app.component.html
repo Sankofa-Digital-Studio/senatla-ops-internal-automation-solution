@@ -6,9 +6,7 @@
     <nav class="flex items-center gap-2 flex-wrap" aria-label="Account navigation">
       <span class="text-slate-300">Signed in as {{ auth.displayName() }}</span>
       <a [routerLink]="workspaceLink().path" class="px-3 py-2 rounded border border-slate-700 text-slate-200 hover:border-slate-500 transition-colors">{{ workspaceLink().label }}</a>
-      <a routerLink="/gmail" class="px-3 py-2 rounded border border-lime-400/40 text-lime-200 hover:border-lime-300 transition-colors">Gmail</a>
-      <!-- Account button to switch: only shown in Director workspace -->
-      <a *ngIf="isDirector()" routerLink="/profile-settings" class="px-3 py-2 rounded border border-yellow-500/60 bg-yellow-500/10 text-yellow-300 hover:border-yellow-400 transition-colors">Switch Account</a>
+      <a routerLink="/profile-settings" class="px-3 py-2 rounded border border-slate-700 text-slate-200 hover:border-slate-500 transition-colors">Profile</a>
       <button type="button" (click)="logout()" class="px-3 py-2 rounded border border-red-900 text-red-300 hover:bg-red-950 transition-colors">Sign out</button>
     </nav>
   </header>

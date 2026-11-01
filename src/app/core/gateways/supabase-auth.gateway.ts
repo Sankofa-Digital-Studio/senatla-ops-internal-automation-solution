@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { AppRole, AuthSession } from '../models/app.models';
 import { cappedSessionExpiry } from '../auth/session-policy';
-import { AuthGateway, GoogleAuthResult, PasswordResetRequestResult, RegistrationRequest, RegistrationResult } from './auth.gateway';
+import { AuthGateway, PasswordResetRequestResult } from './auth.gateway';
 import { injectSupabaseClient } from './supabase.client';
 
 type ProfileRow = {
@@ -43,28 +43,6 @@ export class SupabaseAuthGateway implements AuthGateway {
     return session;
   }
 
-  async register(request: RegistrationRequest): Promise<RegistrationResult> {
-    const email = request.email.trim().toLowerCase();
-    const { data, error } = await this.supabase.auth.signUp({
-      email,
-      password: request.password,
-      options: { data: { display_name: request.displayName.trim() } },
-    });
-    if (error || !data.user) return { success: false, confirmationRequired: false, adminGranted: false, message: 'Registration could not be completed.' };
-    const adminGranted = data.session && request.adminCode ? await this.redeemAdminCode(request.adminCode) : false;
-    return {
-      success: true,
-      confirmationRequired: !data.session,
-      adminGranted,
-      message: data.session ? undefined : 'Check your email to confirm the account. Invitation codes are never stored; sign in before redeeming a new code.',
-    };
-  }
-
-  async redeemAdminCode(code: string): Promise<boolean> {
-    const { data, error } = await this.supabase.rpc('redeem_admin_invitation', { invitation_code: code.trim() });
-    return !error && data === true;
-  }
-
   async requestPasswordReset(email: string, redirectTo?: string): Promise<PasswordResetRequestResult> {
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail) {
@@ -85,22 +63,6 @@ export class SupabaseAuthGateway implements AuthGateway {
     if (error) {
       throw error;
     }
-  }
-
-  async loginAsDemoRole(role: AppRole): Promise<AuthSession> {
-    void role;
-    throw new Error('Demo role sign-in is disabled for the Supabase authentication gateway.');
-  }
-
-  async loginWithGoogle(googleUser?: { email: string; displayName?: string }): Promise<GoogleAuthResult> {
-    void googleUser;
-    throw new Error('Google Workspace OAuth is not configured for this Supabase gateway.');
-  }
-
-  async assignRole(role: AppRole, pendingProfile?: { userId: string; email: string; displayName: string }): Promise<AuthSession> {
-    void role;
-    void pendingProfile;
-    throw new Error('Client-side role assignment is disabled for the Supabase authentication gateway.');
   }
 
   async logout(): Promise<void> {

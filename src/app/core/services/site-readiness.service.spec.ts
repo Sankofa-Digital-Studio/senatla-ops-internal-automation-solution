@@ -16,8 +16,6 @@ class AuthGatewayStub {
     };
   }
   async login() { return null; }
-  async register() { return { success: false, confirmationRequired: false, adminGranted: false }; }
-  async redeemAdminCode() { return false; }
   async logout() {}
 }
 

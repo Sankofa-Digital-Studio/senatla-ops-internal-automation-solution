@@ -56,28 +56,22 @@
           </div>
           <button type="button" class="credential-modal__close" aria-label="Close test users dialog" (click)="hideTestCredentials()">Close</button>
         </header>
-        <p class="credential-modal__note">Use these accounts for fast local review with seeded datasets. You can also sign in with one click on the main login page.</p>
+        <p class="credential-modal__note">Use these provisioned accounts for local review with seeded datasets. Every journey uses the same email-and-password login form.</p>
         <div class="credential-table" role="table" aria-label="Test user credentials and roles">
           <div class="credential-table__row credential-table__row--head" role="row">
             <span role="columnheader">Role</span>
             <span role="columnheader">Email</span>
             <span role="columnheader">Password</span>
-            <span role="columnheader">Action</span>
           </div>
           <div class="credential-table__row" role="row" *ngFor="let account of testCredentials">
             <strong role="cell">{{ account.role }}</strong>
             <code role="cell">{{ account.email }}</code>
             <span role="cell">{{ account.passwordHint }}</span>
-            <span role="cell">
-              <button type="button" (click)="quickLaunchRole(account.roleKey)" class="rounded-full bg-lime-300 px-3 py-1 text-[11px] font-black uppercase text-slate-950 hover:bg-lime-200">
-                Launch
-              </button>
-            </span>
           </div>
         </div>
         <div class="mt-4 pt-3 border-t border-white/10 text-center">
           <a routerLink="/login" (click)="hideTestCredentials()" class="text-xs font-bold text-lime-200 hover:text-lime-100">
-            Open Main Login Page (Google Sign-In & One-Click Logins) &rarr;
+            Open email and password login &rarr;
           </a>
         </div>
       </section>
@@ -96,7 +90,7 @@
         </p>
         <div class="mt-8 flex flex-col gap-3 sm:flex-row">
           <a routerLink="/login" class="inline-flex items-center justify-center rounded-full bg-lime-300 px-7 py-4 text-sm font-black uppercase tracking-[0.18em] text-slate-950 shadow-2xl transition hover:bg-lime-200">Employee Sign In</a>
-          <a routerLink="/register" class="inline-flex items-center justify-center rounded-full border border-white/15 px-7 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white/80 transition hover:border-white/40 hover:text-white">Redeem Invitation</a>
+          <a href="#assurance" (click)="scrollTo('assurance', $event)" class="inline-flex items-center justify-center rounded-full border border-white/15 px-7 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white/80 transition hover:border-white/40 hover:text-white">Review security</a>
         </div>
       </div>
 

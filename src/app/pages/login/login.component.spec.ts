@@ -33,7 +33,7 @@ describe('LoginComponent', () => {
   });
 
   it('uses the production login hint', () => {
-    expect(component.modeHint).toContain('Secure access portal');
+    expect(component.modeHint).toBe('Secure access portal · Email and password only');
   });
 
   it('requests a password reset for a known demo account', async () => {
@@ -60,35 +60,15 @@ describe('LoginComponent', () => {
     expect(component.errorMsg).toBe('');
   });
 
-  it('signs in immediately with one-click demo role login', async () => {
-    await component.loginAsDemoRole('site');
-    expect(component.auth.isAuthenticated()).toBeTrue();
-    expect(component.auth.role()).toBe('site');
-  });
+  it('renders only email and password authentication controls', () => {
+    const page = fixture.nativeElement as HTMLElement;
+    const links = Array.from(page.querySelectorAll('a')).map((link) => link.getAttribute('href'));
 
-  it('hides and rejects simulated authentication outside local review mode', async () => {
-    component.config.api.mode = 'supabase';
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.textContent).not.toContain('One-Click Demo Role Logins');
-    expect(fixture.nativeElement.textContent).not.toContain('Sign in with Google Workspace');
-    await expectAsync(component.auth.loginAsDemoRole('office')).toBeRejectedWithError(
-      /disabled outside local review mode/,
-    );
-
-    component.config.api.mode = 'local';
-  });
-
-  it('triggers first-login operational role picker on Google Sign-In for new user', async () => {
-    await component.handleGoogleSignIn('director.exec@senatlatrading.com');
-    expect(component.showRolePicker).toBeTrue();
-    expect(component.pendingProfile?.email).toBe('director.exec@senatlatrading.com');
-
-    component.selectOperationalRole('office');
-    await component.confirmOperationalRole();
-
-    expect(component.showRolePicker).toBeFalse();
-    expect(component.auth.isAuthenticated()).toBeTrue();
-    expect(component.auth.role()).toBe('office');
+    expect(page.querySelector('input[type="email"]')).not.toBeNull();
+    expect(page.querySelector('input[type="password"]')).not.toBeNull();
+    expect(page.textContent).not.toContain('Google');
+    expect(page.textContent).not.toContain('One-Click Demo');
+    expect(page.textContent).not.toContain('Choose Your Operational Role');
+    expect(links).not.toContain('/register');
   });
 });

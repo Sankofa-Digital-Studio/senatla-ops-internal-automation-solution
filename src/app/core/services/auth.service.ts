@@ -1,17 +1,15 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AppRole, AuthSession } from '../models/app.models';
-import { AUTH_GATEWAY, AuthGateway, GoogleAuthResult, PasswordResetRequestResult, RegistrationRequest } from '../gateways/auth.gateway';
+import { AUTH_GATEWAY, AuthGateway, PasswordResetRequestResult } from '../gateways/auth.gateway';
 import { SESSION_EXPIRY_SCHEDULER } from '../auth/session-expiry.scheduler';
 import { cappedSessionExpiry, sessionHasExpired } from '../auth/session-policy';
-import { RUNTIME_CONFIG } from '../config/runtime-config';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly authGateway = inject<AuthGateway>(AUTH_GATEWAY);
   private readonly router = inject(Router);
   private readonly expiryScheduler = inject(SESSION_EXPIRY_SCHEDULER);
-  private readonly runtimeConfig = inject(RUNTIME_CONFIG);
   private readonly sessionState = signal<AuthSession | null>(null);
   private readonly readyState = signal(false);
   private restorePromise: Promise<void> | null = null;
@@ -50,93 +48,6 @@ export class AuthService {
     return session;
   }
 
-  async loginAsDemoRole(role: AppRole): Promise<AuthSession> {
-    await this.ensureReady();
-    this.requireLocalReviewMode('Demo role sign-in');
-    let session: AuthSession;
-    if (this.authGateway.loginAsDemoRole) {
-      session = await this.authGateway.loginAsDemoRole(role);
-    } else {
-      const displayNames: Record<AppRole, string> = { site: 'Site Manager', office: 'Office Admin', director: 'Director' };
-      const issuedAt = new Date().toISOString();
-      session = {
-        userId: `${role}-review-user`,
-        username: `${role}.demo@senatlatrading.com`,
-        role,
-        displayName: displayNames[role],
-        organizationId: '00000000-0000-4000-8000-000000000001',
-        permittedSiteIds: ['demo-workshop', 'demo-plant-b', 'demo-shaft-4', 's1', 's2'],
-        issuedAt,
-        expiresAt: cappedSessionExpiry(issuedAt),
-      };
-    }
-    this.setSession(session);
-    this.readyState.set(true);
-    return session;
-  }
-
-  async loginWithGoogle(googleUser?: { email: string; displayName?: string }): Promise<GoogleAuthResult> {
-    await this.ensureReady();
-    this.requireLocalReviewMode('Simulated Google sign-in');
-    if (this.authGateway.loginWithGoogle) {
-      const result = await this.authGateway.loginWithGoogle(googleUser);
-      if (result.session) {
-        this.setSession(result.session);
-        this.readyState.set(true);
-      }
-      return result;
-    }
-
-    const email = (googleUser?.email || 'director.exec@senatlatrading.com').trim().toLowerCase();
-    const displayName = googleUser?.displayName?.trim() || email.split('@')[0];
-    return {
-      session: null,
-      needsRoleSelection: true,
-      pendingProfile: {
-        userId: `google-${email.replace(/[^a-zA-Z0-9]/g, '_')}`,
-        email,
-        displayName,
-      },
-    };
-  }
-
-  async assignOperationalRole(
-    role: AppRole,
-    pendingProfile?: { userId: string; email: string; displayName: string },
-  ): Promise<AuthSession> {
-    await this.ensureReady();
-    this.requireLocalReviewMode('Local role assignment');
-    let session: AuthSession;
-    if (this.authGateway.assignRole) {
-      session = await this.authGateway.assignRole(role, pendingProfile);
-    } else {
-      const email = (pendingProfile?.email || 'director.exec@senatlatrading.com').trim().toLowerCase();
-      const displayName = pendingProfile?.displayName?.trim() || email.split('@')[0];
-      const issuedAt = new Date().toISOString();
-      session = {
-        userId: pendingProfile?.userId || `google-${email.replace(/[^a-zA-Z0-9]/g, '_')}`,
-        username: email,
-        role,
-        displayName: displayName || (role === 'site' ? 'Site Manager' : role === 'office' ? 'Office Admin' : 'Director'),
-        organizationId: '00000000-0000-4000-8000-000000000001',
-        permittedSiteIds: ['demo-workshop', 'demo-plant-b', 'demo-shaft-4', 's1', 's2'],
-        issuedAt,
-        expiresAt: cappedSessionExpiry(issuedAt),
-      };
-    }
-    this.setSession(session);
-    this.readyState.set(true);
-    return session;
-  }
-
-  async register(request: RegistrationRequest) {
-    return await this.authGateway.register(request);
-  }
-
-  async redeemAdminCode(code: string) {
-    return await this.authGateway.redeemAdminCode(code);
-  }
-
   async requestPasswordReset(email: string, redirectTo?: string): Promise<PasswordResetRequestResult> {
     return await this.authGateway.requestPasswordReset(email, redirectTo);
   }
@@ -165,12 +76,6 @@ export class AuthService {
 
   currentSession() {
     return this.validateSession() ? this.sessionState() : null;
-  }
-
-  private requireLocalReviewMode(capability: string) {
-    if (this.runtimeConfig.api.mode !== 'local') {
-      throw new Error(`${capability} is disabled outside local review mode.`);
-    }
   }
 
   private setSession(session: AuthSession | null) {
@@ -203,7 +108,7 @@ export class AuthService {
 
   private isPublicRoute(url: string) {
     const path = url.split('?')[0];
-    return path === '/landing' || path === '/login' || path.startsWith('/login/') || path === '/register';
+    return path === '/landing' || path === '/login' || path.startsWith('/login/');
   }
 
   private async restoreSession() {
