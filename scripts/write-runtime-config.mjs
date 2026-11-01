@@ -19,7 +19,19 @@ const config = {
       'NEXT_PUBLIC_SUPABASE_ANON_KEY',
     ),
   },
+  build: {
+    commitSha: firstEnvValue('VERCEL_GIT_COMMIT_SHA', 'GITHUB_SHA'),
+    environment: firstEnvValue('VERCEL_ENV', 'SENATLA_DEPLOYMENT_ENV'),
+  },
 };
+
+if (!['local', 'supabase'].includes(config.api.mode)) {
+  throw new Error('SENATLA_API_MODE must be either local or supabase.');
+}
+
+if (process.env.VERCEL === '1' && config.api.mode !== 'supabase') {
+  throw new Error('Hosted Vercel builds require SENATLA_API_MODE=supabase.');
+}
 
 if (
   (config.api.mode === 'supabase' || process.env.VERCEL === '1') &&

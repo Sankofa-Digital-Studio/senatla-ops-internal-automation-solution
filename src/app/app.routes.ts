@@ -59,6 +59,8 @@ export const routes: Routes = [
   },
   {
     path: 'gmail',
+    canMatch: [roleCanMatch()],
+    canActivate: [roleCanActivate()],
     loadComponent: () => import('./pages/gmail-communications/gmail-communications.component').then((m) => m.GmailCommunicationsComponent),
   },
   {

@@ -1,0 +1,15 @@
+# Hosted deployment records
+
+Use the `Senatla Ops hosted deployment smoke` workflow to produce evidence for an exact Vercel deployment. The workflow verifies public runtime mode, reviewed commit identity, unauthenticated route protection, authenticated Office access, and desktop/mobile viewport containment.
+
+An approved record contains only:
+
+- deployment URL and environment;
+- exact reviewed commit;
+- rollback commit;
+- responsible owner;
+- verification result and UTC timestamp.
+
+Do not store QA passwords, Vercel bypass tokens, Supabase keys, personal information, screenshots containing client records, or copied runtime configuration in this directory.
+
+Issue #88 remains blocked until the repository owner identifies one canonical Vercel project and configures the `hosted-qa` GitHub environment with `SENATLA_HOSTED_QA_EMAIL`, `SENATLA_HOSTED_QA_PASSWORD`, and, where protection is enabled, `VERCEL_AUTOMATION_BYPASS_SECRET`.

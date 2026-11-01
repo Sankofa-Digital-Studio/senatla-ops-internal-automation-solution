@@ -4,12 +4,14 @@ import { AppRole, AuthSession } from '../models/app.models';
 import { AUTH_GATEWAY, AuthGateway, GoogleAuthResult, PasswordResetRequestResult, RegistrationRequest } from '../gateways/auth.gateway';
 import { SESSION_EXPIRY_SCHEDULER } from '../auth/session-expiry.scheduler';
 import { cappedSessionExpiry, sessionHasExpired } from '../auth/session-policy';
+import { RUNTIME_CONFIG } from '../config/runtime-config';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly authGateway = inject<AuthGateway>(AUTH_GATEWAY);
   private readonly router = inject(Router);
   private readonly expiryScheduler = inject(SESSION_EXPIRY_SCHEDULER);
+  private readonly runtimeConfig = inject(RUNTIME_CONFIG);
   private readonly sessionState = signal<AuthSession | null>(null);
   private readonly readyState = signal(false);
   private restorePromise: Promise<void> | null = null;
@@ -50,6 +52,7 @@ export class AuthService {
 
   async loginAsDemoRole(role: AppRole): Promise<AuthSession> {
     await this.ensureReady();
+    this.requireLocalReviewMode('Demo role sign-in');
     let session: AuthSession;
     if (this.authGateway.loginAsDemoRole) {
       session = await this.authGateway.loginAsDemoRole(role);
@@ -74,6 +77,7 @@ export class AuthService {
 
   async loginWithGoogle(googleUser?: { email: string; displayName?: string }): Promise<GoogleAuthResult> {
     await this.ensureReady();
+    this.requireLocalReviewMode('Simulated Google sign-in');
     if (this.authGateway.loginWithGoogle) {
       const result = await this.authGateway.loginWithGoogle(googleUser);
       if (result.session) {
@@ -101,6 +105,7 @@ export class AuthService {
     pendingProfile?: { userId: string; email: string; displayName: string },
   ): Promise<AuthSession> {
     await this.ensureReady();
+    this.requireLocalReviewMode('Local role assignment');
     let session: AuthSession;
     if (this.authGateway.assignRole) {
       session = await this.authGateway.assignRole(role, pendingProfile);
@@ -160,6 +165,12 @@ export class AuthService {
 
   currentSession() {
     return this.validateSession() ? this.sessionState() : null;
+  }
+
+  private requireLocalReviewMode(capability: string) {
+    if (this.runtimeConfig.api.mode !== 'local') {
+      throw new Error(`${capability} is disabled outside local review mode.`);
+    }
   }
 
   private setSession(session: AuthSession | null) {

@@ -27,7 +27,19 @@ export class SupabaseAppStateGateway implements AppStateGateway {
     const employees = (employeeResult.data || []).map((row): Employee => ({ id: row.id, organizationId: row.organization_id, firstName: row.first_name, surname: row.surname, idNumber: row.id_number, role: row.role as Employee['role'], siteId: row.site_id, groupId: row.group_id || undefined, startDate: row.start_date, basicRate: Number(row.basic_rate), salaryAdvances: Number(row.salary_advances), financials: row.financials || {}, logs: row.logs || {}, adjustments: row.adjustments || {}, employmentStatus: row.employment_status as Employee['employmentStatus'], taxRefNumber: row.tax_ref_number || undefined }));
     const snapshot = snapshotResult.data?.snapshot;
     if (!snapshot && !sites.length) return null;
-    return { siteName: sites[0]?.name || snapshot?.siteName || '', sites, employees, issues: snapshot?.issues || [], groups: snapshot?.groups || [], financialTypes: snapshot?.financialTypes || [], safetyTopics: snapshot?.safetyTopics || [], syncHistory: snapshot?.syncHistory || [], lastSyncTime: snapshot?.lastSyncTime || null, safetyTalks: snapshot?.safetyTalks || [] };
+    return {
+      siteName: sites[0]?.name || snapshot?.siteName || '',
+      sites,
+      employees,
+      issues: snapshot?.issues || [],
+      groups: snapshot?.groups || [],
+      financialTypes: snapshot?.financialTypes || [],
+      safetyTopics: snapshot?.safetyTopics || [],
+      syncHistory: snapshot?.syncHistory || [],
+      lastSyncTime: snapshot?.lastSyncTime || null,
+      safetyTalks: snapshot?.safetyTalks || [],
+      siteDayDraft: snapshot?.siteDayDraft || null,
+    };
   }
 
   async saveState(snapshot: AppStateSnapshot): Promise<void> {

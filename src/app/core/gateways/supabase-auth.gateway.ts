@@ -88,89 +88,19 @@ export class SupabaseAuthGateway implements AuthGateway {
   }
 
   async loginAsDemoRole(role: AppRole): Promise<AuthSession> {
-    const displayNames: Record<AppRole, string> = { site: 'Site Manager', office: 'Office Admin', director: 'Director' };
-    const issuedAt = new Date().toISOString();
-    const session: AuthSession = {
-      userId: `${role}-review-user`,
-      username: `${role}.demo@senatlatrading.com`,
-      role,
-      displayName: displayNames[role],
-      organizationId: '00000000-0000-4000-8000-000000000001',
-      permittedSiteIds: ['demo-workshop', 'demo-plant-b', 'demo-shaft-4', 's1', 's2'],
-      issuedAt,
-      expiresAt: cappedSessionExpiry(issuedAt),
-    };
-    this.emit(session);
-    return session;
+    void role;
+    throw new Error('Demo role sign-in is disabled for the Supabase authentication gateway.');
   }
 
   async loginWithGoogle(googleUser?: { email: string; displayName?: string }): Promise<GoogleAuthResult> {
-    const email = (googleUser?.email || 'director.exec@senatlatrading.com').trim().toLowerCase();
-    const displayName = googleUser?.displayName?.trim() || email.split('@')[0];
-    const userId = `google-${email.replace(/[^a-zA-Z0-9]/g, '_')}`;
-
-    const assignedRole = this.getAssignedRole(email);
-    if (!assignedRole) {
-      return {
-        session: null,
-        needsRoleSelection: true,
-        pendingProfile: { userId, email, displayName },
-      };
-    }
-
-    const issuedAt = new Date().toISOString();
-    const session: AuthSession = {
-      userId,
-      username: email,
-      role: assignedRole,
-      displayName,
-      organizationId: '00000000-0000-4000-8000-000000000001',
-      permittedSiteIds: ['demo-workshop', 'demo-plant-b', 'demo-shaft-4', 's1', 's2'],
-      issuedAt,
-      expiresAt: cappedSessionExpiry(issuedAt),
-    };
-    this.emit(session);
-    return { session, needsRoleSelection: false };
+    void googleUser;
+    throw new Error('Google Workspace OAuth is not configured for this Supabase gateway.');
   }
 
   async assignRole(role: AppRole, pendingProfile?: { userId: string; email: string; displayName: string }): Promise<AuthSession> {
-    const email = (pendingProfile?.email || 'director.exec@senatlatrading.com').trim().toLowerCase();
-    const displayName = pendingProfile?.displayName?.trim() || email.split('@')[0];
-    const userId = pendingProfile?.userId || `google-${email.replace(/[^a-zA-Z0-9]/g, '_')}`;
-    this.saveAssignedRole(email, role);
-
-    const issuedAt = new Date().toISOString();
-    const session: AuthSession = {
-      userId,
-      username: email,
-      role,
-      displayName,
-      organizationId: '00000000-0000-4000-8000-000000000001',
-      permittedSiteIds: ['demo-workshop', 'demo-plant-b', 'demo-shaft-4', 's1', 's2'],
-      issuedAt,
-      expiresAt: cappedSessionExpiry(issuedAt),
-    };
-    this.emit(session);
-    return session;
-  }
-
-  private getAssignedRole(email: string): AppRole | null {
-    try {
-      const map = JSON.parse(localStorage.getItem('senatla_ops_role_assignments_v1') || '{}');
-      return map[email] || null;
-    } catch {
-      return null;
-    }
-  }
-
-  private saveAssignedRole(email: string, role: AppRole) {
-    try {
-      const map = JSON.parse(localStorage.getItem('senatla_ops_role_assignments_v1') || '{}');
-      map[email] = role;
-      localStorage.setItem('senatla_ops_role_assignments_v1', JSON.stringify(map));
-    } catch {
-      // Ignore
-    }
+    void role;
+    void pendingProfile;
+    throw new Error('Client-side role assignment is disabled for the Supabase authentication gateway.');
   }
 
   async logout(): Promise<void> {

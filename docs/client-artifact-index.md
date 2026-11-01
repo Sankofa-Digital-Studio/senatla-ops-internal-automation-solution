@@ -1,12 +1,16 @@
 # Senatla Ops client artifact index
 
-Status: demo reference index  
-Integration branch: `dev`  
-Approved baseline commit: `2070d72cc7928b9e18593e223fa85404d35bb696`
+Status: controlled deployment reference index
+Integration branch: `dev`
+Preview branch: `preview`
+Production branch: `main`
+Deployment evidence: `docs/deployment-records/`
 
 ## Current deployment record
 
-The approved `dev` baseline has successful Vercel deployment records for both configured projects. Authorized QA should use the deployment links recorded on commit `2070d72` until the demo-branch preview is published.
+Two Vercel projects currently report deployments for this repository. The owner must identify the canonical project before a hosted release can be approved. Until that decision is recorded, hosted smoke results are diagnostic and issue #88 remains blocked.
+
+Every approved deployment record must identify the deployment URL, environment, exact commit, rollback commit, responsible owner, smoke result, and evidence timestamp. Runtime configuration, authentication credentials, bypass tokens, and private application data must never be copied into the record.
 
 ## Client-safe materials
 

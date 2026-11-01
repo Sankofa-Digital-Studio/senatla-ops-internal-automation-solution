@@ -5,11 +5,13 @@ Senatla Ops is an internal Senatla Trading product. The public company website i
 ## Work authorization
 
 1. Link every change to a GitHub issue with an operational outcome and acceptance evidence.
-2. Use `feature/<issue>-description` or `fix/<issue>-description`; Codex branches use `codex/<issue>-description`.
+2. Use `feature/<issue>-description` or `fix/<issue>-description`; Codex branches use `sankofa/<issue>-description`.
 3. Use `type(scope): description` commits.
 4. Submit a focused pull request and complete the evidence checklist.
-5. Squash merge only after CI and CODEOWNER review. Authors do not self-merge.
-6. GitHub dev is the only integration and demo source of truth. main and master are not merge targets for Senatla Ops demo work.
+5. Feature and fix pull requests target `dev` and normally use squash merge after CI and review.
+6. Release pull requests promote `dev` to `main` with a merge commit so long-lived branch ancestry is preserved.
+7. Authors do not approve or merge their own release pull requests. A different eligible CODEOWNER must approve.
+8. After release, merge `main` back into `dev`; never rewrite either protected branch.
 
 ## Definition of done
 
@@ -21,4 +23,4 @@ Senatla Ops is an internal Senatla Trading product. The public company website i
 - No production personal information or service-role credential enters Git, logs, issues or screenshots.
 - Rollback and recovery instructions are included for high-risk changes.
 
-Run `npm run verify` before requesting review. That single application gate must show evidence for lint, typecheck, headless tests and build. Pull requests target `dev`, the repository integration and demo branch. Supabase changes also require `npx supabase@2.107.0 start`, `db reset --local`, and `test db`.
+Run `npm run verify` before requesting review. That application gate must show evidence for lint, typecheck, headless tests and build. Normal pull requests target `dev`, the integration and demo branch. Supabase changes also require the pinned local stack, a clean database reset, and all pgTAP contracts. Production changes reach `main` only through the reviewed release procedure in the runbook.

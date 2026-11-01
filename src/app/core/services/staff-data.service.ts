@@ -12,7 +12,10 @@ import {
   Site,
   Issue,
   SafetyTalkRecord,
-  FinancialType
+  FinancialType,
+  SiteDayDraft,
+  SiteDayLocation,
+  SiteDayTrip,
 } from '../models/app.models';
 import { APP_STATE_GATEWAY, AppStateGateway, AppStateSnapshot } from '../gateways/app-state.gateway';
 import { AuthService } from './auth.service';
@@ -53,6 +56,7 @@ export class StaffDataService {
   adminAuditTrail = signal<AdminAuditEvent[]>([]);
   attendanceAuditTrail = signal<AttendanceAuditEvent[]>([]);
   attendanceQueue = signal<AttendanceQueueSubmission[]>([]);
+  siteDayDraft = signal<SiteDayDraft | null>(null);
   deliveryError = signal<string | null>(null);
   auditPersistenceError = signal<string | null>(null);
 
@@ -171,6 +175,7 @@ export class StaffDataService {
     const talkToday = this.safetyTalks().find((talk) => talk.date.toDateString() === today) || null;
     this.safetyTalkCompleted.set(!!talkToday);
     this.currentSafetyTopic.set(talkToday?.topic || null);
+    this.siteDayDraft.set(parsed.siteDayDraft ? this.normalizeSiteDayDraft(parsed.siteDayDraft) : null);
   }
 
   private buildSnapshot(): AppStateSnapshot {
@@ -184,7 +189,8 @@ export class StaffDataService {
       safetyTopics: this.safetyTopics(),
       syncHistory: this.syncHistory(),
       lastSyncTime: this.lastSyncTime()?.toISOString() || null,
-      safetyTalks: this.safetyTalks()
+      safetyTalks: this.safetyTalks(),
+      siteDayDraft: this.siteDayDraft(),
     };
   }
 
@@ -206,6 +212,7 @@ export class StaffDataService {
     ]);
     this.adminAuditTrail.set([]);
     this.attendanceAuditTrail.set([]);
+    this.siteDayDraft.set(null);
     this.safetyTopics.set(['Heat Stress & Dehydration', 'Falls of Ground (FOG)', 'Machinery Safety', 'PPE Compliance', 'Emergency Evacuation']);
     this.employeeState.set([
       { id: '1', firstName: 'Tshepo', surname: 'Mokoena', idNumber: '9001015800080', role: 'General Worker', siteId: 's1', groupId: 'g1', startDate: '2023-01-10', basicRate: 350, salaryAdvances: 0, financials: { travel: 0, housing: 0, advance: 0 }, logs: this.generateMockLogs(), adjustments: {} },
@@ -233,6 +240,47 @@ export class StaffDataService {
     this.adminAuditTrail.set([]);
     this.attendanceAuditTrail.set([]);
     this.employeeState.set([]);
+    this.siteDayDraft.set(null);
+  }
+
+  confirmSiteDaySetup(input: { siteId: string; workDate: string; plannedTargets: string; siteLocation: SiteDayLocation }) {
+    const plannedTargets = this.cleanText(input.plannedTargets).slice(0, 2000);
+    if (!plannedTargets) throw new Error('Planned work targets are required.');
+    if (!this.validLocation(input.siteLocation)) throw new Error('A valid site GPS location is required.');
+    const existing = this.siteDayDraft();
+    const sameDay = existing?.siteId === input.siteId && existing.workDate === input.workDate;
+    this.siteDayDraft.set({
+      version: 1,
+      siteId: this.cleanText(input.siteId),
+      workDate: input.workDate,
+      plannedTargets,
+      siteLocation: input.siteLocation,
+      trips: sameDay ? existing.trips : [],
+      confirmedAt: new Date(this.currentTime()).toISOString(),
+    });
+    this.unsyncedChanges.set(true);
+  }
+
+  addSiteDayTrip(trip: SiteDayTrip) {
+    const draft = this.siteDayDraft();
+    if (!draft?.confirmedAt || !draft.siteLocation) throw new Error('Confirm the site-day setup before logging a trip.');
+    if (!this.validLocation(trip.location)) throw new Error('A valid trip GPS location is required.');
+    if (!this.cleanText(trip.assetId) || !this.cleanText(trip.reason)) throw new Error('Trip asset and reason are required.');
+    const normalized: SiteDayTrip = {
+      ...trip,
+      id: this.cleanText(trip.id) || this.generateId(),
+      assetId: this.cleanText(trip.assetId),
+      assetLabel: this.cleanText(trip.assetLabel).slice(0, 160),
+      reading: Number.isFinite(trip.reading) && Number(trip.reading) >= 0 ? Number(trip.reading) : null,
+      reason: this.cleanText(trip.reason).slice(0, 80),
+      customReason: this.cleanText(trip.customReason).slice(0, 500) || undefined,
+      capturedAt: new Date(trip.capturedAt).toISOString(),
+    };
+    this.siteDayDraft.set({
+      ...draft,
+      trips: [normalized, ...draft.trips.filter((entry) => entry.id !== normalized.id)].slice(0, 100),
+    });
+    this.unsyncedChanges.set(true);
   }
 
   setTime(hour: number, minute: number) { const d = new Date(); d.setHours(hour, minute, 0, 0); this.currentTime.set(d); }
@@ -422,11 +470,29 @@ export class StaffDataService {
     const summary = this.getAttendanceSummary(workDate);
     const site = this.sites().find((entry) => entry.name === this.siteName()) || this.sites()[0];
     if (!site) throw new Error('An assigned site is required before attendance can be delivered.');
+    const siteDay = this.siteDayDraft();
+    if (!siteDay || siteDay.siteId !== site.id || siteDay.workDate !== workDate || !siteDay.confirmedAt || !siteDay.siteLocation) {
+      throw new Error('Confirm the site setup, planned targets, and GPS location for this work date before delivery.');
+    }
     const rows = this.employeeState().filter((employee) => employee.siteId === site.id).map((employee) => {
       const log = employee.logs[workDate] || { date: workDate, status: 'pending' as const };
       return { employeeId: employee.id, status: log.status, reason: log.reason, comment: log.comment, isFlagged: log.isFlagged };
     });
-    const payload: AttendanceDeliveryPayload = { siteId: site.id, workDate, rows, summary, timingStatus: status, acknowledgedWarning: isRolloverAck, safetyTopic: this.currentSafetyTopic() || 'None Recorded' };
+    const signatureEvidenceReference = await this.signatureReference(signature);
+    const payload: AttendanceDeliveryPayload = {
+      version: 1,
+      siteId: site.id,
+      workDate,
+      plannedTargets: siteDay.plannedTargets,
+      siteLocation: siteDay.siteLocation,
+      trips: siteDay.trips,
+      rows,
+      summary,
+      timingStatus: status,
+      acknowledgedWarning: isRolloverAck,
+      safetyTopic: this.currentSafetyTopic() || 'None Recorded',
+      signatureEvidenceReference,
+    };
     const idempotencyKey = `attendance:${site.id}:${workDate}`;
     this.deliveryError.set(null);
     let delivery: AttendanceQueueSubmission;
@@ -446,6 +512,44 @@ export class StaffDataService {
     return delivery;
   }
 
+  private normalizeSiteDayDraft(value: SiteDayDraft): SiteDayDraft | null {
+    const siteLocation = value.siteLocation && this.validLocation(value.siteLocation) ? value.siteLocation : null;
+    const trips = Array.isArray(value.trips)
+      ? value.trips.filter((trip) => trip && this.validLocation(trip.location)).map((trip) => ({
+          ...trip,
+          id: this.cleanText(trip.id),
+          assetId: this.cleanText(trip.assetId),
+          assetLabel: this.cleanText(trip.assetLabel),
+          reason: this.cleanText(trip.reason),
+          customReason: this.cleanText(trip.customReason) || undefined,
+          reading: Number.isFinite(trip.reading) ? Number(trip.reading) : null,
+          capturedAt: new Date(trip.capturedAt).toISOString(),
+        }))
+      : [];
+    if (!this.cleanText(value.siteId) || !/^\d{4}-\d{2}-\d{2}$/.test(value.workDate)) return null;
+    return {
+      version: 1,
+      siteId: this.cleanText(value.siteId),
+      workDate: value.workDate,
+      plannedTargets: this.cleanText(value.plannedTargets).slice(0, 2000),
+      siteLocation,
+      trips,
+      confirmedAt: value.confirmedAt || null,
+    };
+  }
+
+  private validLocation(location: SiteDayLocation) {
+    return Number.isFinite(location.latitude) && Number.isFinite(location.longitude)
+      && location.latitude >= -90 && location.latitude <= 90
+      && location.longitude >= -180 && location.longitude <= 180;
+  }
+
+  private async signatureReference(signature: string) {
+    if (!signature.startsWith('data:image/')) throw new Error('A valid signature is required.');
+    const bytes = new TextEncoder().encode(signature);
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    return `sha256:${Array.from(new Uint8Array(digest)).map((value) => value.toString(16).padStart(2, '0')).join('')}`;
+  }
   async retryAttendanceDelivery(submissionId: string) {
     this.deliveryError.set(null);
     try {

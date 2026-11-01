@@ -260,6 +260,7 @@ export class OfficeAdminComponent {
     ownerProfileId: null,
     dueAt: null,
   };
+  issueTransitionReasons: Record<string, string> = {};
   onboardingForm: Omit<EmployeeOnboardingRecord, 'id' | 'organizationId' | 'updatedAt'> & { id?: string } = {
     employeeId: '', criminalCheckStatus: 'pending', fingerprintCheckStatus: 'pending', medicalStatus: 'pending', redTicketNumber: '', redTicketIssuedAt: null, redTicketExpiresAt: null, notes: '',
   };
@@ -528,6 +529,26 @@ export class OfficeAdminComponent {
         dueAt: null,
       };
     });
+  }
+
+  async transitionIssue(issue: Issue, toStatus: 'Escalated' | 'Resolved') {
+    await this.runAction(async () => {
+      const reason = (this.issueTransitionReasons[issue.id] || '').trim();
+      await this.service.transitionIssue(issue.id, toStatus, reason);
+      delete this.issueTransitionReasons[issue.id];
+      this.feedback.set(`Issue ${toStatus.toLowerCase()} with an immutable history event.`);
+    });
+  }
+
+  issueOwnerName(issue: Issue) {
+    if (!issue.ownerProfileId) return 'Unassigned';
+    return this.service.users().find((user) => user.id === issue.ownerProfileId)?.displayName || 'Assigned user';
+  }
+
+  issueSlaState(issue: Issue) {
+    if (issue.status === 'Resolved') return 'Resolved';
+    if (!issue.dueAt) return 'No due date';
+    return new Date(issue.dueAt).getTime() < Date.now() ? 'Overdue' : 'On track';
   }
 
   showPlannedFeature(feature: string) {

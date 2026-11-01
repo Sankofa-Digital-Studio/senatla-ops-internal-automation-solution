@@ -2,16 +2,22 @@
 
 ## Release
 
-1. Confirm the issue and approved pull request contain acceptance evidence.
-2. Back up the production database and record the recovery point.
-3. Apply migrations in preview and run role-negative tests.
-4. Deploy the immutable web artifact with review bypass disabled.
-5. Smoke-test each role, asset lookup and one read-only dashboard path.
-6. Record version, migration identifiers, approvers and rollback point.
+1. Confirm `dev` is green and contains only the approved release scope.
+2. Confirm every included issue and pull request contains acceptance evidence.
+3. Back up the production database and record the recovery point and rollback commit.
+4. Apply migrations in preview and run role-negative tests.
+5. Open a `dev` to `main` release pull request; do not create a direct production commit.
+6. Obtain approval from an eligible CODEOWNER who is not the author or last pusher.
+7. Confirm `application`, `supabase`, `responsive-layout`, and `native-required` are green for the exact release commit.
+8. Merge with a merge commit so `dev` ancestry is retained.
+9. Verify the immutable production artifact with review bypass disabled.
+10. Smoke-test each role, asset lookup, protected-route behavior, and one read-only dashboard path.
+11. Record the release pull request, commit, migration identifiers, deployment URL, approver, owner, and rollback point.
+12. Merge `main` back into `dev` and confirm the branches are no longer diverged.
 
 ## Rollback
 
-Stop new writes when data integrity is uncertain. Restore the prior web artifact first for application-only regressions. For schema failures, use the documented compensating migration; do not edit applied migration files. Restore from backup only after Operations and the technical lead confirm data-loss implications.
+Stop new writes when data integrity is uncertain. Restore the prior web artifact first for application-only regressions. Revert through a reviewed pull request; never force-push or rewrite `main`. For schema failures, use the documented compensating migration; do not edit applied migration files. Restore from backup only after Operations and the technical lead confirm data-loss implications.
 
 ## Incident handling
 

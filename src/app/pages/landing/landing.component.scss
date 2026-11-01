@@ -43,6 +43,10 @@
 
 .desktop-menu a,
 .desktop-menu button {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
   border-radius: 999px;
   padding: .7rem 1rem;
   border: 0;
@@ -81,6 +85,9 @@
 }
 
 .mobile-menu summary {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  place-content: center;
   display: grid;
   gap: .3rem;
   cursor: pointer;
@@ -305,6 +312,20 @@
 
   .credential-table__row--head {
     display: none;
+  }
+
+  .hero-grid {
+    gap: 1.5rem;
+    padding-block: 2rem;
+  }
+
+  .landing-section {
+    margin-bottom: 1.5rem;
+    padding: 1.1rem;
+  }
+
+  .cornerstone-card {
+    padding: .85rem;
   }
 }
 

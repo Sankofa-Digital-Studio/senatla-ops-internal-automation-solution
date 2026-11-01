@@ -49,14 +49,45 @@ export interface AttendanceDeliveryRow {
   isFlagged?: boolean;
 }
 
-export interface AttendanceDeliveryPayload {
+export interface SiteDayLocation {
+  latitude: number;
+  longitude: number;
+}
+
+export interface SiteDayTrip {
+  id: string;
+  assetId: string;
+  assetLabel: string;
+  reading: number | null;
+  reason: string;
+  customReason?: string;
+  location: SiteDayLocation;
+  capturedAt: string;
+}
+
+export interface SiteDayDraft {
+  version: 1;
   siteId: string;
   workDate: string;
+  plannedTargets: string;
+  siteLocation: SiteDayLocation | null;
+  trips: SiteDayTrip[];
+  confirmedAt?: string | null;
+}
+
+export interface AttendanceDeliveryPayload {
+  version: 1;
+  siteId: string;
+  workDate: string;
+  plannedTargets: string;
+  siteLocation: SiteDayLocation;
+  trips: SiteDayTrip[];
   rows: AttendanceDeliveryRow[];
   summary: NonNullable<SyncRecord['attendanceSummary']>;
   timingStatus: SyncRecord['status'];
   acknowledgedWarning: boolean;
   safetyTopic: string;
+  signatureEvidenceReference: string;
 }
 
 export interface AttendanceQueueSubmission {
@@ -156,10 +187,29 @@ export interface Issue {
   category: 'Safety' | 'Payroll' | 'Discipline' | 'Operations';
   description: string;
   status: 'Open' | 'Resolved' | 'Escalated';
+  /** @deprecated Read-only compatibility data; new history is stored in issueEvents. */
   auditTrail: { date: Date, action: string, user: string }[];
   severity?: IssueSeverity;
   ownerProfileId?: string | null;
   dueAt?: string | null;
+  version?: number;
+  events?: IssueEvent[];
+}
+
+export type IssueEventType = 'created' | 'details_updated' | 'assigned' | 'sla_changed' | 'escalated' | 'resolved' | 'legacy';
+
+export interface IssueEvent {
+  id: string;
+  issueId: string;
+  eventType: IssueEventType;
+  fromStatus?: Issue['status'] | null;
+  toStatus?: Issue['status'] | null;
+  reason?: string | null;
+  actorId?: string | null;
+  actorName: string;
+  ownerProfileId?: string | null;
+  dueAt?: string | null;
+  occurredAt: string;
 }
 
 export interface Group {

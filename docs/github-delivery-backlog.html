@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Senatla Ops GitHub Delivery Backlog</title>
+  <style>
+    :root { --ink:#172033; --muted:#5c667a; --line:#d9dee8; --panel:#f6f8fb; --navy:#17365d; --gold:#d8a423; --white:#fff; --link:#0b5cad; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter,Segoe UI,Arial,sans-serif; color:var(--ink); background:#eef2f7; line-height:1.6; }
+    header { background:linear-gradient(135deg,#101d33,#234a78); color:var(--white); padding:clamp(2rem,7vw,5rem) 1rem; }
+    header .wrap, main { width:min(1120px,calc(100% - 2rem)); margin:auto; }
+    .eyebrow { color:#f0c95c; font-weight:700; letter-spacing:.08em; text-transform:uppercase; font-size:.78rem; }
+    h1 { margin:.35rem 0 .5rem; font-size:clamp(2rem,6vw,4rem); line-height:1.05; }
+    header p { max-width:760px; color:#e0e8f2; font-size:1.08rem; }
+    main { background:var(--white); margin-block:1.25rem 3rem; padding:clamp(1rem,4vw,3rem); border-radius:18px; box-shadow:0 14px 40px rgba(16,29,51,.09); }
+    nav { display:flex; flex-wrap:wrap; gap:.5rem; margin:0 0 2rem; }
+    nav a { color:var(--navy); background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:.45rem .8rem; text-decoration:none; font-size:.9rem; }
+    h2 { margin-top:2.4rem; color:var(--navy); font-size:1.55rem; }
+    h3 { margin-top:1.5rem; color:var(--ink); }
+    a { color:var(--link); }
+    .summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1rem; }
+    .metric { border:1px solid var(--line); border-radius:14px; padding:1rem; background:var(--panel); }
+    .metric strong { display:block; font-size:1.7rem; color:var(--navy); }
+    .table-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:12px; }
+    table { width:100%; border-collapse:collapse; min-width:760px; }
+    th,td { padding:.78rem .85rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    th { background:var(--navy); color:var(--white); font-size:.82rem; letter-spacing:.02em; }
+    tbody tr:nth-child(even) { background:#f8fafd; }
+    .priority { display:inline-block; min-width:2.4rem; text-align:center; border-radius:999px; padding:.1rem .5rem; font-weight:700; background:#fde8e7; color:#9c1c16; }
+    .note { border-left:4px solid var(--gold); padding:.2rem 1rem; color:var(--muted); }
+    footer { margin-top:2.5rem; padding-top:1rem; border-top:1px solid var(--line); color:var(--muted); font-size:.9rem; }
+    @media (max-width:760px) {
+      .summary { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      main { width:100%; margin-top:0; border-radius:0; }
+      .table-wrap { overflow:visible; border:0; }
+      .responsive-table { min-width:0; }
+      .responsive-table thead { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+      .responsive-table, .responsive-table tbody, .responsive-table tr, .responsive-table td { display:block; width:100%; }
+      .responsive-table tr { margin:0 0 .85rem; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--white); }
+      .responsive-table tbody tr:nth-child(even) { background:var(--panel); }
+      .responsive-table td { display:grid; grid-template-columns:7.5rem minmax(0,1fr); gap:.75rem; border-bottom:1px solid var(--line); overflow-wrap:anywhere; }
+      .responsive-table td:last-child { border-bottom:0; }
+      .responsive-table td::before { color:var(--navy); font-weight:700; font-size:.78rem; text-transform:uppercase; letter-spacing:.03em; }
+      .roadmap-table td:nth-child(1)::before { content:"Milestone"; }
+      .roadmap-table td:nth-child(2)::before { content:"Purpose"; }
+      .roadmap-table td:nth-child(3)::before { content:"Exit evidence"; }
+      .task-table td:nth-child(1)::before { content:"Issue"; }
+      .task-table td:nth-child(2)::before { content:"Priority"; }
+      .task-table td:nth-child(3)::before { content:"Parent"; }
+      .task-table td:nth-child(4)::before { content:"Task"; }
+      .task-table td:nth-child(5)::before { content:"Estimate"; }
+    }
+    @media (max-width:430px) { .summary { grid-template-columns:1fr; } header .wrap,main { width:100%; } th,td { padding:.65rem; } }
+    @media (prefers-color-scheme:dark) { :root { --ink:#edf2f8; --muted:#b5bfd0; --line:#34445c; --panel:#17243a; --white:#0e1829; --link:#77b9ff; } body { background:#09111f; } header { color:#fff; } main { background:#0e1829; } tbody tr:nth-child(even) { background:#132036; } }
+    @media print { body { background:#fff; } header { background:#17365d!important; -webkit-print-color-adjust:exact; print-color-adjust:exact; } main { box-shadow:none; width:100%; margin:0; } nav { display:none; } a { color:inherit; text-decoration:none; } }
+  </style>
+</head>
+<body>
+  <header><div class="wrap"><div class="eyebrow">Sankofa Digital Studio · Senatla Trading</div><h1>GitHub Delivery Backlog</h1><p>Implementation-ready work derived from the repository audit and organized into accountable milestones, project-board fields, and verifiable acceptance outcomes.</p><p>Updated 31 October 2026</p></div></header>
+  <main>
+    <nav aria-label="Document sections"><a href="#state">Current state</a><a href="#roadmap">Roadmap</a><a href="#tasks">Tasks</a><a href="#sequence">Sequence</a><a href="#viability">Viability</a><a href="#review">Three-pass review</a></nav>
+    <section id="state"><h2>Current delivery state</h2><div class="summary"><div class="metric"><strong>29</strong>issues organized</div><div class="metric"><strong>12</strong>new detailed tasks</div><div class="metric"><strong>5</strong>delivery milestones</div><div class="metric"><strong>1</strong>accountable owner</div></div><ul><li>Every repository issue is assigned to OhhttooeXCIV.</li><li>Issues 4 through 20 and 86 through 97 are on the Senatla Ops board.</li><li>Corrected Target Date, Delivery Stage, Risk Category, and Client Decision fields are available.</li><li>Pull request 82 is in Code Review as P0 Security work.</li></ul></section>
+    <section id="roadmap"><h2>Delivery roadmap</h2><div class="table-wrap"><table class="responsive-table roadmap-table"><thead><tr><th>Milestone</th><th>Purpose</th><th>Exit evidence</th></tr></thead><tbody><tr><td>M0 Governance and Access</td><td>Branch rules, identity, data boundaries, deployment access, and client decisions</td><td>Protected path, access proof, security tests, and decisions</td></tr><tr><td>M1 Operational Foundations</td><td>Site-day, workforce, offline recovery, private evidence, and documents</td><td>Persisted workflows, recovery proof, audit history, reproducible artifacts</td></tr><tr><td>M2 Controlled Pilot</td><td>Assets, inspections, maintenance, and source-backed analytics</td><td>Clean import, safety blocks, independent approvals, reconciled metrics</td></tr><tr><td>M3 UAT and Release</td><td>Recovery, role journeys, production mapping, and acceptance</td><td>Desktop and mobile evidence, restore rehearsal, rollback, sign-off</td></tr><tr><td>M4 Reuse and Scale</td><td>Reusable architecture and delivery workflows</td><td>Domain-neutral packages, consumer proof, adoption guide</td></tr></tbody></table></div></section>
+    <section id="tasks"><h2>Implementation-ready tasks</h2><div class="table-wrap"><table class="responsive-table task-table"><thead><tr><th>Issue</th><th>Priority</th><th>Parent</th><th>Task</th><th>Estimate</th></tr></thead><tbody>
+      <tr><td><a href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/86">86</a></td><td><span class="priority">P1</span></td><td>10</td><td>Persist the complete site-day record</td><td>3 to 5 days</td></tr>
+      <tr><td><a href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/87">87</a></td><td><span class="priority">P0</span></td><td>4</td><td>Make dev the default and protect main</td><td>0.5 to 1 day</td></tr>
+      <tr><td><a href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/88">88</a></td><td><span class="priority">P0</span></td><td>7</td><td>Verify hosted runtime configuration and preview smoke tests</td><td>1 to 2 days</td></tr>
+      <tr><td><a href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/89">89</a></td><td><span class="priority">P1</span></td><td>11</td><td>Enforce ownership, SLA, and immutable issue history</td><td>3 to 4 days</td></tr>
+      <tr><td><a href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/90">90</a></td><td><span class="priority">P1</span></td><td>13</td><td>Convert failed inspections into safety blocks</td><td>5 to 8 days</td></tr>
+      <tr><td><a href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/91">91</a></td><td><span class="priority">P1</span></td><td>12</td><td>Stage asset CSV imports before writes</td><td>4 to 6 days</td></tr>
+      <tr><td><a href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/92">92</a></td><td><span class="priority">P1</span></td><td>14</td><td>Replace unsupported executive claims</td><td>3 to 5 days</td></tr>
+      <tr><td><a href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/93">93</a></td><td><span class="priority">P1</span></td><td>13</td><td>Enforce independent return-to-service approval</td><td>2 to 4 days</td></tr>
+      <tr><td><a href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/94">94</a></td><td><span class="priority">P1</span></td><td>15</td><td>Move evidence into private storage objects</td><td>4 to 6 days</td></tr>
+      <tr><td><a href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/95">95</a></td><td><span class="priority">P2</span></td><td>16</td><td>Generate and verify approved documents with one command</td><td>3 to 5 days</td></tr>
+      <tr><td><a href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/96">96</a></td><td><span class="priority">P0</span></td><td>17</td><td>Add release journeys for every role</td><td>4 to 7 days</td></tr>
+      <tr><td><a href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/97">97</a></td><td><span class="priority">P1</span></td><td>20</td><td>Publish a reusable application quality workflow</td><td>2 to 4 days</td></tr>
+    </tbody></table></div></section>
+    <section id="sequence"><h2>Critical execution sequence</h2><ol><li>Complete issue 87 and align the release path.</li><li>Resolve issue 88 and prove controlled hosted QA.</li><li>Complete issues 86, 89, 94, and 95 as the operational foundation.</li><li>Complete issues 90, 91, 92, and 93 for the controlled pilot.</li><li>Run issue 96 after dependent workflows stabilize.</li><li>Extract issue 97 only after the current gate is stable.</li></ol><p class="note">Done means acceptance criteria and required application, database, mobile, deployment, rollback, or client evidence are complete. Merge status alone is insufficient.</p></section>
+    <section id="viability"><h2>Commercial viability review</h2><p><a href="https://www.getmaintainx.com/use-cases/work-order-management">MaintainX</a>, <a href="https://www.fleetio.com/features/asset-management-software">Fleetio</a>, and <a href="https://www.hcss.com/equipment360/what-is-equipment360/">HCSS Equipment360</a> already cover broad work-order, fleet, and equipment-maintenance capabilities. Senatla Ops should not reproduce those suites. Its viable boundary is a source-linked operational record for one company, connecting people, safety, attendance, payroll control, site synchronization, assets, maintenance, maker-checker decisions, and audit evidence through one authorization model.</p></section>
+    <section id="review"><h2>Three-pass review</h2><h3>Pass 1 Repository gaps</h3><p>The initial scan found incomplete board coverage, broad epics, inconsistent repository metadata, narrow browser proof, and missing persistence boundaries.</p><h3>Pass 2 Duplication challenge</h3><p>Authentication, negative RLS contracts, deterministic verification, attendance retry, readiness confirmation, and parts of the offline outbox already exist. Duplicating them would weaken the backlog.</p><h3>Pass 3 Reconciled backlog</h3><p>The final tasks focus on live configuration, hosted proof, missing persisted fields, immutable history, controlled import, safety blocks, database-enforced approval, private evidence, source-backed metrics, reproducible artifacts, cross-role UAT, and reusable CI.</p></section>
+    <footer>Senatla Ops internal delivery control · Updated 31 October 2026</footer>
+  </main>
+</body>
+</html>

@@ -21,6 +21,8 @@ import {
   FinancialType,
   Group,
   Issue,
+  IssueEvent,
+  IssueEventType,
   IssueSeverity,
   IntegrationOutboxEvent,
   ManagedUserProfile,
@@ -105,7 +107,22 @@ type IssueRow = {
   owner_profile_id: string | null;
   due_at: string | null;
   audit_trail: Issue['auditTrail'];
+  version: number;
   created_at: string;
+};
+
+type IssueEventRow = {
+  id: string;
+  issue_id: string;
+  event_type: IssueEventType;
+  from_status: Issue['status'] | null;
+  to_status: Issue['status'] | null;
+  reason: string | null;
+  actor_id: string | null;
+  actor_name: string;
+  owner_profile_id: string | null;
+  due_at: string | null;
+  occurred_at: string;
 };
 
 type AssetRow = {
@@ -984,30 +1001,90 @@ export class OfficeAdminService {
   async saveIssue(issue: Issue & { severity?: IssueSeverity; ownerProfileId?: string | null; dueAt?: string | null }) {
     const normalized = this.normalizeIssue(issue);
     if (!normalized.description) throw new Error('Issue description is required.');
-
-    if (this.supabase) {
-      const { error } = await this.supabase.from('issues').upsert({
-        id: normalized.id,
-        organization_id: normalized.organizationId,
-        site_id: normalized.siteId || null,
-        reported_by: normalized.reportedBy,
-        category: normalized.category,
-        description: normalized.description,
-        status: normalized.status,
-        severity: normalized.severity ?? 'medium',
-        owner_profile_id: normalized.ownerProfileId ?? null,
-        due_at: normalized.dueAt ?? null,
-        audit_trail: normalized.auditTrail,
-      });
-      if (error) throw error;
+    if ((normalized.severity === 'high' || normalized.severity === 'critical') && (!normalized.ownerProfileId || !normalized.dueAt)) {
+      throw new Error('High and critical issues require an owner and due date.');
     }
 
-    this.issues.update((issues) => [normalized, ...issues.filter((entry) => entry.id !== normalized.id)]);
+    if (this.supabase) {
+      const { data, error } = await this.supabase.rpc('save_operational_issue', {
+        p_issue_id: issue.id || null,
+        p_site_id: normalized.siteId || null,
+        p_reported_by: normalized.reportedBy,
+        p_category: normalized.category,
+        p_description: normalized.description,
+        p_severity: normalized.severity ?? 'medium',
+        p_owner_profile_id: normalized.ownerProfileId ?? null,
+        p_due_at: normalized.dueAt ?? null,
+      });
+      if (error) throw error;
+      const savedRow = (Array.isArray(data) ? data[0] : data) as IssueRow | null;
+      if (savedRow) {
+        const saved = this.mapIssue(savedRow, normalized.events || []);
+        this.issues.update((issues) => [saved, ...issues.filter((entry) => entry.id !== saved.id)]);
+        return saved;
+      }
+    }
+
+    const session = this.auth.currentSession();
+    const event: IssueEvent = {
+      id: this.createId(),
+      issueId: normalized.id,
+      eventType: issue.id ? 'details_updated' : 'created',
+      fromStatus: issue.status,
+      toStatus: normalized.status,
+      reason: null,
+      actorId: session?.userId ?? null,
+      actorName: session?.displayName || 'Local operator',
+      ownerProfileId: normalized.ownerProfileId,
+      dueAt: normalized.dueAt,
+      occurredAt: new Date().toISOString(),
+    };
+    const localIssue = { ...normalized, version: (issue.version || 0) + 1, events: [...(issue.events || []), event] };
+    this.issues.update((issues) => [localIssue, ...issues.filter((entry) => entry.id !== normalized.id)]);
     await this.persistLocalWorkspace();
     await this.logActivity('issue_saved', 'issue', normalized.id, {
       status: normalized.status,
       severity: normalized.severity ?? 'medium',
     });
+    return localIssue;
+  }
+
+  async transitionIssue(issueId: string, toStatus: 'Escalated' | 'Resolved', reason: string) {
+    const normalizedReason = reason.trim();
+    if (!normalizedReason) throw new Error('A transition reason is required.');
+    const current = this.issues().find((issue) => issue.id === issueId);
+    if (!current) throw new Error('Issue not found.');
+
+    if (this.supabase) {
+      const { data, error } = await this.supabase.rpc('transition_operational_issue', {
+        p_issue_id: issueId,
+        p_to_status: toStatus,
+        p_reason: normalizedReason,
+      });
+      if (error) throw error;
+      const row = (Array.isArray(data) ? data[0] : data) as IssueRow | null;
+      const updated = row ? this.mapIssue(row, current.events || []) : { ...current, status: toStatus };
+      this.issues.update((issues) => [updated, ...issues.filter((issue) => issue.id !== issueId)]);
+      return updated;
+    }
+
+    if (current.status === 'Resolved' || (current.status === 'Escalated' && toStatus === 'Escalated')) {
+      throw new Error('That issue transition is not allowed.');
+    }
+    if (toStatus === 'Escalated' && (!current.ownerProfileId || !current.dueAt)) {
+      throw new Error('Escalation requires an owner and due date.');
+    }
+    const session = this.auth.currentSession();
+    const event: IssueEvent = {
+      id: this.createId(), issueId, eventType: toStatus === 'Escalated' ? 'escalated' : 'resolved',
+      fromStatus: current.status, toStatus, reason: normalizedReason,
+      actorId: session?.userId ?? null, actorName: session?.displayName || 'Local operator',
+      ownerProfileId: current.ownerProfileId, dueAt: current.dueAt, occurredAt: new Date().toISOString(),
+    };
+    const updated: Issue = { ...current, status: toStatus, version: (current.version || 0) + 1, events: [...(current.events || []), event] };
+    this.issues.update((issues) => [updated, ...issues.filter((issue) => issue.id !== issueId)]);
+    await this.persistLocalWorkspace();
+    return updated;
   }
 
   async saveAsset(asset: VehicleAsset) {
@@ -1510,6 +1587,7 @@ export class OfficeAdminService {
       vendorInvoiceResult,
       outboxResult,
       attendanceQueueResult,
+      issueEventResult,
     ] = await Promise.all([
       this.supabase!.from('profiles').select('id, username, display_name, role, is_active, created_at').order('created_at', { ascending: false }),
       this.supabase!.from('sites').select('id, organization_id, name, location, manager_profile_id, team_name, job_number, estimated_duration, compliance_checklist, is_active').order('name'),
@@ -1518,7 +1596,7 @@ export class OfficeAdminService {
       this.supabase!.from('employee_onboarding_records').select('id, organization_id, employee_id, criminal_check_status, fingerprint_check_status, medical_status, red_ticket_number, red_ticket_issued_at, red_ticket_expires_at, notes, updated_at').order('updated_at', { ascending: false }),
       this.supabase!.from('ppe_issue_records').select('id, organization_id, employee_id, item_type, brand, size, unit_cost, order_date, collection_date, status, requested_at, office_confirmed_at, office_confirmed_by, employee_confirmed_at, employee_confirmed_by').order('requested_at', { ascending: false }),
       this.supabase!.from('financial_types').select('id, name, category, is_active, is_system').order('name'),
-      this.supabase!.from('issues').select('id, organization_id, site_id, reported_by, category, description, status, severity, owner_profile_id, due_at, audit_trail, created_at').order('created_at', { ascending: false }),
+      this.supabase!.from('issues').select('id, organization_id, site_id, reported_by, category, description, status, severity, owner_profile_id, due_at, audit_trail, version, created_at').order('created_at', { ascending: false }),
       this.supabase!.from('assets').select('id, organization_id, registration_number, serial_number, vin, make, model, type, license_expiry, status, assigned_site_id, notes, custodian_name, asset_class, lifecycle_state, retired_at').order('license_expiry'),
       this.supabase!.from('admin_activity_log').select('id, organization_id, action, entity_type, entity_id, actor_id, actor_name, details, occurred_at').order('occurred_at', { ascending: false }).limit(50),
       this.supabase!.from('payroll_periods').select('id, organization_id, period_key, month, year, status, locked_at, locked_by').order('year', { ascending: false }).order('month', { ascending: false }),
@@ -1536,9 +1614,10 @@ export class OfficeAdminService {
       this.supabase!.from('vendor_invoice_records').select('id, organization_id, vendor_id, invoice_date, order_number, invoice_number, supplier_order_number, internal_order_number, items_purchased, total, responsible_person, status, requested_by, requested_by_name, director_reviewed_by, director_reviewed_at, created_at, updated_at').order('created_at', { ascending: false }),
       this.supabase!.from('integration_outbox').select('id, organization_id, event_type, aggregate_type, aggregate_id, payload, status, idempotency_key, attempts, last_error, created_at, processed_at').order('created_at', { ascending: false }).limit(100),
       this.supabase!.from('queued_sync_submissions').select('id, organization_id, submitted_by, site_id, work_date, status, outcome, attempts, idempotency_key, last_error, diagnostic_context, created_at, processed_at').order('created_at', { ascending: false }).limit(100),
+      this.supabase!.from('issue_events').select('id, issue_id, event_type, from_status, to_status, reason, actor_id, actor_name, owner_profile_id, due_at, occurred_at').order('occurred_at', { ascending: true }),
     ]);
 
-    const results = [profileResult, siteResult, groupResult, employeeResult, onboardingResult, ppeResult, financialTypeResult, issueResult, assetResult, activityResult, payrollPeriodResult, payrollExportResult, approvalResult, savedViewResult, organizationResult, custodyResult, complianceResult, meterResult, workOrderResult, maintenancePlanResult, fuelResult, vendorResult, vendorInvoiceResult, outboxResult, attendanceQueueResult];
+    const results = [profileResult, siteResult, groupResult, employeeResult, onboardingResult, ppeResult, financialTypeResult, issueResult, assetResult, activityResult, payrollPeriodResult, payrollExportResult, approvalResult, savedViewResult, organizationResult, custodyResult, complianceResult, meterResult, workOrderResult, maintenancePlanResult, fuelResult, vendorResult, vendorInvoiceResult, outboxResult, attendanceQueueResult, issueEventResult];
     const firstError = results.find((result) => result.error)?.error;
     if (firstError) throw firstError;
 
@@ -1550,7 +1629,10 @@ export class OfficeAdminService {
       employeeOnboarding: (onboardingResult.data as EmployeeOnboardingRow[]).map((row) => ({ id: row.id, organizationId: row.organization_id, employeeId: row.employee_id, criminalCheckStatus: row.criminal_check_status, fingerprintCheckStatus: row.fingerprint_check_status, medicalStatus: row.medical_status, redTicketNumber: row.red_ticket_number, redTicketIssuedAt: row.red_ticket_issued_at, redTicketExpiresAt: row.red_ticket_expires_at, notes: row.notes || '', updatedAt: row.updated_at })),
       ppeIssues: (ppeResult.data as PpeIssueRow[]).map((row) => ({ id: row.id, organizationId: row.organization_id, employeeId: row.employee_id, itemType: row.item_type, brand: row.brand || '', size: row.size, unitCost: row.unit_cost, orderDate: row.order_date, collectionDate: row.collection_date, status: row.status, requestedAt: row.requested_at, officeConfirmedAt: row.office_confirmed_at, officeConfirmedBy: row.office_confirmed_by, employeeConfirmedAt: row.employee_confirmed_at, employeeConfirmedBy: row.employee_confirmed_by })),
       financialTypes: (financialTypeResult.data as FinancialTypeRow[]).map((row) => this.mapFinancialType(row)),
-      issues: (issueResult.data as IssueRow[]).map((row) => this.mapIssue(row)),
+      issues: (issueResult.data as IssueRow[]).map((row) => this.mapIssue(
+        row,
+        (issueEventResult.data as IssueEventRow[]).filter((event) => event.issue_id === row.id).map((event) => this.mapIssueEvent(event)),
+      )),
       assets: (assetResult.data as AssetRow[]).map((row) => this.mapAsset(row)),
       assetCustodyEvents: (custodyResult.data as AssetCustodyRow[]).map((row) => this.mapCustody(row)),
       assetComplianceRecords: (complianceResult.data as AssetComplianceRow[]).map((row) => this.mapCompliance(row)),
@@ -1951,7 +2033,7 @@ export class OfficeAdminService {
     };
   }
 
-  private mapIssue(row: IssueRow): Issue {
+  private mapIssue(row: IssueRow, events: IssueEvent[] = []): Issue {
     const issue = {
       id: row.id,
       organizationId: row.organization_id || SENATLA_TRADING_ORGANIZATION_ID,
@@ -1971,8 +2053,26 @@ export class OfficeAdminService {
       severity: row.severity,
       ownerProfileId: row.owner_profile_id,
       dueAt: row.due_at,
+      version: Number(row.version || 1),
+      events,
     };
     return issue as Issue;
+  }
+
+  private mapIssueEvent(row: IssueEventRow): IssueEvent {
+    return {
+      id: row.id,
+      issueId: row.issue_id,
+      eventType: row.event_type,
+      fromStatus: row.from_status,
+      toStatus: row.to_status,
+      reason: row.reason,
+      actorId: row.actor_id,
+      actorName: row.actor_name,
+      ownerProfileId: row.owner_profile_id,
+      dueAt: row.due_at,
+      occurredAt: row.occurred_at,
+    };
   }
 
   private mapAsset(row: AssetRow): VehicleAsset {

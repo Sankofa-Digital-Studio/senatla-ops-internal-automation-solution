@@ -405,8 +405,8 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.showWizard = true;
   }
 
-  private async fetchRoleResources(_session: AuthSession) {
-    await new Promise((resolve) => setTimeout(resolve, 150));
+  private fetchRoleResources(_session: AuthSession) {
+    return Promise.resolve();
   }
 
   private normalizeRole(input: string): AppRole | null {

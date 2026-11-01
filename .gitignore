@@ -80,6 +80,7 @@ Thumbs.db
 .vercel
 
 output/playwright/
+/.playwright-cli/
 supabase/.branches/
 supabase/.temp/
 

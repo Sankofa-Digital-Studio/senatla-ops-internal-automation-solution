@@ -85,7 +85,8 @@ export class SiteManagerComponent {
 
   async confirmDailySetup() {
     const selectedSite = this.readiness.selectedSite();
-    if (!selectedSite || !this.readiness.canProceed() || !this.plannedTargets.trim() || !this.siteLocationLabel.includes(',')) {
+    const siteLocation = this.parseCoordinateLabel(this.siteLocationLabel);
+    if (!selectedSite || !this.readiness.canProceed() || !this.plannedTargets.trim() || !siteLocation) {
       this.siteLocationWarning = 'Confirm an authorized ready site, planned work targets, and current GPS location before starting the day.';
       return;
     }
@@ -94,6 +95,7 @@ export class SiteManagerComponent {
       return;
     }
     this.service.setCurrentSite(selectedSite.id, selectedSite.name);
+    this.service.confirmSiteDaySetup({ siteId: selectedSite.id, workDate: this.selectedDateStr, plannedTargets: this.plannedTargets, siteLocation });
     this.localSiteName = selectedSite.name;
     this.showDailySetup = false;
   }
@@ -117,20 +119,24 @@ export class SiteManagerComponent {
 
   logTripAway() {
     const asset = this.siteAssets().find((entry) => entry.entityId === this.tripAssetId) || null;
-    if (!asset || !this.tripReason || !this.tripLocationLabel.includes(',')) {
+    const location = this.parseCoordinateLabel(this.tripLocationLabel);
+    if (!asset || !this.tripReason || !location) {
       this.tripLocationWarning = 'Select an asset or vehicle, capture GPS, and choose a reason before logging a trip away.';
       return;
     }
 
-    this.tripLogs = [{
+    const trip = {
+      id: crypto.randomUUID(),
       assetId: asset.entityId,
       assetLabel: this.assetLabel(asset),
-      km: this.tripCurrentKm,
+      reading: this.tripCurrentKm,
       reason: this.tripReason,
       customReason: this.tripCustomReason.trim(),
-      location: this.tripLocationLabel,
-      capturedAt: new Date(this.service.currentTime()),
-    }, ...this.tripLogs].slice(0, 8);
+      location,
+      capturedAt: new Date(this.service.currentTime()).toISOString(),
+    };
+    this.service.addSiteDayTrip(trip);
+    this.tripLogs = [{ ...trip, km: trip.reading, location: this.tripLocationLabel, capturedAt: new Date(trip.capturedAt) }, ...this.tripLogs].slice(0, 8);
 
     this.tripAssetId = '';
     this.tripCurrentKm = null;
@@ -392,6 +398,20 @@ export class SiteManagerComponent {
       this.service.setCurrentSite(selectedSite.id, selectedSite.name);
       this.localSiteName = selectedSite.name;
     }
+    const draft = this.service.siteDayDraft();
+    if (draft && draft.workDate === this.selectedDateStr) {
+      this.plannedTargets = draft.plannedTargets;
+      this.siteLocationLabel = draft.siteLocation ? `${draft.siteLocation.latitude.toFixed(5)}, ${draft.siteLocation.longitude.toFixed(5)}` : this.siteLocationLabel;
+      this.tripLogs = draft.trips.map((trip) => ({ assetId: trip.assetId, assetLabel: trip.assetLabel, km: trip.reading, reason: trip.reason, customReason: trip.customReason || '', location: `${trip.location.latitude.toFixed(5)}, ${trip.location.longitude.toFixed(5)}`, capturedAt: new Date(trip.capturedAt) }));
+      this.showDailySetup = !draft.confirmedAt;
+    }
+  }
+
+  private parseCoordinateLabel(label: string) {
+    if (!label.includes(',')) return null;
+    const [latitude, longitude] = label.split(',').map((value) => Number(value.trim()));
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return null;
+    return { latitude, longitude };
   }
 
   private parseLocation() {
