@@ -24,6 +24,7 @@
     "provision:users": "node scripts/provision-users.mjs",
     "test:provision-users": "node --test scripts/provision-users.test.mjs",
     "test:password-change-complete-contract": "node --test scripts/password-change-complete-contract.test.mjs",
+    "test:profile-recovery-contract": "node --test scripts/profile-recovery-contract.test.mjs",
     "validate:ocr-device-uat": "node scripts/validate-ocr-device-uat.mjs",
     "docker:ensure": "node scripts/ensure-docker.mjs",
     "test:docker-ensure": "node --test scripts/ensure-docker.test.mjs",
