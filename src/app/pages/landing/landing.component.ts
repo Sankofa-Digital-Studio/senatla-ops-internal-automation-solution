@@ -3,13 +3,14 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { RUNTIME_CONFIG } from '../../core/config/runtime-config';
+import { AccessibleDialogDirective } from '../../core/accessibility/accessible-dialog.directive';
 
 @Component({
   selector: 'app-landing',
   templateUrl: './landing.component.html',
   styleUrls: ['./landing.component.scss'],
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, AccessibleDialogDirective],
 })
 export class LandingComponent implements OnInit {
   readonly auth = inject(AuthService);

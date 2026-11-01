@@ -4,7 +4,7 @@
     <div class="cornerstone-loader__veil"></div>
     <div class="cornerstone-loader__content">
       <p class="cornerstone-loader__eyebrow">Senatla means a rock</p>
-      <h1>Built together, on a sure foundation.</h1>
+      <p class="loader-heading font-black text-2xl">Built together, on a sure foundation.</p>
       <p>“The stone the builders rejected has become the chief cornerstone.” <span>Psalm 118:22</span></p>
       <div class="cornerstone-loader__progress" aria-hidden="true"><span></span></div>
     </div>
@@ -46,7 +46,14 @@
       </details>
     </header>
 
-    <div *ngIf="testCredentialsVisible()" class="credential-modal" role="dialog" aria-modal="true" aria-labelledby="test-credentials-heading">
+    <div
+      *ngIf="testCredentialsVisible()"
+      class="credential-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="test-credentials-heading"
+      [appAccessibleDialog]="testCredentialsVisible()"
+      (dialogClose)="hideTestCredentials()">
       <button type="button" class="credential-modal__backdrop" aria-label="Close test users dialog" (click)="hideTestCredentials()"></button>
       <section class="credential-modal__panel">
         <header class="credential-modal__header">
@@ -82,9 +89,9 @@
         <p class="eyebrow mb-6 inline-flex rounded-full border border-lime-300/30 bg-lime-300/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-lime-100">
           Clear operations. Confident decisions.
         </p>
-        <h2 class="hero-title font-black leading-[0.94] tracking-tight text-white">
+        <h1 class="hero-title font-black leading-[0.94] tracking-tight text-white">
           Command every moving part before it becomes a blocker.
-        </h2>
+        </h1>
         <p class="hero-summary mt-6 max-w-2xl leading-8 text-white/70">
           Senatla Ops connects field activity, workforce controls, asset evidence, and approvals in one secure operating system built for accountable teams.
         </p>

@@ -63,11 +63,26 @@ describe('LandingComponent', () => {
     expect(dialog.textContent).not.toContain('test-password');
   });
 
+  it('closes test credentials modal on Escape key press with accessible dialog handling', () => {
+    const page = fixture.nativeElement as HTMLElement;
+    (page.querySelector('.desktop-menu button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const dialog = page.querySelector('[role="dialog"]') as HTMLElement;
+    expect(dialog).not.toBeNull();
+
+    dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+
+    expect(page.querySelector('[role="dialog"]')).toBeNull();
+  });
+
   it('shows the cornerstone welcome gate while the landing page is preparing', () => {
     const page = fixture.nativeElement as HTMLElement;
     expect(page.querySelector('.cornerstone-loader')).not.toBeNull();
     expect(page.textContent).toContain('Senatla means a rock');
   });
+
   it('offers login without exposing public registration', () => {
     const links = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('a')).map((link) => link.getAttribute('href'));
     expect(links).not.toContain('/register');
