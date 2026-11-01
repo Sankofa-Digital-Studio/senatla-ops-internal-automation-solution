@@ -4,6 +4,7 @@ import { AppRole, AuthSession } from '../models/app.models';
 import { AUTH_GATEWAY, AuthGateway, PasswordResetRequestResult } from '../gateways/auth.gateway';
 import { SESSION_EXPIRY_SCHEDULER } from '../auth/session-expiry.scheduler';
 import { cappedSessionExpiry, sessionHasExpired } from '../auth/session-policy';
+import { isAllowedAccessEmail, normalizeAccessEmail, requireAllowedAccessEmail } from '../auth/access-email-policy';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -42,14 +43,16 @@ export class AuthService {
 
   async login(username: string, password: string): Promise<AuthSession | null> {
     await this.ensureReady();
-    const session = await this.authGateway.login(username, password);
+    const email = normalizeAccessEmail(username);
+    if (!isAllowedAccessEmail(email)) return null;
+    const session = await this.authGateway.login(email, password);
     this.setSession(session);
     this.readyState.set(true);
     return session;
   }
 
   async requestPasswordReset(email: string, redirectTo?: string): Promise<PasswordResetRequestResult> {
-    return await this.authGateway.requestPasswordReset(email, redirectTo);
+    return await this.authGateway.requestPasswordReset(requireAllowedAccessEmail(email), redirectTo);
   }
 
   async updatePassword(nextPassword: string, usernameHint?: string) {

@@ -25,8 +25,8 @@ describe('OfficeAdminComponent', () => {
   });
 
   it('forces new email invitations to minimum site access', async () => {
-    await TestBed.inject(AuthService).login('office.admin@test.invalid', 'test-password');
-    component.inviteForm = { email: 'new@example.com', displayName: 'New User', role: 'director' };
+    await TestBed.inject(AuthService).login('thosontula+office@gmail.com', 'test-password');
+    component.inviteForm = { email: 'new@senatlatrading.com', displayName: 'New User', role: 'director' };
     await component.submitInvite();
     expect(component.service.users()[0].role).toBe('site');
   });
@@ -90,7 +90,7 @@ describe('OfficeAdminComponent', () => {
   });
 
   it('keeps a realistic synthetic employee as a draft until explicit approval, then records POST audit evidence', async () => {
-    await TestBed.inject(AuthService).login('office.admin@test.invalid', 'test-password');
+    await TestBed.inject(AuthService).login('thosontula+office@gmail.com', 'test-password');
     component.service.sites.set([{ id: 'site-1', name: 'North Shaft', location: 'Rustenburg', isActive: true }]);
     component.selectedSiteId.set('site-1');
 
@@ -112,7 +112,7 @@ describe('OfficeAdminComponent', () => {
   });
 
   it('requires deletion approval and records the approving user, DELETE action, and timestamp', async () => {
-    await TestBed.inject(AuthService).login('office.admin@test.invalid', 'test-password');
+    await TestBed.inject(AuthService).login('thosontula+office@gmail.com', 'test-password');
     const employee = {
       id: 'employee-delete', firstName: 'Synthetic', surname: 'Worker', idNumber: '9001015009087',
       companyNumber: 'SEN-DEL-001', role: 'Operator' as const, siteId: 'site-1', startDate: '2026-08-01',
@@ -133,7 +133,7 @@ describe('OfficeAdminComponent', () => {
   });
 
   it('keeps bulk rows staged until import approval and then records a bulk POST action', async () => {
-    await TestBed.inject(AuthService).login('office.admin@test.invalid', 'test-password');
+    await TestBed.inject(AuthService).login('thosontula+office@gmail.com', 'test-password');
     component.employeeImportRows.set([{
       sourceRow: 4, status: 'ready', errors: [], warnings: [], employee: {
         id: '', firstName: 'Kagiso', surname: 'Dlamini', idNumber: 'UAT-EMP-0001', companyNumber: 'SEN-BULK-001',
@@ -159,7 +159,7 @@ describe('OfficeAdminComponent', () => {
   });
 
   it('retains structured invoice references for Director review', async () => {
-    await TestBed.inject(AuthService).login('office.admin@test.invalid', 'test-password');
+    await TestBed.inject(AuthService).login('thosontula+office@gmail.com', 'test-password');
     const vendor = await component.service.saveVendorAccount({ name: 'Demo supplier', description: '', taxNumber: 'VAT-001', totalOwingAmount: 0 });
     const invoice = await component.service.submitVendorInvoice({ vendorId: vendor.id, invoiceDate: '2026-09-01', orderNumber: 'SUP-44', supplierOrderNumber: 'SUP-44', internalOrderNumber: 'INT-44', invoiceNumber: 'INV-44', itemsPurchased: 'Safety equipment', total: 100, responsiblePerson: 'Office requester' });
     expect(invoice.internalOrderNumber).toBe('INT-44');

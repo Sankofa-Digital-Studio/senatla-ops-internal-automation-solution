@@ -10,7 +10,7 @@ const SITE_B = '62000000-0000-4000-8000-000000000002';
 class AuthGatewayStub {
   async loadSession(): Promise<AuthSession> {
     return {
-      userId: '61000000-0000-4000-8000-000000000001', username: 'site@example.test', role: 'site',
+      userId: '61000000-0000-4000-8000-000000000001', username: 'site.manager@senatlatrading.com', role: 'site',
       displayName: 'Site Manager', organizationId: '00000000-0000-4000-8000-000000000001',
       permittedSiteIds: [SITE_A], issuedAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 60_000).toISOString(),
     };

@@ -2,12 +2,12 @@ import { Injectable } from '@angular/core';
 import { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { AppRole, AuthSession } from '../models/app.models';
 import { cappedSessionExpiry } from '../auth/session-policy';
+import { isAllowedAccessEmail, normalizeAccessEmail, requireAllowedAccessEmail } from '../auth/access-email-policy';
 import { AuthGateway, PasswordResetRequestResult } from './auth.gateway';
 import { injectSupabaseClient } from './supabase.client';
 
 type ProfileRow = {
   id: string;
-  username: string | null;
   display_name: string | null;
   role: AppRole | null;
   is_active: boolean;
@@ -27,14 +27,19 @@ export class SupabaseAuthGateway implements AuthGateway {
   async loadSession(): Promise<AuthSession | null> {
     const { data, error } = await this.supabase.auth.getUser();
     if (error || !data.user) return null;
+    if (!data.user.email || !isAllowedAccessEmail(data.user.email)) {
+      await this.supabase.auth.signOut();
+      return null;
+    }
     const { data: sessionData } = await this.supabase.auth.getSession();
     if (!sessionData.session) return null;
     return await this.buildSession(data.user.id, data.user.email ?? '', sessionData.session);
   }
 
   async login(username: string, password: string): Promise<AuthSession | null> {
-    const email = username.trim().toLowerCase();
-    const { data, error } = await this.supabase.auth.signInWithPassword({ email, password: password.trim() });
+    const email = normalizeAccessEmail(username);
+    if (!isAllowedAccessEmail(email)) return null;
+    const { data, error } = await this.supabase.auth.signInWithPassword({ email, password });
     if (error || !data.user || !data.session) return null;
 
     const session = await this.buildSession(data.user.id, data.user.email ?? email, data.session);
@@ -44,10 +49,7 @@ export class SupabaseAuthGateway implements AuthGateway {
   }
 
   async requestPasswordReset(email: string, redirectTo?: string): Promise<PasswordResetRequestResult> {
-    const normalizedEmail = email.trim().toLowerCase();
-    if (!normalizedEmail) {
-      throw new Error('Work email is required.');
-    }
+    const normalizedEmail = requireAllowedAccessEmail(email);
     const { error } = await this.supabase.auth.resetPasswordForEmail(
       normalizedEmail,
       redirectTo ? { redirectTo } : undefined,
@@ -77,9 +79,14 @@ export class SupabaseAuthGateway implements AuthGateway {
   }
 
   private async buildSession(userId: string, fallbackEmail: string, session: Session): Promise<AuthSession | null> {
+    const accessEmail = normalizeAccessEmail(fallbackEmail);
+    if (!isAllowedAccessEmail(accessEmail)) {
+      await this.supabase.auth.signOut();
+      return null;
+    }
     const { data: profile, error } = await this.supabase
       .from('profiles')
-      .select('id, username, display_name, role, is_active, organization_id')
+      .select('id, display_name, role, is_active, organization_id')
       .eq('id', userId)
       .maybeSingle<ProfileRow>();
 
@@ -100,7 +107,7 @@ export class SupabaseAuthGateway implements AuthGateway {
 
     return {
       userId,
-      username: profile.username || fallbackEmail || userId,
+      username: accessEmail,
       role: profile.role,
       displayName: profile.display_name || fallbackEmail || 'Unknown User',
       organizationId: profile.organization_id,

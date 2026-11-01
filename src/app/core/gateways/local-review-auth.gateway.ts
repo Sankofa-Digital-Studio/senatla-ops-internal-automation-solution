@@ -1,10 +1,8 @@
 import { Injectable } from '@angular/core';
-import { AppRole, AuthSession } from '../models/app.models';
+import { isAllowedAccessEmail, normalizeAccessEmail } from '../auth/access-email-policy';
 import { cappedSessionExpiry, sessionHasExpired } from '../auth/session-policy';
-import {
-  AuthGateway,
-  PasswordResetRequestResult,
-} from './auth.gateway';
+import { AppRole, AuthSession } from '../models/app.models';
+import { AuthGateway, PasswordResetRequestResult } from './auth.gateway';
 
 type ReviewAccount = {
   password: string;
@@ -13,179 +11,89 @@ type ReviewAccount = {
   permittedSiteIds: string[];
 };
 
-const SESSION_KEY = 'senatla_ops_local_review_session_v1';
-const MOCK_RESET_KEY = 'senatla_ops_local_review_reset_v1';
+const SESSION_KEY = 'senatla_ops_local_review_session_v2';
+const MOCK_RESET_KEY = 'senatla_ops_local_review_reset_v2';
 const LOCAL_REVIEW_RECOVERY_PATH = '/login/recovery';
-const ROLE_ASSIGNMENTS_KEY = 'senatla_ops_role_assignments_v1';
+const REVIEW_SITES = ['demo-workshop', 'demo-plant-b', 'demo-shaft-4', 's1', 's2'];
 
-const DEMO_SITES = ['demo-workshop', 'demo-plant-b', 'demo-shaft-4', 's1', 's2'];
+const REVIEW_ACCOUNTS: ReadonlyArray<readonly [string, ReviewAccount]> = [
+  [
+    'thosontula+site@gmail.com',
+    { password: 'test-password', role: 'site', displayName: 'Site Manager', permittedSiteIds: REVIEW_SITES },
+  ],
+  [
+    'thosontula+office@gmail.com',
+    { password: 'test-password', role: 'office', displayName: 'Office Admin', permittedSiteIds: REVIEW_SITES },
+  ],
+  [
+    'thosontula+director@gmail.com',
+    { password: 'test-password', role: 'director', displayName: 'Director', permittedSiteIds: REVIEW_SITES },
+  ],
+  [
+    'thosontula@gmail.com',
+    { password: 'test-password', role: 'director', displayName: 'Developer', permittedSiteIds: REVIEW_SITES },
+  ],
+];
 
 @Injectable()
 export class LocalReviewAuthGateway implements AuthGateway {
   private readonly listeners = new Set<(session: AuthSession | null) => void>();
-  private readonly credentials = new Map<string, ReviewAccount>([
-    // Site Manager aliases
-    [
-      'site.manager@senatlatrading.com',
-      { password: 'test-password', role: 'site', displayName: 'Site Manager', permittedSiteIds: DEMO_SITES },
-    ],
-    [
-      'manager@senatlatrading.com',
-      { password: 'test-password', role: 'site', displayName: 'Site Manager', permittedSiteIds: DEMO_SITES },
-    ],
-    [
-      'site@senatlatrading.com',
-      { password: 'test-password', role: 'site', displayName: 'Site Manager', permittedSiteIds: DEMO_SITES },
-    ],
-    [
-      'site.manager@test.invalid',
-      { password: 'test-password', role: 'site', displayName: 'Site Manager', permittedSiteIds: DEMO_SITES },
-    ],
-    [
-      'site',
-      { password: 'test-password', role: 'site', displayName: 'Site Manager', permittedSiteIds: DEMO_SITES },
-    ],
-    // Office Admin aliases
-    [
-      'office.admin@senatlatrading.com',
-      { password: 'test-password', role: 'office', displayName: 'Office Admin', permittedSiteIds: DEMO_SITES },
-    ],
-    [
-      'admin@senatlatrading.com',
-      { password: 'test-password', role: 'office', displayName: 'Office Admin', permittedSiteIds: DEMO_SITES },
-    ],
-    [
-      'office@senatlatrading.com',
-      { password: 'test-password', role: 'office', displayName: 'Office Admin', permittedSiteIds: DEMO_SITES },
-    ],
-    [
-      'office.admin@test.invalid',
-      { password: 'test-password', role: 'office', displayName: 'Office Admin', permittedSiteIds: DEMO_SITES },
-    ],
-    [
-      'office',
-      { password: 'test-password', role: 'office', displayName: 'Office Admin', permittedSiteIds: DEMO_SITES },
-    ],
-    [
-      'admin',
-      { password: 'test-password', role: 'office', displayName: 'Office Admin', permittedSiteIds: DEMO_SITES },
-    ],
-    // Director aliases
-    [
-      'director.exec@senatlatrading.com',
-      { password: 'test-password', role: 'director', displayName: 'Director', permittedSiteIds: DEMO_SITES },
-    ],
-    [
-      'director@senatlatrading.com',
-      { password: 'test-password', role: 'director', displayName: 'Director', permittedSiteIds: DEMO_SITES },
-    ],
-    [
-      'exec@senatlatrading.com',
-      { password: 'test-password', role: 'director', displayName: 'Director', permittedSiteIds: DEMO_SITES },
-    ],
-    [
-      'director.exec@test.invalid',
-      { password: 'test-password', role: 'director', displayName: 'Director', permittedSiteIds: DEMO_SITES },
-    ],
-    [
-      'director',
-      { password: 'test-password', role: 'director', displayName: 'Director', permittedSiteIds: DEMO_SITES },
-    ],
-  ]);
+  private readonly credentials = new Map<string, ReviewAccount>(REVIEW_ACCOUNTS);
 
   async loadSession(): Promise<AuthSession | null> {
     return this.readSession();
   }
 
   async login(username: string, password: string): Promise<AuthSession | null> {
-    const email = username.trim().toLowerCase();
-    const cleanPassword = password.trim();
+    const email = normalizeAccessEmail(username);
+    if (!isAllowedAccessEmail(email)) return null;
 
-    // 1. Direct match with credentials map
     const account = this.credentials.get(email);
-    if (account && (account.password === cleanPassword || cleanPassword.length >= 4)) {
-      const issuedAt = new Date().toISOString();
-      const session: AuthSession = {
-        userId: `${account.role}-review-user`,
-        username: email,
-        role: account.role,
-        displayName: account.displayName,
-        organizationId: '00000000-0000-4000-8000-000000000001',
-        permittedSiteIds: account.permittedSiteIds,
-        issuedAt,
-        expiresAt: cappedSessionExpiry(issuedAt),
-      };
+    if (!account || account.password !== password) return null;
 
-      this.persistSession(session);
-      return session;
-    }
+    const issuedAt = new Date().toISOString();
+    const session: AuthSession = {
+      userId: email === 'thosontula@gmail.com' ? 'developer-user' : `${account.role}-review-user`,
+      username: email,
+      role: account.role,
+      displayName: account.displayName,
+      organizationId: '00000000-0000-4000-8000-000000000001',
+      permittedSiteIds: account.permittedSiteIds,
+      issuedAt,
+      expiresAt: cappedSessionExpiry(issuedAt),
+    };
 
-    // Keyword heuristic match for role deduction in local review
-    let deducedRole: AppRole | null = null;
-    let displayName = email.split('@')[0];
-    if (email.includes('site') || email.includes('manager')) {
-      deducedRole = 'site';
-      displayName = 'Site Manager';
-    } else if (email.includes('office') || email.includes('admin')) {
-      deducedRole = 'office';
-      displayName = 'Office Admin';
-    } else if (email.includes('director') || email.includes('exec') || email.includes('ceo')) {
-      deducedRole = 'director';
-      displayName = 'Director';
-    } else {
-      deducedRole = this.getAssignedRole(email);
-    }
-
-    if (deducedRole && cleanPassword.length >= 4) {
-      const issuedAt = new Date().toISOString();
-      const session: AuthSession = {
-        userId: `user-${email.replace(/[^a-zA-Z0-9]/g, '_')}`,
-        username: email,
-        role: deducedRole,
-        displayName: displayName || (deducedRole === 'site' ? 'Site Manager' : deducedRole === 'office' ? 'Office Admin' : 'Director'),
-        organizationId: '00000000-0000-4000-8000-000000000001',
-        permittedSiteIds: DEMO_SITES,
-        issuedAt,
-        expiresAt: cappedSessionExpiry(issuedAt),
-      };
-      this.persistSession(session);
-      return session;
-    }
-
-    return null;
+    this.persistSession(session);
+    return session;
   }
 
   async requestPasswordReset(email: string): Promise<PasswordResetRequestResult> {
-    const normalizedEmail = email.trim().toLowerCase();
-    if (!this.credentials.has(normalizedEmail)) {
-      throw new Error('No account matches that email.');
+    const normalizedEmail = normalizeAccessEmail(email);
+    if (!isAllowedAccessEmail(normalizedEmail) || !this.credentials.has(normalizedEmail)) {
+      throw new Error('No provisioned account matches that email.');
     }
     sessionStorage.setItem(MOCK_RESET_KEY, normalizedEmail);
     return {
-      message: `Demo reset prepared for ${normalizedEmail}. Open the recovery link to choose a new password.`,
+      message: `Local recovery prepared for ${normalizedEmail}. Open the one-time link to choose a new password.`,
       resetLink: `${location.origin}${LOCAL_REVIEW_RECOVERY_PATH}?mock_user=${encodeURIComponent(normalizedEmail)}`,
     };
   }
 
   async updatePassword(nextPassword: string, usernameHint?: string): Promise<void> {
     const password = nextPassword.trim();
-    if (password.length < 8) {
-      throw new Error('Choose a password with at least 8 characters.');
-    }
-    const email = (usernameHint || sessionStorage.getItem(MOCK_RESET_KEY) || '').trim().toLowerCase();
+    if (password.length < 8) throw new Error('Choose a password with at least 8 characters.');
+
+    const email = normalizeAccessEmail(usernameHint || sessionStorage.getItem(MOCK_RESET_KEY) || '');
     const account = this.credentials.get(email);
-    if (account) {
-      this.credentials.set(email, { ...account, password });
-    } else {
-      throw new Error('Demo recovery session is unavailable. Request a new reset link.');
-    }
+    if (!account) throw new Error('Local recovery session is unavailable. Request a new reset link.');
+
+    this.credentials.set(email, { ...account, password });
     sessionStorage.removeItem(MOCK_RESET_KEY);
     this.emit(null);
   }
 
   async logout(): Promise<void> {
-    try { sessionStorage.removeItem(SESSION_KEY); } catch {}
-    try { localStorage.removeItem(SESSION_KEY); } catch {}
+    this.clearSession();
     this.emit(null);
   }
 
@@ -202,41 +110,30 @@ export class LocalReviewAuthGateway implements AuthGateway {
 
   private readSession(): AuthSession | null {
     try {
-      let raw = sessionStorage.getItem(SESSION_KEY);
-      if (!raw) {
-        raw = localStorage.getItem(SESSION_KEY);
-      }
+      const raw = sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY);
       const parsed = JSON.parse(raw || 'null') as AuthSession | null;
-      if (!parsed?.expiresAt || sessionHasExpired(parsed)) {
-        try { sessionStorage.removeItem(SESSION_KEY); } catch {}
-        try { localStorage.removeItem(SESSION_KEY); } catch {}
+      const email = normalizeAccessEmail(parsed?.username || '');
+      const account = this.credentials.get(email);
+      if (
+        !parsed?.expiresAt ||
+        sessionHasExpired(parsed) ||
+        !isAllowedAccessEmail(email) ||
+        !account ||
+        account.role !== parsed.role
+      ) {
+        this.clearSession();
         return null;
       }
-      return parsed;
+      return { ...parsed, username: email };
     } catch {
-      try { sessionStorage.removeItem(SESSION_KEY); } catch {}
-      try { localStorage.removeItem(SESSION_KEY); } catch {}
+      this.clearSession();
       return null;
     }
   }
 
-  private getAssignedRole(email: string): AppRole | null {
-    try {
-      const map = JSON.parse(localStorage.getItem(ROLE_ASSIGNMENTS_KEY) || '{}');
-      return map[email] || null;
-    } catch {
-      return null;
-    }
-  }
-
-  private saveAssignedRole(email: string, role: AppRole) {
-    try {
-      const map = JSON.parse(localStorage.getItem(ROLE_ASSIGNMENTS_KEY) || '{}');
-      map[email] = role;
-      localStorage.setItem(ROLE_ASSIGNMENTS_KEY, JSON.stringify(map));
-    } catch {
-      // Ignore storage error
-    }
+  private clearSession() {
+    try { sessionStorage.removeItem(SESSION_KEY); } catch {}
+    try { localStorage.removeItem(SESSION_KEY); } catch {}
   }
 
   private emit(session: AuthSession | null) {

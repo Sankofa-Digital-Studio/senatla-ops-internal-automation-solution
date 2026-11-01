@@ -12,9 +12,9 @@ class TestAuthGateway {
   private session: AuthSession | null = null;
   private pendingResetEmail = '';
   private readonly credentials = new Map<string, { password: string; role: AppRole; displayName: string }>([
-    ['site.manager@test.invalid', { password: 'test-password', role: 'site', displayName: 'Site Manager' }],
-    ['office.admin@test.invalid', { password: 'test-password', role: 'office', displayName: 'Office Admin' }],
-    ['director.exec@test.invalid', { password: 'test-password', role: 'director', displayName: 'Director' }],
+    ['thosontula+site@gmail.com', { password: 'test-password', role: 'site', displayName: 'Site Manager' }],
+    ['thosontula+office@gmail.com', { password: 'test-password', role: 'office', displayName: 'Office Admin' }],
+    ['thosontula+director@gmail.com', { password: 'test-password', role: 'director', displayName: 'Director' }],
   ]);
 
   async loadSession(): Promise<AuthSession | null> {
@@ -23,7 +23,7 @@ class TestAuthGateway {
 
   async login(username: string, password: string): Promise<AuthSession | null> {
     const user = this.credentials.get(username.trim().toLowerCase());
-    if (!user || user.password !== password.trim()) return null;
+    if (!user || user.password !== password) return null;
 
     this.session = {
       userId: `${user.role}-user`,

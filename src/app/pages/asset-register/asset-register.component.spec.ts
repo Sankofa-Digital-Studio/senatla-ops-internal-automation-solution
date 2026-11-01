@@ -14,7 +14,7 @@ describe('AssetRegisterComponent', () => {
       providers: TEST_APP_PROVIDERS,
     }).compileComponents();
 
-    await TestBed.inject(AuthService).login('office.admin@test.invalid', 'test-password');
+    await TestBed.inject(AuthService).login('thosontula+office@gmail.com', 'test-password');
     fixture = TestBed.createComponent(AssetRegisterComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
@@ -25,7 +25,7 @@ describe('AssetRegisterComponent', () => {
   });
 
   it('shows the seeded demo assets and supports serial-only identity', async () => {
-    await TestBed.inject(AuthService).login('office.admin@test.invalid', 'test-password');
+    await TestBed.inject(AuthService).login('thosontula+office@gmail.com', 'test-password');
     await fixture.whenStable();
     fixture.detectChanges();
 

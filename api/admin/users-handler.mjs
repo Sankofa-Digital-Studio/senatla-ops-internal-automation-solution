@@ -211,7 +211,12 @@ export function buildAdminUsersHandler({ createAdminClient }) {
 
 export function normalizeEmail(value) {
   const email = `${value || ''}`.trim().toLowerCase();
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : '';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return '';
+
+  const isCorporate = /^[^@\s]+@senatlatrading\.com$/.test(email);
+  const isDeveloper = email === 'thosontula@gmail.com';
+  const isDeveloperAlias = /^thosontula\+[a-z0-9._-]+@gmail\.com$/.test(email);
+  return isCorporate || isDeveloper || isDeveloperAlias ? email : '';
 }
 
 export function isAppRole(role) {

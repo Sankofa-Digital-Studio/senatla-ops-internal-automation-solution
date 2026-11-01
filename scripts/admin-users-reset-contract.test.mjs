@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildAdminUsersHandler } from '../api/admin/users-handler.mjs';
+import { buildAdminUsersHandler, normalizeEmail } from '../api/admin/users-handler.mjs';
 
 function createResponse() {
   return {
@@ -21,7 +21,7 @@ function createClientDouble({
   adminProfile = { role: 'office', is_active: true, organization_id: 'org-1', display_name: 'Office Admin' },
   targetProfile = {
     id: 'user-2',
-    username: 'worker@example.com',
+    username: 'worker@senatlatrading.com',
     display_name: 'Worker',
     role: 'site',
     is_active: true,
@@ -31,10 +31,12 @@ function createClientDouble({
 } = {}) {
   const state = {
     resetCalls: [],
+    inviteCalls: [],
     authActivityEvents: [],
     lastProfileLookup: null,
     authUpdateCalls: [],
     profileUpdateCalls: [],
+    profileUpsertCalls: [],
   };
 
   const client = {
@@ -45,7 +47,10 @@ function createClientDouble({
         return resetError ? { error: resetError } : { error: null };
       },
       admin: {
-        inviteUserByEmail: async () => ({ data: { user: { id: 'invited-1', created_at: '2026-08-30T00:00:00.000Z' } }, error: null }),
+        inviteUserByEmail: async (email) => {
+          state.inviteCalls.push(email);
+          return { data: { user: { id: 'invited-1', created_at: '2026-08-30T00:00:00.000Z' } }, error: null };
+        },
         updateUserById: async (userId, payload) => {
           state.authUpdateCalls.push({ userId, payload });
           return { error: null };
@@ -73,6 +78,10 @@ function createClientDouble({
 
 function createProfilesQuery(state, adminProfile, targetProfile) {
   return {
+    async upsert(payload) {
+      state.profileUpsertCalls.push(payload);
+      return { error: null };
+    },
     select() {
       const filters = [];
       const query = {
@@ -132,6 +141,63 @@ function createProfilesQuery(state, adminProfile, targetProfile) {
   };
 }
 
+test('normalizes only corporate email and the explicit developer mailbox aliases', () => {
+  assert.equal(normalizeEmail(' Worker@SenatlaTrading.com '), 'worker@senatlatrading.com');
+  assert.equal(normalizeEmail(' Thosontula@GMAIL.com '), 'thosontula@gmail.com');
+  assert.equal(normalizeEmail(' Thosontula+Site.UAT@GMAIL.com '), 'thosontula+site.uat@gmail.com');
+
+  for (const email of [
+    'worker@example.com',
+    'worker@senatlatrading.com.evil.example',
+    'thosontula@gmail.com.evil.example',
+    'thosontula+@gmail.com',
+    'thosontula+site@googlemail.com',
+    'not-an-email',
+  ]) {
+    assert.equal(normalizeEmail(email), '', email);
+  }
+});
+
+test('admin invite accepts a developer plus alias and stores the normalized email', async () => {
+  process.env.SENATLA_SUPABASE_URL = 'https://example.supabase.co';
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
+
+  const { client, state } = createClientDouble();
+  const handler = buildAdminUsersHandler({ createAdminClient: () => client });
+  const res = createResponse();
+
+  await handler({
+    method: 'POST',
+    headers: { authorization: 'Bearer token-1' },
+    body: { email: ' Thosontula+Provisioning@GMAIL.com ', displayName: 'Provisioning Test' },
+  }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(state.inviteCalls, ['thosontula+provisioning@gmail.com']);
+  assert.equal(state.profileUpsertCalls[0].username, 'thosontula+provisioning@gmail.com');
+});
+
+test('admin invite rejects external and lookalike domains before calling Supabase Auth', async () => {
+  process.env.SENATLA_SUPABASE_URL = 'https://example.supabase.co';
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
+
+  for (const email of ['worker@example.com', 'worker@senatlatrading.com.evil.example', 'thosontula+site@googlemail.com']) {
+    const { client, state } = createClientDouble();
+    const handler = buildAdminUsersHandler({ createAdminClient: () => client });
+    const res = createResponse();
+
+    await handler({
+      method: 'POST',
+      headers: { authorization: 'Bearer token-1' },
+      body: { email, displayName: 'Rejected User' },
+    }, res);
+
+    assert.equal(res.statusCode, 400, email);
+    assert.deepEqual(res.jsonBody, { error: 'Email and display name are required.' });
+    assert.equal(state.inviteCalls.length, 0);
+  }
+});
+
 test('admin send_reset requests a reset email, preserves redirectTo, and audits the event', async () => {
   process.env.SENATLA_SUPABASE_URL = 'https://example.supabase.co';
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
@@ -156,12 +222,12 @@ test('admin send_reset requests a reset email, preserves redirectTo, and audits 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.jsonBody, {
     ok: true,
-    message: 'Password reset email requested for worker@example.com.',
+    message: 'Password reset email requested for worker@senatlatrading.com.',
   });
   assert.deepEqual(state.lastProfileLookup, { id: 'user-2', organizationId: 'org-1' });
   assert.deepEqual(state.resetCalls, [
     {
-      email: 'worker@example.com',
+      email: 'worker@senatlatrading.com',
       options: { redirectTo: 'https://senatla.app/login/recovery' },
     },
   ]);
@@ -258,6 +324,34 @@ test('admin send_reset rejects users without a valid work email', async () => {
   assert.equal(state.authActivityEvents.length, 0);
 });
 
+test('admin send_reset rejects a syntactically valid corporate lookalike domain', async () => {
+  process.env.SENATLA_SUPABASE_URL = 'https://example.supabase.co';
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
+
+  const { client, state } = createClientDouble({
+    targetProfile: {
+      id: 'user-2',
+      username: 'worker@senatlatrading.com.evil.example',
+      display_name: 'Worker',
+      role: 'site',
+      is_active: true,
+      organization_id: 'org-1',
+    },
+  });
+  const handler = buildAdminUsersHandler({ createAdminClient: () => client });
+  const res = createResponse();
+
+  await handler({
+    method: 'PATCH',
+    headers: { authorization: 'Bearer token-1' },
+    body: { action: 'send_reset', userId: 'user-2' },
+  }, res);
+
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.jsonBody, { error: 'Target user has no work email.' });
+  assert.equal(state.resetCalls.length, 0);
+});
+
 test('admin send_reset rejects redirectTo values outside the configured application origins', async () => {
   process.env.SENATLA_SUPABASE_URL = 'https://example.supabase.co';
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
@@ -309,7 +403,7 @@ test('admin send_reset accepts additional configured trusted origins', async () 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(state.resetCalls, [
     {
-      email: 'worker@example.com',
+      email: 'worker@senatlatrading.com',
       options: { redirectTo: 'https://uat.senatla.app/login/recovery?from=admin' },
     },
   ]);
@@ -329,7 +423,7 @@ test('admin update_profile updates auth and profile records and audits role chan
     body: {
       action: 'update_profile',
       userId: 'user-2',
-      email: 'Updated.Worker@Example.com',
+      email: 'Updated.Worker@senatlatrading.com',
       displayName: 'Updated Worker',
       role: 'director',
     },
@@ -343,19 +437,19 @@ test('admin update_profile updates auth and profile records and audits role chan
     ok: true,
     user: {
       id: 'user-2',
-      username: 'updated.worker@example.com',
+      username: 'updated.worker@senatlatrading.com',
       displayName: 'Updated Worker',
       role: 'director',
       isActive: true,
     },
   });
   assert.deepEqual(state.authUpdateCalls, [
-    { userId: 'user-2', payload: { email: 'updated.worker@example.com' } },
+    { userId: 'user-2', payload: { email: 'updated.worker@senatlatrading.com' } },
   ]);
   assert.deepEqual(state.profileUpdateCalls, [
     {
       payload: {
-        username: 'updated.worker@example.com',
+        username: 'updated.worker@senatlatrading.com',
         display_name: 'Updated Worker',
         role: 'director',
       },
@@ -381,9 +475,9 @@ test('admin update_profile rejects invalid profile payloads before mutating auth
     body: {
       action: 'update_profile',
       userId: 'user-2',
-      email: 'bad-email',
-      displayName: '   ',
-      role: 'super-admin',
+      email: 'worker@senatlatrading.com.evil.example',
+      displayName: 'Worker',
+      role: 'site',
     },
   };
   const res = createResponse();
@@ -404,7 +498,7 @@ test('admin suspend rejects self-suspension before mutating auth or profiles', a
   const { client, state } = createClientDouble({
     targetProfile: {
       id: 'admin-1',
-      username: 'admin@example.com',
+      username: 'admin@senatlatrading.com',
       display_name: 'Office Admin',
       role: 'office',
       is_active: true,
@@ -473,7 +567,7 @@ test('admin activate re-enables the target account and records the lifecycle aud
   const { client, state } = createClientDouble({
     targetProfile: {
       id: 'user-2',
-      username: 'worker@example.com',
+      username: 'worker@senatlatrading.com',
       display_name: 'Worker',
       role: 'site',
       is_active: false,

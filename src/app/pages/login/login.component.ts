@@ -138,7 +138,7 @@ export class LoginComponent implements OnInit, OnDestroy {
 
       // If credentials did not match a known account but username was entered:
       if (!this.username.trim()) {
-        this.errorMsg = 'Please enter your work email or username.';
+        this.errorMsg = 'Please enter your work email.';
         return;
       }
 

@@ -24,7 +24,7 @@ describe('LoginComponent', () => {
 
   it('rejects a valid account when the selected role is wrong', async () => {
     component.requestedRole = 'office';
-    component.username = 'director.exec@test.invalid';
+    component.username = 'thosontula+director@gmail.com';
     component.password = 'test-password';
 
     await component.handleLogin();
@@ -37,19 +37,19 @@ describe('LoginComponent', () => {
   });
 
   it('requests a password reset for a known demo account', async () => {
-    component.username = 'office.admin@test.invalid';
+    component.username = 'thosontula+office@gmail.com';
 
     await component.requestPasswordReset();
 
     expect(component.recoveryMsg).toContain('Mock reset prepared');
-    expect(component.recoveryMsg).toContain('/login/recovery?mock_user=office.admin%40test.invalid');
+    expect(component.recoveryMsg).toContain('/login/recovery?mock_user=thosontula%2Boffice%40gmail.com');
   });
 
   it('updates a password during local recovery mode', async () => {
-    component.username = 'office.admin@test.invalid';
+    component.username = 'thosontula+office@gmail.com';
     await component.requestPasswordReset();
     component.recoveryMode = true;
-    component.recoveryUsernameHint = 'office.admin@test.invalid';
+    component.recoveryUsernameHint = 'thosontula+office@gmail.com';
     component.recoveryPassword = 'new-password';
     component.confirmRecoveryPassword = 'new-password';
 

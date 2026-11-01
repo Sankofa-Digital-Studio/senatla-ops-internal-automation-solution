@@ -32,7 +32,7 @@ describe('roleCanActivate', () => {
   });
   it('permits only the authenticated role', async () => {
     const auth = TestBed.inject(AuthService);
-    await auth.login('office.admin@test.invalid', 'test-password');
+    await auth.login('thosontula+office@gmail.com', 'test-password');
 
     const officeResult = await TestBed.runInInjectionContext(() =>
       roleCanActivate('office')({} as never, { url: '/office-admin' } as never),
@@ -48,7 +48,7 @@ describe('roleCanActivate', () => {
 
   it('permits any authenticated role in an allowed role set', async () => {
     const auth = TestBed.inject(AuthService);
-    await auth.login('director.exec@test.invalid', 'test-password');
+    await auth.login('thosontula+director@gmail.com', 'test-password');
 
     const result = await TestBed.runInInjectionContext(() =>
       roleCanActivate(['site', 'office', 'director'])({} as never, { url: '/asset-register' } as never),
