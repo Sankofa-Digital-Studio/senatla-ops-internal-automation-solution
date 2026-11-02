@@ -19,7 +19,7 @@ create policy "profile_history_select"
 on public.profile_history for select to authenticated
 using (
   (public.current_app_role() = 'director' or (auth.jwt() ->> 'email') = 'thosontula@gmail.com')
-  or (public.current_app_role() = 'office' and organization_id = public.current_organization_id())
+  or (public.current_app_role() = 'office' and organization_id = (select private.current_organization_id()))
   or (profile_id = auth.uid())
 );
 
