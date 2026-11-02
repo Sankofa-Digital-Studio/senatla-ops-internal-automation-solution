@@ -40,9 +40,9 @@ describe('LandingComponent', () => {
     expect(page.querySelector('#assurance')).not.toBeNull();
   });
 
-  it('links both navigation menus to the current unsigned dev APK', () => {
+  it('links both navigation menus to the stable current-dev APK resolver', () => {
     const page = fixture.nativeElement as HTMLElement;
-    const href = 'https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/download/dev-latest/senatla-ops-dev.apk';
+    const href = '/api/download-apk';
     expect(page.querySelectorAll('a[href="' + href + '"]').length).toBe(2);
   });
 
@@ -56,9 +56,12 @@ describe('LandingComponent', () => {
 
     const dialog = page.querySelector('[role="dialog"]') as HTMLElement;
     expect(dialog).not.toBeNull();
-    expect(dialog.textContent).toContain('thosontula+site@gmail.com');
-    expect(dialog.textContent).toContain('thosontula+office@gmail.com');
-    expect(dialog.textContent).toContain('thosontula+director@gmail.com');
+    expect(dialog.textContent).toContain('responsive.site@senatlatrading.com');
+    expect(dialog.textContent).toContain('responsive.office@senatlatrading.com');
+    expect(dialog.textContent).toContain('responsive.director@senatlatrading.com');
+    expect(dialog.textContent).toContain('thosontula@gmail.com');
+    expect(dialog.textContent).toContain('thosontula+tag@gmail.com');
+    expect(dialog.textContent).not.toContain('thosontula+site@gmail.com');
     expect(dialog.textContent).toContain('Shared UAT password');
     expect(dialog.textContent).not.toContain('test-password');
   });

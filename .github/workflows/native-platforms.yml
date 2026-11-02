@@ -106,11 +106,11 @@ jobs:
       - name: Publish current dev APK
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: dev-latest
-          name: Senatla Ops dev APK
+          tag_name: dev-${{ github.sha }}
+          name: Senatla Ops dev APK (${{ github.sha }})
           prerelease: true
           make_latest: false
-          body: Unsigned Android debug build for the current dev deployment. Install only for UAT testing.
+          body: Unsigned Android debug build for dev commit ${{ github.sha }}. Install only for UAT testing.
           files: artifacts/senatla-ops-dev.apk
   ios-simulator:
     needs: changes

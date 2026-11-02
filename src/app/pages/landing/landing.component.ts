@@ -20,9 +20,11 @@ export class LandingComponent implements OnInit {
   readonly isLocalMode = computed(() => this.runtimeConfig.api.mode === 'local');
   readonly showBackToTop = signal(false);
   readonly testCredentials = [
-    { role: 'Site Manager', email: 'thosontula+site@gmail.com', passwordHint: 'Shared UAT password' },
-    { role: 'Office Admin', email: 'thosontula+office@gmail.com', passwordHint: 'Shared UAT password' },
-    { role: 'Director', email: 'thosontula+director@gmail.com', passwordHint: 'Shared UAT password' },
+    { role: 'Site Manager', email: 'responsive.site@senatlatrading.com', passwordHint: 'Shared UAT password' },
+    { role: 'Office Admin', email: 'responsive.office@senatlatrading.com', passwordHint: 'Shared UAT password' },
+    { role: 'Director', email: 'responsive.director@senatlatrading.com', passwordHint: 'Shared UAT password' },
+    { role: 'Developer override', email: 'thosontula@gmail.com', passwordHint: 'Shared UAT password' },
+    { role: 'Developer alias test', email: 'thosontula+tag@gmail.com', passwordHint: 'Shared UAT password' },
   ];
 
   async ngOnInit() {
