@@ -39,7 +39,9 @@
     "native:sync:android": "cap sync android",
     "native:sync:ios": "cap sync ios && node scripts/normalize-capacitor-spm-paths.mjs",
     "test:download-apk-contract": "node --test scripts/download-apk-contract.test.mjs",
-    "test:pwa-manifest-contract": "node --test scripts/pwa-manifest-contract.test.mjs"
+    "test:pwa-manifest-contract": "node --test scripts/pwa-manifest-contract.test.mjs",
+    "validate:release-health": "node scripts/validate-release-health.mjs",
+    "test:release-health": "node --test scripts/validate-release-health.test.mjs"
   },
   "private": true,
   "dependencies": {
