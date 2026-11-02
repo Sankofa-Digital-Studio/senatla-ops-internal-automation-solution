@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, OnDestroy, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   AssetEvidenceType,
@@ -55,7 +55,7 @@ export interface AssetEvidenceFileSelection {
         <header><h3>Evidence and extraction review</h3><p>Tap an image to zoom before confirming captured values.</p></header>
         <div class="evidence-list">
           <article *ngFor="let item of evidence">
-            <button *ngIf="item.previewUrl" type="button" class="preview-button" (click)="zoomedEvidence = item" [attr.aria-label]="'View ' + evidenceLabel(item.evidenceType)"><img [src]="item.previewUrl" [alt]="evidenceLabel(item.evidenceType)"></button>
+            <button *ngIf="item.previewUrl" type="button" class="preview-button" (click)="openLightbox(item)" [attr.aria-label]="'View ' + evidenceLabel(item.evidenceType)"><img *ngIf="!isImageFailed(item.id)" [src]="item.previewUrl" [alt]="evidenceLabel(item.evidenceType)" (error)="onImageError(item.id)"><span *ngIf="isImageFailed(item.id)" class="thumb-fallback-icon" aria-hidden="true">⚠️</span></button>
             <div><strong>{{ evidenceLabel(item.evidenceType) }}</strong><small>{{ item.fileName }} · {{ provenanceLabel(item) }}</small><span [class.needs-review]="item.extractionState === 'review_required'">{{ extractionLabel(item) }}</span><dl *ngIf="extractedEntries(item).length" class="extracted-fields"><div *ngFor="let field of extractedEntries(item)"><dt>{{ fieldLabel(field[0]) }}</dt><dd>{{ field[1] }}</dd></div></dl></div>
             <div class="evidence-actions">
               <app-ui-button *ngIf="item.extractionState === 'review_required'" size="sm" variant="secondary" [busy]="busy" (pressed)="extractionRequested.emit(item)">Apply values</app-ui-button>
@@ -93,10 +93,93 @@ export interface AssetEvidenceFileSelection {
         <ol><li *ngFor="let item of reminders"><span>{{ dateLabel(item.scheduledAt) }}</span><strong>{{ item.title }}</strong><small>{{ item.phase === 'expiry' ? 'Renewal' : 'Grace period' }}</small></li></ol>
       </section>
 
-      <div class="image-lightbox" *ngIf="zoomedEvidence" (click)="zoomedEvidence = null">
-        <div (click)="$event.stopPropagation()">
-          <button type="button" (click)="zoomedEvidence = null" aria-label="Close image preview">Close</button>
-          <img *ngIf="zoomedEvidence.previewUrl" [src]="zoomedEvidence.previewUrl" [alt]="evidenceLabel(zoomedEvidence.evidenceType)">
+            <div
+        class="image-lightbox"
+        *ngIf="zoomedEvidence"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Evidence preview lightbox"
+        (click)="closeLightbox()"
+        (touchstart)="onTouchStart($event)"
+        (touchend)="onTouchEnd($event)"
+      >
+        <div class="lightbox-modal" (click)="$event.stopPropagation()">
+          <header class="lightbox-header">
+            <div class="lightbox-meta">
+              <span class="lightbox-counter" *ngIf="previewableEvidence.length > 1" aria-live="polite">
+                Evidence {{ zoomedEvidenceIndex + 1 }} of {{ previewableEvidence.length }}
+              </span>
+              <strong>{{ evidenceLabel(zoomedEvidence.evidenceType) }}</strong>
+              <small>{{ zoomedEvidence.fileName }}</small>
+            </div>
+            <button
+              type="button"
+              class="lightbox-close-btn"
+              (click)="closeLightbox()"
+              aria-label="Close image preview"
+            >
+              ✕
+            </button>
+          </header>
+
+          <div class="lightbox-stage">
+            <button
+              *ngIf="previewableEvidence.length > 1"
+              type="button"
+              class="lightbox-nav lightbox-prev"
+              (click)="prevEvidence()"
+              aria-label="Previous evidence"
+            >
+              ‹
+            </button>
+
+            <div class="lightbox-content">
+              <ng-container *ngIf="!isImageFailed(zoomedEvidence.id); else imageErrorFallback">
+                <img
+                  *ngIf="zoomedEvidence.previewUrl"
+                  [src]="zoomedEvidence.previewUrl"
+                  [alt]="evidenceLabel(zoomedEvidence.evidenceType)"
+                  (error)="onImageError(zoomedEvidence.id)"
+                  class="lightbox-image"
+                />
+              </ng-container>
+              <ng-template #imageErrorFallback>
+                <div class="image-error-fallback" role="alert">
+                  <span class="error-badge">Image preview unavailable</span>
+                  <p>Failed to load media for {{ zoomedEvidence.fileName }}. The file may be corrupt or the link may have expired.</p>
+                  <button type="button" class="retry-btn" (click)="retryImage(zoomedEvidence.id)">Retry preview</button>
+                </div>
+              </ng-template>
+            </div>
+
+            <button
+              *ngIf="previewableEvidence.length > 1"
+              type="button"
+              class="lightbox-nav lightbox-next"
+              (click)="nextEvidence()"
+              aria-label="Next evidence"
+            >
+              ›
+            </button>
+          </div>
+
+          <footer class="lightbox-strip" *ngIf="previewableEvidence.length > 1">
+            <div class="thumbnail-strip" role="tablist" aria-label="Evidence thumbnails">
+              <button
+                *ngFor="let item of previewableEvidence; let idx = index"
+                type="button"
+                class="thumb-tile"
+                [class.active]="item.id === zoomedEvidence.id"
+                [attr.aria-selected]="item.id === zoomedEvidence.id"
+                [attr.aria-label]="'Go to evidence ' + (idx + 1) + ' of ' + previewableEvidence.length + ': ' + evidenceLabel(item.evidenceType)"
+                (click)="selectEvidence(item)"
+              >
+                <img *ngIf="item.previewUrl && !isImageFailed(item.id)" [src]="item.previewUrl" [alt]="evidenceLabel(item.evidenceType)" (error)="onImageError(item.id)" />
+                <span *ngIf="isImageFailed(item.id)" class="thumb-fallback-icon" aria-hidden="true">⚠️</span>
+                <span class="thumb-index">{{ idx + 1 }}</span>
+              </button>
+            </div>
+          </footer>
         </div>
       </div>
 
@@ -104,7 +187,7 @@ export interface AssetEvidenceFileSelection {
         <section class="confirmation-modal" (click)="$event.stopPropagation()">
           <header><h3>Confirm asset registration</h3><button type="button" (click)="confirmationOpen = false" aria-label="Close confirmation">Close</button></header>
           <div class="confirmation-body">
-            <button *ngIf="primaryEvidence() as image" type="button" class="confirmation-image" (click)="zoomedEvidence = image"><img [src]="image.previewUrl" [alt]="evidenceLabel(image.evidenceType)"></button>
+            <button *ngIf="primaryEvidence() as image" type="button" class="confirmation-image" (click)="openLightbox(image)"><img [src]="image.previewUrl" [alt]="evidenceLabel(image.evidenceType)"></button>
             <dl>
               <div><dt>Identifier</dt><dd>{{ summaryIdentifier() }}</dd></div>
               <div><dt>Asset</dt><dd>{{ asset.make }} {{ asset.model }}</dd></div>
@@ -160,10 +243,35 @@ export interface AssetEvidenceFileSelection {
     ol { display: grid; margin: 12px 0 0; padding: 0; list-style: none; }
     li { display: grid; grid-template-columns: 92px 1fr auto; gap: 10px; padding: 8px 0; border-bottom: 1px solid #293541; color: #dce3e8; font-size: 11px; }
     li span,li small { color: #8493a1; }
-    .image-lightbox,.confirmation-backdrop { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 18px; background: rgba(3,7,12,.82); }
-    .image-lightbox>div { display: grid; gap: 10px; width: min(980px, 96vw); max-height: 92vh; }
-    .image-lightbox button,.confirmation-modal header button { justify-self: end; border: 1px solid #566575; border-radius: 6px; background: #111a22; color: #f7fafc; padding: 8px 12px; }
-    .image-lightbox img { max-width: 100%; max-height: 82vh; object-fit: contain; border-radius: 6px; background: #0b1117; }
+    
+    .image-lightbox,.confirmation-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 16px; background: rgba(3,7,12,.88); backdrop-filter: blur(4px); }
+    .lightbox-modal { display: flex; flex-direction: column; width: min(980px, 96vw); max-height: 94vh; border: 1px solid #3b4855; border-radius: 8px; background: #0f171f; box-shadow: 0 24px 80px rgba(0,0,0,.55); overflow: hidden; }
+    .lightbox-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #283542; background: #131c25; }
+    .lightbox-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: #f2f5f8; font-size: 13px; }
+    .lightbox-meta small { color: #8fa0b0; font-size: 11px; }
+    .lightbox-counter { padding: 2px 8px; border-radius: 4px; background: #eab308; color: #111827; font-size: 11px; font-weight: 800; letter-spacing: .02em; }
+    .lightbox-close-btn { min-width: 36px; min-height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #566575; border-radius: 6px; background: #1a2530; color: #f7fafc; font-size: 14px; cursor: pointer; }
+    .lightbox-close-btn:hover { background: #243242; border-color: #cbd5e1; }
+    .lightbox-stage { position: relative; display: flex; align-items: center; justify-content: space-between; flex: 1; min-height: 280px; max-height: 68vh; background: #070b0e; overflow: hidden; user-select: none; }
+    .lightbox-content { flex: 1; display: flex; align-items: center; justify-content: center; height: 100%; max-height: 68vh; padding: 12px; overflow: hidden; }
+    .lightbox-image { max-width: 100%; max-height: 66vh; object-fit: contain; border-radius: 4px; }
+    .lightbox-nav { z-index: 10; min-width: 44px; min-height: 44px; border: 1px solid #4a5968; border-radius: 50%; background: rgba(17,26,34,.82); color: #f7fafc; font-size: 26px; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s ease, transform .1s ease; margin: 0 12px; }
+    .lightbox-nav:hover { background: #eab308; color: #111827; border-color: #eab308; }
+    .lightbox-nav:active { transform: scale(0.95); }
+    .image-error-fallback { display: grid; place-items: center; gap: 10px; max-width: 400px; padding: 24px; text-align: center; color: #e2e8f0; }
+    .error-badge { display: inline-block; padding: 4px 10px; border-radius: 4px; background: rgba(239,68,68,.16); border: 1px solid rgba(239,68,68,.36); color: #fca5a5; font-size: 12px; font-weight: 700; }
+    .image-error-fallback p { margin: 0; color: #94a3b8; font-size: 12px; line-height: 1.5; }
+    .retry-btn { border: 1px solid #64748b; border-radius: 6px; background: #1e293b; color: #f8fafc; padding: 6px 14px; font-size: 12px; cursor: pointer; }
+    .retry-btn:hover { background: #334155; }
+    .lightbox-strip { border-top: 1px solid #283542; background: #101720; padding: 8px 12px; overflow-x: auto; }
+    .thumbnail-strip { display: flex; gap: 8px; justify-content: center; }
+    .thumb-tile { position: relative; width: 52px; height: 40px; padding: 0; border: 2px solid transparent; border-radius: 4px; background: #1a2430; overflow: hidden; cursor: pointer; opacity: .7; transition: border-color .15s, opacity .15s; }
+    .thumb-tile:hover { opacity: 1; }
+    .thumb-tile.active { border-color: #eab308; opacity: 1; }
+    .thumb-tile img { width: 100%; height: 100%; object-fit: cover; }
+    .thumb-tile .thumb-fallback-icon { display: flex; align-items: center; justify-content: center; height: 100%; font-size: 14px; }
+    .thumb-tile .thumb-index { position: absolute; bottom: 2px; right: 2px; font-size: 9px; font-weight: 700; background: rgba(0,0,0,.65); color: #fff; padding: 0 3px; border-radius: 2px; }
+    .thumb-fallback-icon { display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #1e293b; color: #f59e0b; font-size: 18px; }
     .confirmation-modal { width: min(760px, 96vw); border: 1px solid #42505f; border-radius: 8px; background: #0f171f; color: #eef3f7; box-shadow: 0 24px 80px rgba(0,0,0,.38); }
     .confirmation-modal header,.confirmation-modal footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #283542; }
     .confirmation-modal footer { border-top: 1px solid #283542; border-bottom: 0; }
@@ -179,7 +287,7 @@ export interface AssetEvidenceFileSelection {
     @media (max-width:760px) { .capture-grid,.document-grid,.confirmation-body,dl { grid-template-columns:1fr; } .ocr-guide { align-items:stretch; flex-direction:column; } .capture-grid button { min-height:82px; } .registration-status { position:sticky; top:0; z-index:4; } .evidence-list article { grid-template-columns:48px 1fr; } .preview-button,.preview-button img,.evidence-list img { width:48px; } .evidence-list app-ui-button { grid-column:1/-1; } li { grid-template-columns:82px 1fr; } li small { grid-column:2; } .confirmation-modal header,.confirmation-modal footer { align-items: stretch; flex-direction: column; } .confirmation-modal header button { justify-self: stretch; } }
   `],
 })
-export class AssetRegistrationWorkspaceComponent {
+export class AssetRegistrationWorkspaceComponent implements OnDestroy {
   readonly captureOptions: Array<{ type: AssetEvidenceType; symbol: string; label: string; detail: string }> = [
     { type: 'asset_photo', symbol: 'CAM', label: 'Asset photo', detail: 'Overall condition and identity' },
     { type: 'number_plate', symbol: 'SCAN', label: 'Serial or number plate', detail: 'OCR or barcode assisted capture' },
@@ -213,7 +321,146 @@ export class AssetRegistrationWorkspaceComponent {
   @Output() readonly detailsVerifiedChange = new EventEmitter<boolean>();
 
   confirmationOpen = false;
-  zoomedEvidence: AssetRegistrationEvidence | null = null;
+  private readonly _zoomedEvidence = signal<AssetRegistrationEvidence | null>(null);
+  private readonly _zoomedEvidenceIndex = signal<number>(-1);
+  private readonly _failedImageIds = signal<Set<string>>(new Set<string>());
+
+  get zoomedEvidence(): AssetRegistrationEvidence | null {
+    return this._zoomedEvidence();
+  }
+  set zoomedEvidence(value: AssetRegistrationEvidence | null) {
+    this._zoomedEvidence.set(value);
+  }
+
+  get zoomedEvidenceIndex(): number {
+    return this._zoomedEvidenceIndex();
+  }
+  set zoomedEvidenceIndex(value: number) {
+    this._zoomedEvidenceIndex.set(value);
+  }
+
+  touchStartX: number | null = null;
+  touchStartY: number | null = null;
+
+  get previewableEvidence(): AssetRegistrationEvidence[] {
+    const withPreview = this.evidence.filter((item) => Boolean(item.previewUrl));
+    if (withPreview.length > 0) {
+      return withPreview;
+    }
+    const current = this._zoomedEvidence();
+    return current ? [current] : [];
+  }
+
+  openLightbox(item: AssetRegistrationEvidence) {
+    this._zoomedEvidence.set(item);
+    const list = this.previewableEvidence;
+    const index = list.findIndex((e) => e.id === item.id);
+    this._zoomedEvidenceIndex.set(index >= 0 ? index : 0);
+    this.lockBodyScroll();
+  }
+
+  closeLightbox() {
+    this._zoomedEvidence.set(null);
+    this._zoomedEvidenceIndex.set(-1);
+    this.unlockBodyScroll();
+  }
+
+  nextEvidence() {
+    const list = this.previewableEvidence;
+    if (list.length <= 1) return;
+    const nextIdx = (this._zoomedEvidenceIndex() + 1) % list.length;
+    this._zoomedEvidenceIndex.set(nextIdx);
+    this._zoomedEvidence.set(list[nextIdx]);
+  }
+
+  prevEvidence() {
+    const list = this.previewableEvidence;
+    if (list.length <= 1) return;
+    const prevIdx = (this._zoomedEvidenceIndex() - 1 + list.length) % list.length;
+    this._zoomedEvidenceIndex.set(prevIdx);
+    this._zoomedEvidence.set(list[prevIdx]);
+  }
+
+  selectEvidence(item: AssetRegistrationEvidence) {
+    this._zoomedEvidence.set(item);
+    const list = this.previewableEvidence;
+    const index = list.findIndex((e) => e.id === item.id);
+    this._zoomedEvidenceIndex.set(index >= 0 ? index : 0);
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent) {
+    if (!this._zoomedEvidence()) return;
+    if (event.key === 'Escape') {
+      this.closeLightbox();
+      event.preventDefault();
+    } else if (event.key === 'ArrowRight') {
+      this.nextEvidence();
+      event.preventDefault();
+    } else if (event.key === 'ArrowLeft') {
+      this.prevEvidence();
+      event.preventDefault();
+    }
+  }
+
+  onTouchStart(event: TouchEvent) {
+    const touch = event.changedTouches?.[0];
+    if (touch) {
+      this.touchStartX = touch.clientX;
+      this.touchStartY = touch.clientY;
+    }
+  }
+
+  onTouchEnd(event: TouchEvent) {
+    if (this.touchStartX === null || this.touchStartY === null) return;
+    const touch = event.changedTouches?.[0];
+    if (!touch) return;
+    const deltaX = touch.clientX - this.touchStartX;
+    const deltaY = touch.clientY - this.touchStartY;
+    this.touchStartX = null;
+    this.touchStartY = null;
+
+    if (Math.abs(deltaX) >= 40 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      if (deltaX < 0) {
+        this.nextEvidence();
+      } else {
+        this.prevEvidence();
+      }
+    }
+  }
+
+  onImageError(id: string) {
+    this._failedImageIds.update((set) => new Set(set).add(id));
+  }
+
+  retryImage(id: string) {
+    this._failedImageIds.update((set) => {
+      const next = new Set(set);
+      next.delete(id);
+      return next;
+    });
+  }
+
+  isImageFailed(id: string): boolean {
+    return this._failedImageIds().has(id);
+  }
+
+  private lockBodyScroll() {
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  private unlockBodyScroll() {
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.style.overflow = '';
+    }
+  }
+
+  ngOnDestroy() {
+    this.unlockBodyScroll();
+  }
+
   manualOcrText = '';
   showOcrGuide = this.shouldShowOcrGuide();
 
