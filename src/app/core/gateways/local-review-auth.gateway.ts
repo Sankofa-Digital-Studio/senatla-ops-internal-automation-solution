@@ -9,6 +9,7 @@ type ReviewAccount = {
   role: AppRole;
   displayName: string;
   permittedSiteIds: string[];
+  mustChangePassword?: boolean;
 };
 
 const SESSION_KEY = 'senatla_ops_local_review_session_v2';
@@ -32,6 +33,18 @@ const REVIEW_ACCOUNTS: ReadonlyArray<readonly [string, ReviewAccount]> = [
   [
     'thosontula@gmail.com',
     { password: 'test-password', role: 'director', displayName: 'Developer', permittedSiteIds: REVIEW_SITES },
+  ],
+  [
+    'brian@senatlatrading.com',
+    { password: 'Sen4t!aOperationsBrian2026', role: 'site', displayName: 'Brian', permittedSiteIds: ['demo-workshop', 's1'], mustChangePassword: true },
+  ],
+  [
+    'maggie@senatlatrading.com',
+    { password: 'Sen4t!aOperationsMaggie2026', role: 'office', displayName: 'Maggie', permittedSiteIds: REVIEW_SITES, mustChangePassword: true },
+  ],
+  [
+    'rubinthoso@senatlatrading.com',
+    { password: 'Sen4t!aOperationsRubin2026', role: 'director', displayName: 'Rubin Thoso', permittedSiteIds: REVIEW_SITES, mustChangePassword: true },
   ],
 ];
 
@@ -61,7 +74,7 @@ export class LocalReviewAuthGateway implements AuthGateway {
       permittedSiteIds: account.permittedSiteIds,
       issuedAt,
       expiresAt: cappedSessionExpiry(issuedAt),
-      mustChangePassword: false,
+      mustChangePassword: account.mustChangePassword === true,
     };
 
     this.persistSession(session);
@@ -88,7 +101,7 @@ export class LocalReviewAuthGateway implements AuthGateway {
     const account = this.credentials.get(email);
     if (!account) throw new Error('Local recovery session is unavailable. Request a new reset link.');
 
-    this.credentials.set(email, { ...account, password });
+    this.credentials.set(email, { ...account, password, mustChangePassword: false });
     sessionStorage.removeItem(MOCK_RESET_KEY);
     this.emit(null);
   }

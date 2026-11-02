@@ -42,7 +42,9 @@
     "test:pwa-manifest-contract": "node --test scripts/pwa-manifest-contract.test.mjs",
     "validate:release-health": "node scripts/validate-release-health.mjs",
     "test:release-health": "node --test scripts/validate-release-health.test.mjs",
-    "test:password-policy": "node --test scripts/password-policy.test.mjs"
+    "test:password-policy": "node --test scripts/password-policy.test.mjs",
+    "seed:users": "node scripts/seed-operational-users.mjs",
+    "test:seed-users": "node --test scripts/seed-operational-users.test.mjs"
   },
   "private": true,
   "dependencies": {

@@ -1,4 +1,4 @@
-import { Provider } from '@angular/core';
+import { Provider, EnvironmentProviders } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { DEFAULT_RUNTIME_CONFIG, provideRuntimeConfig } from './core/config/runtime-config';
@@ -17,6 +17,9 @@ class TestAuthGateway {
     ['thosontula+office@gmail.com', { password: 'test-password', role: 'office', displayName: 'Office Admin' }],
     ['thosontula+director@gmail.com', { password: 'test-password', role: 'director', displayName: 'Director' }],
     ['thosontula+temporary@gmail.com', { password: 'temporary-password', role: 'site', displayName: 'Temporary User', mustChangePassword: true }],
+    ['brian@senatlatrading.com', { password: 'Sen4t!aOperationsBrian2026', role: 'site', displayName: 'Brian', mustChangePassword: true }],
+    ['maggie@senatlatrading.com', { password: 'Sen4t!aOperationsMaggie2026', role: 'office', displayName: 'Maggie', mustChangePassword: true }],
+    ['rubinthoso@senatlatrading.com', { password: 'Sen4t!aOperationsRubin2026', role: 'director', displayName: 'Rubin Thoso', mustChangePassword: true }],
   ]);
 
   async loadSession(): Promise<AuthSession | null> {
@@ -65,6 +68,7 @@ class TestAuthGateway {
 
   async logout(): Promise<void> {
     this.session = null;
+    this.pendingResetEmail = '';
   }
 }
 
@@ -74,7 +78,7 @@ class TestCostAttributionGateway implements CostAttributionGateway {
   }
 }
 
-export const TEST_APP_PROVIDERS = [
+export const TEST_APP_PROVIDERS: (Provider | EnvironmentProviders)[] = [
   provideRouter(routes),
   provideRuntimeConfig(DEFAULT_RUNTIME_CONFIG),
   ...provideBackendGateways(DEFAULT_RUNTIME_CONFIG),
@@ -83,7 +87,7 @@ export const TEST_APP_PROVIDERS = [
   { provide: SESSION_EXPIRY_SCHEDULER, useValue: { schedule: () => () => undefined } },
 ];
 
-export function resetTestStorage() {
+export function resetTestStorage(): void {
   sessionStorage.clear();
   localStorage.clear();
 }
