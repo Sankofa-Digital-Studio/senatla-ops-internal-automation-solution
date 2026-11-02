@@ -44,7 +44,8 @@
     "test:release-health": "node --test scripts/validate-release-health.test.mjs",
     "test:password-policy": "node --test scripts/password-policy.test.mjs",
     "seed:users": "node scripts/seed-operational-users.mjs",
-    "test:seed-users": "node --test scripts/seed-operational-users.test.mjs"
+    "test:seed-users": "node --test scripts/seed-operational-users.test.mjs",
+    "test:recovery-pin-contract": "node --test scripts/recovery-pin-contract.test.mjs"
   },
   "private": true,
   "dependencies": {
