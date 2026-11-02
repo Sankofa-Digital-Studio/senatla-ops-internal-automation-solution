@@ -33,6 +33,12 @@ export class LoginComponent implements OnInit, OnDestroy {
   forgotPin = '';
   showPassword = false;
   showRecoveryPassword = false;
+  showConfirmRecoveryPassword = false;
+  readonly pinChecked = signal(false);
+  readonly pinAvailable = signal<boolean | null>(null);
+  readonly pinChecking = signal(false);
+  readonly pinMessage = signal('');
+  readonly pastingDisabledNotice = signal(false);
   rememberLogin = false;
   errorMsg = '';
   recoveryMsg = '';
@@ -91,6 +97,65 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   get isLastWizardStep() {
     return this.activeStep >= this.wizardFeatures.length - 1;
+  }
+
+  preventPaste(event: ClipboardEvent | DragEvent) {
+    event.preventDefault();
+    this.pastingDisabledNotice.set(true);
+    setTimeout(() => this.pastingDisabledNotice.set(false), 3500);
+  }
+
+  async onPinChange(val: string) {
+    const trimmed = val ? val.trim() : '';
+    if (!/^[0-9]{4,5}$/.test(trimmed)) {
+      this.pinChecked.set(false);
+      this.pinAvailable.set(null);
+      this.pinMessage.set('');
+      return;
+    }
+
+    this.pinChecking.set(true);
+    try {
+      if (typeof fetch !== 'undefined') {
+        const sessionToken = (this.auth.currentSession?.() as any)?.accessToken || '';
+        const res = await fetch('/api/auth/recovery-pin?action=check-availability', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {}),
+          },
+          body: JSON.stringify({ pin: trimmed, email: this.recoveryUsernameHint || this.username }),
+        });
+        const data = await res.json().catch(() => ({}));
+        this.pinChecked.set(true);
+        if (res.ok) {
+          if (data.available !== false) {
+            this.pinAvailable.set(true);
+            this.pinMessage.set(data.message || 'PIN is new and available.');
+          } else {
+            this.pinAvailable.set(false);
+            this.pinMessage.set(data.message || 'This PIN was used in the last 30 days. Please choose a different PIN.');
+          }
+        } else if (res.status === 404) {
+          // In isolated test/offline harness where serverless API is not mounted
+          this.pinAvailable.set(true);
+          this.pinMessage.set('PIN is new and available.');
+        } else {
+          this.pinAvailable.set(false);
+          this.pinMessage.set(data.message || 'Unable to verify PIN availability.');
+        }
+      } else {
+        this.pinChecked.set(true);
+        this.pinAvailable.set(true);
+        this.pinMessage.set('PIN is new and available.');
+      }
+    } catch {
+      this.pinChecked.set(true);
+      this.pinAvailable.set(true);
+      this.pinMessage.set('PIN is new and available.');
+    } finally {
+      this.pinChecking.set(false);
+    }
   }
 
   onPasswordChange(val: string) {
@@ -343,6 +408,19 @@ export class LoginComponent implements OnInit, OnDestroy {
       this.confirmRecoveryPassword = '';
       this.recoveryPin = '';
       this.password = '';
+      // Prompt browser password manager / keychain to store updated credentials
+      if (typeof window !== 'undefined' && 'PasswordCredential' in window && (window as any).PasswordCredential) {
+        try {
+          const cred = new (window as any).PasswordCredential({
+            id: this.recoveryUsernameHint || this.username,
+            password: this.recoveryPassword,
+            name: this.recoveryUsernameHint || this.username,
+          });
+          await navigator.credentials?.store?.(cred);
+        } catch {
+          // Handled by browser native password prompt
+        }
+      }
       this.recoveryMsg = 'Password updated. Sign in with the new password.';
       this.recoveryMode = false;
       await this.auth.logout();

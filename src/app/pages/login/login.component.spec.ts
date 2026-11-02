@@ -104,6 +104,51 @@ describe('LoginComponent', () => {
     expect(page.querySelector('#recovery-pin')).not.toBeNull();
   });
 
+  it('disables pasting on confirm password input and shows transient notice', () => {
+    component.recoveryMode = true;
+    fixture.detectChanges();
+
+    const preventDefaultSpy = jasmine.createSpy('preventDefault');
+    component.preventPaste({ preventDefault: preventDefaultSpy } as any);
+
+    expect(preventDefaultSpy).toHaveBeenCalled();
+    expect(component.pastingDisabledNotice()).toBeTrue();
+  });
+
+  it('checks PIN availability when 4-5 digits entered and displays verification badge', async () => {
+    const fix = TestBed.createComponent(LoginComponent);
+    const comp = fix.componentInstance;
+    comp.recoveryMode = true;
+    comp.onPasswordChange('theSusp3k_t#');
+    fix.detectChanges();
+
+    expect(comp.pinChecked()).toBeFalse();
+
+    await comp.onPinChange('4829');
+    fix.detectChanges();
+
+    expect(comp.pinChecked()).toBeTrue();
+    expect(comp.pinAvailable()).toBeTrue();
+    expect(comp.pinMessage()).toContain('available');
+
+    const page = fix.nativeElement as HTMLElement;
+    expect(page.textContent).toContain('PIN is new and available');
+  });
+
+  it('renders instructions on distinct separate lines in recovery mode', () => {
+    const fix = TestBed.createComponent(LoginComponent);
+    const comp = fix.componentInstance;
+    comp.recoveryMode = true;
+    comp.forcedPasswordChange = true;
+    fix.detectChanges();
+
+    const page = fix.nativeElement as HTMLElement;
+    const paragraphs = page.querySelectorAll('.recovery-instructions p');
+    expect(paragraphs.length).toBeGreaterThanOrEqual(2);
+    expect(paragraphs[0].textContent).toContain('temporary password must be replaced');
+    expect(paragraphs[1].textContent).toContain('save your personal recovery PIN');
+  });
+
   it('renders only email and password authentication controls on primary form', () => {
     const page = fixture.nativeElement as HTMLElement;
     const links = Array.from(page.querySelectorAll('a')).map((link) => link.getAttribute('href'));

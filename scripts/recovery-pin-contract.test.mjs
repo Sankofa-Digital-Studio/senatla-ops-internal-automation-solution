@@ -168,3 +168,43 @@ test('verify-pin validates correct PIN for user email', async () => {
   await handler(reqFail, resFail);
   assert.equal(resFail.statusCode, 401);
 });
+
+test('check-availability reports PIN availability and rejects recently used PIN', async () => {
+  process.env.SENATLA_SUPABASE_URL = 'http://127.0.0.1:54321';
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-key';
+
+  const usedHash = hashPin('5544');
+  const now = new Date('2026-11-02T12:00:00Z');
+  const fiveDaysAgo = new Date('2026-10-28T12:00:00Z').toISOString();
+
+  const { client } = mockClient({
+    recentPins: [{ pin_hash: usedHash, created_at: fiveDaysAgo }],
+  });
+  const handler = buildRecoveryPinHandler({ createAdminClient: () => client, now: () => now });
+
+  // 1. Available PIN
+  const reqAvailable = {
+    method: 'POST',
+    query: { action: 'check-availability' },
+    headers: { authorization: 'Bearer valid-token' },
+    body: { pin: '9988' },
+  };
+  const resAvailable = mockResponse();
+  await handler(reqAvailable, resAvailable);
+  assert.equal(resAvailable.statusCode, 200);
+  assert.equal(resAvailable.body.available, true);
+  assert.match(resAvailable.body.message, /available/i);
+
+  // 2. Used PIN (within 30 days)
+  const reqUsed = {
+    method: 'POST',
+    query: { action: 'check-availability' },
+    headers: { authorization: 'Bearer valid-token' },
+    body: { pin: '5544' },
+  };
+  const resUsed = mockResponse();
+  await handler(reqUsed, resUsed);
+  assert.equal(resUsed.statusCode, 200);
+  assert.equal(resUsed.body.available, false);
+  assert.match(resUsed.body.message, /used in the last 30 days/i);
+});

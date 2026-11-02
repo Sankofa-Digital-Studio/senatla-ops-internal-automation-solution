@@ -97,6 +97,64 @@ export function buildRecoveryPinHandler({ createAdminClient = createClient, now 
       return;
     }
 
+    if (action === 'check-availability') {
+      const authHeader = req.headers?.authorization || '';
+      const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+      let userId = null;
+
+      if (token) {
+        const { data: authData } = await adminClient.auth.getUser(token);
+        userId = authData?.user?.id || null;
+      }
+
+      const pin = req.body?.pin;
+      if (!isValidPinFormat(pin)) {
+        res.status(400).json({ error: 'Recovery PIN must be 4 or 5 digits.' });
+        return;
+      }
+
+      if (!userId) {
+        const email = `${req.body?.email || ''}`.trim().toLowerCase();
+        if (email) {
+          const { data: userList } = await adminClient.auth.admin.listUsers();
+          const user = (userList?.users || []).find((u) => (u.email || '').toLowerCase() === email);
+          userId = user?.id || null;
+        }
+      }
+
+      if (!userId) {
+        res.status(200).json({ ok: true, available: true, message: 'PIN is new and available.' });
+        return;
+      }
+
+      const pinDigest = hashPin(pin);
+      const thirtyDaysAgoIso = new Date(now().getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+      const { data: recentPins, error: recentPinsErr } = await adminClient
+        .from('recovery_pin_history')
+        .select('pin_hash, created_at')
+        .eq('user_id', userId)
+        .gte('created_at', thirtyDaysAgoIso);
+
+      if (recentPinsErr) {
+        res.status(500).json({ error: recentPinsErr.message || 'Unable to check PIN history.' });
+        return;
+      }
+
+      const isReused = (recentPins || []).some((r) => r.pin_hash === pinDigest);
+      if (isReused) {
+        res.status(200).json({
+          ok: true,
+          available: false,
+          message: 'This PIN was used in the last 30 days. Please choose a different PIN.',
+        });
+        return;
+      }
+
+      res.status(200).json({ ok: true, available: true, message: 'PIN is new and available.' });
+      return;
+    }
+
     if (action === 'verify-pin') {
       // Verifies whether email + PIN matches the user's current recovery PIN
       const email = `${req.body?.email || ''}`.trim().toLowerCase();
@@ -134,7 +192,7 @@ export function buildRecoveryPinHandler({ createAdminClient = createClient, now 
       return;
     }
 
-    res.status(400).json({ error: 'Invalid action. Supported actions: set-pin, verify-pin.' });
+    res.status(400).json({ error: 'Invalid action. Supported actions: set-pin, verify-pin, check-availability.' });
   };
 }
 
