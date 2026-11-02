@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { RUNTIME_CONFIG } from '../../core/config/runtime-config';
@@ -18,6 +18,7 @@ export class LandingComponent implements OnInit {
   readonly landingReady = signal(false);
   readonly testCredentialsVisible = signal(false);
   readonly isLocalMode = computed(() => this.runtimeConfig.api.mode === 'local');
+  readonly showBackToTop = signal(false);
   readonly testCredentials = [
     { role: 'Site Manager', email: 'thosontula+site@gmail.com', passwordHint: 'Shared UAT password' },
     { role: 'Office Admin', email: 'thosontula+office@gmail.com', passwordHint: 'Shared UAT password' },
@@ -50,6 +51,13 @@ export class LandingComponent implements OnInit {
     }
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  @HostListener('window:scroll')
+  onWindowScroll() {
+    if (typeof window !== 'undefined') {
+      this.showBackToTop.set(window.scrollY > 350);
     }
   }
 

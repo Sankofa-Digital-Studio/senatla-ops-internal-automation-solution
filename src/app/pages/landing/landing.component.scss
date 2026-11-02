@@ -486,3 +486,132 @@
 @keyframes loading-rock { from { transform: translateX(-35%); } to { transform: translateX(170%); } }
 @media (min-width: 768px) { .section-grid { grid-template-columns: repeat(3, 1fr); } .landing-section { padding: 2rem; } }
 @media (prefers-reduced-motion: reduce) { .cornerstone-loader__progress span { animation: none; width: 100%; } }
+
+/* Nav icon & responsive tablet fit */
+.nav-login-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .site-header {
+    gap: 0.5rem;
+  }
+  .desktop-menu {
+    gap: 0.35rem;
+  }
+  .desktop-menu a,
+  .desktop-menu button {
+    padding: 0.55rem 0.75rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+  }
+  .desktop-menu .nav-login {
+    padding: 0.55rem 0.9rem;
+  }
+}
+
+/* Hero tagline styling without pill */
+.hero-tagline-wrap {
+  display: inline-block;
+  position: relative;
+}
+.hero-tagline {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.tagline-dot {
+  color: #bef264;
+  font-size: 0.85rem;
+}
+.tagline-accent-bar {
+  margin-top: 6px;
+  margin-left: auto;
+  width: 38%;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent 0%, #bef264 100%);
+}
+
+/* Central downward chevron with buzz / bounce & afterglow */
+.scroll-down-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 1.75rem auto 1.5rem;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.2s;
+}
+.scroll-down-wrap:hover {
+  opacity: 1;
+}
+.scroll-down-text {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: rgba(217, 249, 157, 0.75);
+}
+.scroll-down-chevron {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(190, 242, 100, 0.12);
+  border: 1px solid rgba(190, 242, 100, 0.32);
+  color: #bef264;
+  animation: chevron-buzz-bounce 2.2s infinite ease-in-out;
+}
+.scroll-down-chevron svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+@keyframes chevron-buzz-bounce {
+  0%, 100% {
+    transform: translateY(0);
+    box-shadow: 0 0 4px rgba(190, 242, 100, 0.25);
+  }
+  50% {
+    transform: translateY(7px);
+    box-shadow: 0 0 16px rgba(190, 242, 100, 0.8);
+  }
+}
+
+/* Floating Back to Top button */
+.back-to-top-button {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 95;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.65rem 1.1rem;
+  border-radius: 999px;
+  background: #0f172a;
+  border: 1px solid rgba(190, 242, 100, 0.45);
+  color: #d9f99d;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s, border-color 0.2s;
+}
+.back-to-top-button svg {
+  width: 1rem;
+  height: 1rem;
+}
+.back-to-top-button:hover {
+  background: #172015;
+  border-color: #bef264;
+  transform: translateY(-2px);
+}
