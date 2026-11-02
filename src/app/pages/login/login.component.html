@@ -65,16 +65,56 @@
             <label for="login-password" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">Password</label>
             <input id="login-password" [type]="showPassword ? 'text' : 'password'" [(ngModel)]="password" name="password" autocomplete="current-password" class="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm text-white focus:border-lime-300 focus:outline-none" [placeholder]="passwordPlaceholder">
           </div>
+
+          <!-- Password Reset Mode Inputs -->
           <div *ngIf="recoveryMode" class="grid gap-3">
             <div>
               <label for="recovery-password" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">New password</label>
-              <input id="recovery-password" [type]="showRecoveryPassword ? 'text' : 'password'" [(ngModel)]="recoveryPassword" name="recoveryPassword" autocomplete="new-password" class="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm text-white focus:border-lime-300 focus:outline-none" placeholder="Choose a new password">
+              <input id="recovery-password" [type]="showRecoveryPassword ? 'text' : 'password'" [(ngModel)]="recoveryPassword" (ngModelChange)="onPasswordChange($event)" name="recoveryPassword" autocomplete="new-password" class="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm text-white focus:border-lime-300 focus:outline-none" placeholder="8-16 chars (non-adjacent) or 12+ chars">
+
+              <!-- Strength meter bar -->
+              <div class="mt-2 space-y-1">
+                <div class="flex items-center justify-between text-[11px] font-bold">
+                  <span class="text-slate-400">Password Strength:</span>
+                  <span [class.text-red-400]="passwordStrength().tier === 'weak'" [class.text-amber-400]="passwordStrength().tier === 'amber'" [class.text-lime-300]="passwordStrength().tier === 'green'">
+                    {{ passwordStrength().score }}% ({{ passwordStrength().tier === 'green' ? 'Acceptable · Strong' : passwordStrength().tier === 'amber' ? 'Acceptable · Good' : 'Weak' }})
+                  </span>
+                </div>
+                <div class="h-2 w-full overflow-hidden rounded-full bg-slate-800" role="progressbar" [attr.aria-valuenow]="passwordStrength().score" aria-valuemin="0" aria-valuemax="100" [attr.aria-label]="'Password strength: ' + passwordStrength().score + '%'">
+                  <div class="h-full transition-all duration-300 rounded-full" [style.width.%]="passwordStrength().score" [class.bg-red-500]="passwordStrength().tier === 'weak'" [class.bg-amber-400]="passwordStrength().tier === 'amber'" [class.bg-lime-300]="passwordStrength().tier === 'green'"></div>
+                </div>
+                <p *ngIf="passwordStrength().errors.length" class="text-[11px] text-red-300">
+                  {{ passwordStrength().errors[0] }}
+                </p>
+              </div>
             </div>
+
             <div>
               <label for="recovery-password-confirmation" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">Confirm password</label>
               <input id="recovery-password-confirmation" [type]="showRecoveryPassword ? 'text' : 'password'" [(ngModel)]="confirmRecoveryPassword" name="confirmRecoveryPassword" autocomplete="new-password" class="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm text-white focus:border-lime-300 focus:outline-none" placeholder="Repeat the new password">
             </div>
+
+            <!-- Recovery PIN: Hidden until password is valid and acceptable (score >= 75%) -->
+            <div *ngIf="!isRecoveryPinHidden" class="rounded-xl border border-lime-300/30 bg-slate-950 p-3.5 space-y-2">
+              <div class="flex items-center justify-between">
+                <label for="recovery-pin" class="block text-xs font-bold uppercase tracking-wider text-lime-200">4-5 Digit Recovery PIN</label>
+                <span class="text-[10px] text-slate-400">Required for future password recovery</span>
+              </div>
+              <input id="recovery-pin" type="text" [(ngModel)]="recoveryPin" name="recoveryPin" maxlength="5" inputmode="numeric" pattern="[0-9]*" class="w-full rounded-lg border border-slate-700 bg-slate-900 p-2.5 text-sm font-mono tracking-widest text-white focus:border-lime-300 focus:outline-none" placeholder="e.g. 4829">
+              <p class="text-[11px] text-slate-400">Cannot be a PIN used within the last 30 days.</p>
+            </div>
           </div>
+
+          <!-- Forgot Password Flow PIN Prompt -->
+          <div *ngIf="showForgotPinPrompt && !recoveryMode" class="rounded-xl border border-lime-300/30 bg-slate-950 p-3.5 space-y-2">
+            <div class="flex items-center justify-between">
+              <label for="forgot-recovery-pin" class="block text-xs font-bold uppercase tracking-wider text-lime-200">Enter Your Recovery PIN</label>
+              <span class="text-[10px] text-slate-400">4 or 5 digits</span>
+            </div>
+            <input id="forgot-recovery-pin" type="text" [(ngModel)]="forgotPin" name="forgotPin" maxlength="5" inputmode="numeric" pattern="[0-9]*" class="w-full rounded-lg border border-slate-700 bg-slate-900 p-2.5 text-sm font-mono tracking-widest text-white focus:border-lime-300 focus:outline-none" placeholder="Enter recovery PIN">
+            <p class="text-[11px] text-slate-400">Verification is required before sending password recovery to @senatlatrading.com.</p>
+          </div>
+
           <div class="grid gap-2 rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-xs text-slate-300">
             <label *ngIf="!recoveryMode" class="flex cursor-pointer items-center gap-2"><input type="checkbox" [(ngModel)]="showPassword" name="showPassword" class="accent-lime-300"><span>Show password</span></label>
             <label *ngIf="recoveryMode" class="flex cursor-pointer items-center gap-2"><input type="checkbox" [(ngModel)]="showRecoveryPassword" name="showRecoveryPassword" class="accent-lime-300"><span>Show recovery password</span></label>
@@ -82,10 +122,15 @@
           </div>
           <div *ngIf="errorMsg" class="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300" role="alert" aria-live="assertive" aria-atomic="true">{{ errorMsg }}</div>
           <div *ngIf="recoveryMsg" class="break-words rounded-xl border border-lime-500/30 bg-lime-500/10 p-3 text-xs text-lime-100" role="status" aria-live="polite" aria-atomic="true">{{ recoveryMsg }}</div>
-          <button type="submit" [disabled]="isSubmitting" class="w-full rounded-xl bg-lime-300 py-3.5 text-xs font-black uppercase tracking-[0.16em] text-slate-950 hover:bg-lime-200 disabled:cursor-wait disabled:opacity-60">{{ recoveryMode ? (isRecoveringPassword ? 'Updating password...' : 'Save new password') : (isSubmitting ? 'Checking access...' : 'Sign In') }}</button>
+
+          <button *ngIf="!showForgotPinPrompt || recoveryMode" type="submit" [disabled]="isSubmitting || (recoveryMode && (!passwordStrength().acceptable || isRecoveryPinHidden))" class="w-full rounded-xl bg-lime-300 py-3.5 text-xs font-black uppercase tracking-[0.16em] text-slate-950 hover:bg-lime-200 disabled:cursor-not-allowed disabled:opacity-60">{{ recoveryMode ? (isRecoveringPassword ? 'Updating password...' : 'Save new password') : (isSubmitting ? 'Checking access...' : 'Sign In') }}</button>
+
+          <button *ngIf="showForgotPinPrompt && !recoveryMode" type="button" (click)="confirmAndRequestPasswordReset()" [disabled]="isSubmitting" class="w-full rounded-xl bg-lime-300 py-3.5 text-xs font-black uppercase tracking-[0.16em] text-slate-950 hover:bg-lime-200 disabled:cursor-wait disabled:opacity-60">Send Recovery Link</button>
         </form>
+
         <div class="space-y-3 border-t border-slate-800 pt-4 text-center">
-          <button *ngIf="!recoveryMode" type="button" (click)="requestPasswordReset()" [disabled]="isSubmitting" class="text-xs text-lime-200 hover:text-lime-100">Forgot password?</button>
+          <button *ngIf="!recoveryMode && !showForgotPinPrompt" type="button" (click)="initiatePasswordReset()" [disabled]="isSubmitting" class="text-xs text-lime-200 hover:text-lime-100">Forgot password?</button>
+          <button *ngIf="showForgotPinPrompt && !recoveryMode" type="button" (click)="cancelForgotPin()" class="text-xs text-slate-400 hover:text-white">Cancel</button>
           <div><a routerLink="/landing" class="text-xs text-slate-500 hover:text-slate-300">Back to Landing</a></div>
         </div>
       </div>

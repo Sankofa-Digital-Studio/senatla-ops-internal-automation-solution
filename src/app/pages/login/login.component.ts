@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subscription, combineLatest } from 'rxjs';
 import { AppRole, AuthSession } from 'src/app/core/models/app.models';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { OnboardingFeature, OnboardingService } from 'src/app/core/services/onboarding.service';
+import { evaluatePassword, PasswordValidationResult } from 'src/app/core/auth/password-policy';
 
 const LOGIN_PREF_KEY = 'senatla_ops_login_pref_v1';
 const RECOVERY_ROUTE = '/login/recovery';
@@ -28,6 +29,8 @@ export class LoginComponent implements OnInit, OnDestroy {
   password = '';
   recoveryPassword = '';
   confirmRecoveryPassword = '';
+  recoveryPin = '';
+  forgotPin = '';
   showPassword = false;
   showRecoveryPassword = false;
   rememberLogin = false;
@@ -41,6 +44,19 @@ export class LoginComponent implements OnInit, OnDestroy {
   recoveryMode = false;
   forcedPasswordChange = false;
   recoveryUsernameHint = '';
+  showForgotPinPrompt = false;
+
+  readonly passwordStrength = signal<PasswordValidationResult>({
+    valid: false,
+    score: 0,
+    tier: 'weak',
+    acceptable: false,
+    errors: [],
+  });
+
+  get isRecoveryPinHidden(): boolean {
+    return !this.passwordStrength().acceptable;
+  }
 
   // Onboarding wizard state
   showWizard = false;
@@ -77,13 +93,17 @@ export class LoginComponent implements OnInit, OnDestroy {
     return this.activeStep >= this.wizardFeatures.length - 1;
   }
 
+  onPasswordChange(val: string) {
+    this.passwordStrength.set(evaluatePassword(val));
+  }
+
   ngOnInit() {
     this.restoreLoginPreference();
     this.routeSubscription = combineLatest([this.route.paramMap, this.route.queryParamMap]).subscribe(([params, query]) => {
       this.requestedRole = this.normalizeRole(params.get('role') ?? '');
       this.redirectUrl = this.sanitizeRedirect(query.get('redirect'));
       this.errorMsg = '';
-      this.recoveryMode = this.isRecoveryRoute(query);
+      this.recoveryMode = this.recoveryMode || this.isRecoveryRoute(query);
       this.forcedPasswordChange = query.get('forced') === '1';
       this.recoveryUsernameHint = query.get('mock_user')?.trim().toLowerCase() || '';
       this.recoveryMsg = '';
@@ -197,20 +217,67 @@ export class LoginComponent implements OnInit, OnDestroy {
     localStorage.setItem(LOGIN_PREF_KEY, JSON.stringify({ username: this.username.trim() }));
   }
 
-  async requestPasswordReset() {
+  initiatePasswordReset() {
     const email = this.username.trim().toLowerCase();
     if (!email) {
-      this.errorMsg = 'Enter your work email first, then request recovery.';
+      this.errorMsg = 'Enter your work email first, then click Forgot password.';
       return;
     }
     this.errorMsg = '';
     this.recoveryMsg = '';
+    this.showForgotPinPrompt = true;
+  }
+
+  cancelForgotPin() {
+    this.showForgotPinPrompt = false;
+    this.forgotPin = '';
+  }
+
+  async confirmAndRequestPasswordReset() {
+    const email = this.username.trim().toLowerCase();
+    const pin = this.forgotPin.trim();
+
+    if (!email) {
+      this.errorMsg = 'Enter your work email first.';
+      return;
+    }
+    if (!/^[0-9]{4,5}$/.test(pin)) {
+      this.errorMsg = 'Enter your 4 or 5 digit recovery PIN.';
+      return;
+    }
+
+    this.errorMsg = '';
+    this.recoveryMsg = '';
     this.isSubmitting = true;
+
     try {
+      // In Supabase mode, verify PIN with API endpoint if available
+      if (typeof fetch !== 'undefined') {
+        try {
+          const verifyRes = await fetch('/api/auth/recovery-pin?action=verify-pin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, pin }),
+          });
+          if (verifyRes.ok) {
+            // PIN verified
+          } else if (verifyRes.status === 401 || verifyRes.status === 400) {
+            const errData = await verifyRes.json().catch(() => ({}));
+            throw new Error(errData.error || 'Invalid recovery PIN or email address.');
+          }
+        } catch (fetchErr) {
+          if (fetchErr instanceof Error && fetchErr.message.includes('Invalid recovery PIN')) {
+            throw fetchErr;
+          }
+        }
+      }
+
       const result = await this.auth.requestPasswordReset(email, `${location.origin}${RECOVERY_ROUTE}`);
       this.recoveryMsg = result.resetLink
         ? `${result.message} One-time link: ${result.resetLink}`
         : result.message;
+      this.showForgotPinPrompt = false;
+      this.forgotPin = '';
     } catch (error) {
       this.errorMsg = error instanceof Error ? error.message : 'Password recovery could not be prepared.';
     } finally {
@@ -224,21 +291,57 @@ export class LoginComponent implements OnInit, OnDestroy {
       this.errorMsg = 'Sign in with the temporary password before choosing a new password.';
       return;
     }
-    if (this.recoveryPassword.trim().length < 8) {
-      this.errorMsg = 'Choose a password with at least 8 characters.';
+
+    // Evaluate password policy and strength
+    const strength = evaluatePassword(this.recoveryPassword);
+    this.passwordStrength.set(strength);
+
+    if (!strength.valid || !strength.acceptable) {
+      this.errorMsg = strength.errors[0] || 'Password must reach at least 75% (Amber) strength.';
       return;
     }
+
     if (this.recoveryPassword !== this.confirmRecoveryPassword) {
       this.errorMsg = 'Password confirmation does not match.';
       return;
     }
+
+    // Validate 4-5 digit recovery PIN
+    const pin = this.recoveryPin.trim();
+    if (!/^[0-9]{4,5}$/.test(pin)) {
+      this.errorMsg = 'Please enter a 4 or 5 digit recovery PIN.';
+      return;
+    }
+
     this.errorMsg = '';
     this.recoveryMsg = '';
     this.isRecoveringPassword = true;
+
     try {
+      // 1. Call API endpoint to store recovery PIN
+      if (typeof fetch !== 'undefined') {
+        const sessionToken = (this.auth.currentSession?.() as any)?.accessToken || '';
+        if (sessionToken) {
+          const pinRes = await fetch('/api/auth/recovery-pin?action=set-pin', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${sessionToken}`,
+            },
+            body: JSON.stringify({ pin }),
+          });
+          if (!pinRes.ok) {
+            const errData = await pinRes.json().catch(() => ({}));
+            throw new Error(errData.error || 'Failed to register recovery PIN.');
+          }
+        }
+      }
+
+      // 2. Update password
       await this.auth.updatePassword(this.recoveryPassword, this.recoveryUsernameHint || this.username);
       this.recoveryPassword = '';
       this.confirmRecoveryPassword = '';
+      this.recoveryPin = '';
       this.password = '';
       this.recoveryMsg = 'Password updated. Sign in with the new password.';
       this.recoveryMode = false;
@@ -286,7 +389,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   private isRecoveryRoute(query: import('@angular/router').ParamMap) {
-    if (this.router.url.split('?')[0] === RECOVERY_ROUTE) return true;
+    if (this.router.url.split('?')[0].endsWith('/recovery')) return true;
     if (query.get('forced') === '1') return true;
     if (query.get('type') === 'recovery') return true;
     if (typeof window === 'undefined') return false;

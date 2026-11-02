@@ -37,25 +37,30 @@ describe('LoginComponent', () => {
     expect(component.modeHint).toBe('Secure access portal · Email and password only');
   });
 
-  it('requests a password reset for a known demo account', async () => {
+  it('requests a password reset for a known demo account using recovery PIN flow', async () => {
     component.username = 'thosontula+office@gmail.com';
+    component.forgotPin = '4829';
 
-    await component.requestPasswordReset();
+    await component.confirmAndRequestPasswordReset();
 
     expect(component.recoveryMsg).toContain('Mock reset prepared');
     expect(component.recoveryMsg).toContain('/login/recovery?mock_user=thosontula%2Boffice%40gmail.com');
   });
 
-  it('updates a password during local recovery mode', async () => {
+  it('updates a password during local recovery mode with non-adjacent password and PIN', async () => {
     component.username = 'thosontula+office@gmail.com';
-    await component.requestPasswordReset();
     component.recoveryMode = true;
     component.recoveryUsernameHint = 'thosontula+office@gmail.com';
-    component.recoveryPassword = 'new-password';
-    component.confirmRecoveryPassword = 'new-password';
+    component.recoveryPassword = 'theSusp3k_t#';
+    component.confirmRecoveryPassword = 'theSusp3k_t#';
+    component.recoveryPin = '58291';
+    component.onPasswordChange('theSusp3k_t#');
+
+    expect(component.isRecoveryPinHidden).toBeFalse();
 
     await component.handlePasswordUpdate();
-    component.password = 'new-password';
+    component.username = 'thosontula+office@gmail.com';
+    component.password = 'theSusp3k_t#';
     await component.handleLogin();
 
     expect(component.errorMsg).toBe('');
@@ -69,9 +74,37 @@ describe('LoginComponent', () => {
 
     expect(TestBed.inject(Router).url).toBe('/login/recovery?forced=1');
     expect(component.auth.requiresPasswordChange()).toBeTrue();
+    await TestBed.inject(Router).navigateByUrl('/login');
   });
 
-  it('renders only email and password authentication controls', () => {
+  it('renders strength meter and hides recovery PIN until password is valid', () => {
+    const fix = TestBed.createComponent(LoginComponent);
+    const comp = fix.componentInstance;
+    comp.recoveryMode = true;
+    fix.detectChanges();
+
+    const page = fix.nativeElement as HTMLElement;
+    const pwdInput = page.querySelector('#recovery-password') as HTMLInputElement;
+    expect(pwdInput).not.toBeNull();
+    expect(page.querySelector('#recovery-pin')).toBeNull();
+
+    // Type an invalid password (adjacent constraints)
+    comp.onPasswordChange('MYPASSw0RD#');
+    fix.detectChanges();
+
+    expect(comp.isRecoveryPinHidden).toBeTrue();
+    expect(page.querySelector('#recovery-pin')).toBeNull();
+
+    // Type a valid password (non-adjacent constraints)
+    comp.onPasswordChange('theSusp3k_t#');
+    fix.detectChanges();
+
+    expect(comp.passwordStrength().acceptable).toBeTrue();
+    expect(comp.isRecoveryPinHidden).toBeFalse();
+    expect(page.querySelector('#recovery-pin')).not.toBeNull();
+  });
+
+  it('renders only email and password authentication controls on primary form', () => {
     const page = fixture.nativeElement as HTMLElement;
     const links = Array.from(page.querySelectorAll('a')).map((link) => link.getAttribute('href'));
 
