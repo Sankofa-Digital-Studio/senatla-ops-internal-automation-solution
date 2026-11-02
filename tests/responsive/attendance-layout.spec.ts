@@ -1,9 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 import { expect, Locator, Page, test } from 'playwright/test';
+import { RESPONSIVE_TEST_ACCOUNTS, RESPONSIVE_TEST_PASSWORD } from './accounts';
 
 const credentials = {
-  office: { email: 'responsive.office@test.invalid', password: 'Responsive-test-2026!' },
-  site: { email: 'responsive.site@test.invalid', password: 'Responsive-test-2026!' },
+  office: { email: RESPONSIVE_TEST_ACCOUNTS.office.email, password: RESPONSIVE_TEST_PASSWORD },
+  site: { email: RESPONSIVE_TEST_ACCOUNTS.site.email, password: RESPONSIVE_TEST_PASSWORD },
 };
 
 test('Office Admin attendance queue renders without responsive regressions', async ({ page }, testInfo) => {

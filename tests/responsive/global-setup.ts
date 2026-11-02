@@ -1,37 +1,60 @@
 import { spawnSync } from 'node:child_process';
 import { createClient } from '@supabase/supabase-js';
-
-const password = 'Responsive-test-2026!';
+import { RESPONSIVE_TEST_ACCOUNTS, RESPONSIVE_TEST_PASSWORD } from './accounts';
 
 export default async function globalSetup() {
   const url = required('SENATLA_SUPABASE_URL');
   const serviceKey = required('SUPABASE_SERVICE_ROLE_KEY');
   const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
-  const siteId = await ensureUser(admin, 'responsive.site@test.invalid', 'Responsive Site Manager');
-  const officeId = await ensureUser(admin, 'responsive.office@test.invalid', 'Responsive Office Admin');
-  const sql = fixtureSql(siteId, officeId);
+  const ids = Object.fromEntries(await Promise.all(
+    Object.entries(RESPONSIVE_TEST_ACCOUNTS).map(async ([key, account]) => [
+      key,
+      await ensureUser(admin, account.email, account.displayName, account.role),
+    ]),
+  )) as Record<keyof typeof RESPONSIVE_TEST_ACCOUNTS, string>;
+  const sql = fixtureSql(ids);
   const result = spawnSync('docker', ['exec', '-i', 'supabase_db_senatla-ops', 'psql', '-U', 'postgres', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1'], { input: sql, encoding: 'utf8' });
   if (result.status !== 0) throw new Error(result.stderr || result.stdout || 'Responsive SQL fixture failed.');
 }
 
-async function ensureUser(admin: ReturnType<typeof createClient>, email: string, displayName: string) {
+async function ensureUser(
+  admin: ReturnType<typeof createClient>,
+  email: string,
+  displayName: string,
+  role: 'site' | 'office' | 'director',
+) {
   const listed = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
   if (listed.error) throw listed.error;
   const existing = listed.data.users.find((user) => user.email === email);
   if (existing) {
-    const updated = await admin.auth.admin.updateUserById(existing.id, { password, email_confirm: true, user_metadata: { display_name: displayName } });
+    const updated = await admin.auth.admin.updateUserById(existing.id, {
+      password: RESPONSIVE_TEST_PASSWORD,
+      email_confirm: true,
+      app_metadata: { role, must_change_password: false },
+      user_metadata: { display_name: displayName },
+    });
     if (updated.error) throw updated.error;
     return existing.id;
   }
-  const created = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { display_name: displayName } });
+  const created = await admin.auth.admin.createUser({
+    email,
+    password: RESPONSIVE_TEST_PASSWORD,
+    email_confirm: true,
+    app_metadata: { role, must_change_password: false },
+    user_metadata: { display_name: displayName },
+  });
   if (created.error) throw created.error;
   return created.data.user.id;
 }
 
-function fixtureSql(siteUserId: string, officeUserId: string) {
+function fixtureSql(ids: Record<keyof typeof RESPONSIVE_TEST_ACCOUNTS, string>) {
+  const { site: siteUserId, office: officeUserId, director, developer, developerAlias } = ids;
   return `begin;
 update public.profiles set display_name='Responsive Site Manager',role='site',is_active=true,organization_id='00000000-0000-4000-8000-000000000001' where id='${siteUserId}'::uuid;
 update public.profiles set display_name='Responsive Office Admin',role='office',is_active=true,organization_id='00000000-0000-4000-8000-000000000001' where id='${officeUserId}'::uuid;
+update public.profiles set display_name='Responsive Director',role='director',is_active=true,organization_id='00000000-0000-4000-8000-000000000001' where id='${director}'::uuid;
+update public.profiles set display_name='Developer',role='director',is_active=true,organization_id='00000000-0000-4000-8000-000000000001' where id='${developer}'::uuid;
+update public.profiles set display_name='Developer Alias',role='director',is_active=true,organization_id='00000000-0000-4000-8000-000000000001' where id='${developerAlias}'::uuid;
 insert into public.sites(id,name,location,manager_profile_id,is_active,organization_id) values('61000000-0000-4000-8000-000000000001','Responsive Test Site','CI Yard','${siteUserId}'::uuid,true,'00000000-0000-4000-8000-000000000001') on conflict(id) do update set manager_profile_id=excluded.manager_profile_id;
 insert into public.sites(id,name,location,is_active,organization_id) values('61000000-0000-4000-8000-000000000002','Forbidden Test Site','Other Yard',true,'00000000-0000-4000-8000-000000000001') on conflict(id) do nothing;
 insert into public.profile_site_access(profile_id,site_id,organization_id) values('${siteUserId}'::uuid,'61000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000001') on conflict(profile_id,site_id) do update set organization_id=excluded.organization_id;
