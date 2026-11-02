@@ -6,6 +6,14 @@
       "destination": "/api/$1"
     },
     {
+      "source": "/manifest.webmanifest",
+      "destination": "/manifest.webmanifest"
+    },
+    {
+      "source": "/sw.js",
+      "destination": "/sw.js"
+    },
+    {
       "source": "/assets/runtime-config.json",
       "destination": "/assets/runtime-config.json"
     },

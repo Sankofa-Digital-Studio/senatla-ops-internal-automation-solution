@@ -38,7 +38,8 @@
     "test:e2e:cypress": "cypress run",
     "native:sync:android": "cap sync android",
     "native:sync:ios": "cap sync ios && node scripts/normalize-capacitor-spm-paths.mjs",
-    "test:download-apk-contract": "node --test scripts/download-apk-contract.test.mjs"
+    "test:download-apk-contract": "node --test scripts/download-apk-contract.test.mjs",
+    "test:pwa-manifest-contract": "node --test scripts/pwa-manifest-contract.test.mjs"
   },
   "private": true,
   "dependencies": {
