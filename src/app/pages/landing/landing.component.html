@@ -27,6 +27,8 @@
       </a>
 
       <nav class="desktop-menu" aria-label="Primary navigation">
+        <a href="#capabilities" (click)="scrollTo('capabilities', $event)">Capabilities</a>
+        <a href="#assurance" (click)="scrollTo('assurance', $event)">Security</a>
         <a href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/download/dev-latest/senatla-ops-dev.apk" download target="_blank" rel="noopener noreferrer">Android APK</a>
         <button type="button" *ngIf="isLocalMode()" (click)="showTestCredentials()">Test users</button>
         <a routerLink="/login" class="nav-login" aria-label="Sign In">
@@ -42,6 +44,8 @@
       <details class="mobile-menu">
         <summary role="button" aria-label="Open navigation menu" aria-controls="mobile-navigation"><span></span><span></span><span></span></summary>
         <nav id="mobile-navigation" aria-label="Mobile navigation">
+          <a href="#capabilities" (click)="scrollTo('capabilities', $event)">Capabilities</a>
+          <a href="#assurance" (click)="scrollTo('assurance', $event)">Security</a>
           <a href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/download/dev-latest/senatla-ops-dev.apk" download target="_blank" rel="noopener noreferrer">Android APK</a>
           <button type="button" *ngIf="isLocalMode()" (click)="showTestCredentials()">Test users</button>
           <a routerLink="/login">Sign In</a>
