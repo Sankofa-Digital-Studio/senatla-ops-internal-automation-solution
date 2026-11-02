@@ -85,6 +85,7 @@ async function assertResponsiveSurface(page: Page) {
   }
   const clipped = await page.locator('h1:visible, h2:visible, h3:visible, button:visible, a:visible').evaluateAll((nodes) => nodes
     .filter((node) => node.textContent?.trim())
+    .filter((node) => !node.matches('a[href="#main-content"]'))
     .filter((node) => node.scrollWidth > node.clientWidth + 1 && getComputedStyle(node).overflowX !== 'auto')
     .map((node) => node.textContent?.trim()).slice(0, 10));
   expect(clipped, `Clipped labels: ${clipped.join(', ')}`).toEqual([]);

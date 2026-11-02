@@ -138,6 +138,7 @@ describe('LoginComponent', () => {
   it('renders instructions on distinct separate lines in recovery mode', () => {
     const fix = TestBed.createComponent(LoginComponent);
     const comp = fix.componentInstance;
+    fix.detectChanges();
     comp.recoveryMode = true;
     comp.forcedPasswordChange = true;
     fix.detectChanges();
