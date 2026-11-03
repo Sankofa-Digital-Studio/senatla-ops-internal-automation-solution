@@ -1,0 +1,17 @@
+@media print {
+  header, .no-print, button, input {
+    display: none !important;
+  }
+  body, .min-h-full {
+    background: white !important;
+    color: black !important;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  th, td {
+    border: 1px solid #ddd !important;
+    color: black !important;
+  }
+}

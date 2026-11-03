@@ -52,6 +52,12 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/asset-register/asset-register.component').then((m) => m.AssetRegisterComponent),
   },
   {
+    path: 'costing-model',
+    canMatch: [roleCanMatch(['site', 'office', 'director'], 'director')],
+    canActivate: [roleCanActivate(['site', 'office', 'director'], 'director')],
+    loadComponent: () => import('./pages/costing-model/costing-model.component').then((m) => m.CostingModelComponent),
+  },
+  {
     path: 'profile-settings',
     canMatch: [roleCanMatch()],
     canActivate: [roleCanActivate()],

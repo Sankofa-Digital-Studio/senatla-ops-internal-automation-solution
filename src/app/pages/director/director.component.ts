@@ -1,4 +1,5 @@
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { StaffDataService } from 'src/app/core/services/staff-data.service';
 import { OfficeAdminService } from 'src/app/core/services/office-admin.service';
@@ -6,7 +7,7 @@ import { CostAttributionService } from 'src/app/core/services/cost-attribution.s
 
 @Component({
   selector: 'app-director', templateUrl: './director.component.html', styleUrls: ['./director.component.scss'], standalone: true,
-  imports: [CommonModule, DecimalPipe, DatePipe],
+  imports: [CommonModule, DecimalPipe, DatePipe, RouterLink],
 })
 export class DirectorComponent {
   readonly service = inject(StaffDataService);
