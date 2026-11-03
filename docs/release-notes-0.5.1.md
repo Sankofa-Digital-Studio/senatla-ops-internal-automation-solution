@@ -49,11 +49,13 @@ Completed locally:
 - APK download contract: 5 passing tests.
 - Migration and responsive defects reproduced from GitHub Actions traces and corrected at their source.
 
-Required before promotion:
+Completed release evidence:
 
-- GitHub `application`, `supabase`, `responsive-layout` and `native-required` gates green for the exact release commit.
-- Vercel preview deployment and authenticated smoke journeys.
-- Fast-forward `preview`, then `main`, to the same verified commit.
+- Release commit: `cba6b8b1eaeb258c7ba49adea7ad6e82f2a2d506`.
+- GitHub `application`, `supabase`, `responsive-layout` and `native-required` gates passed for the exact release commit.
+- Vercel preview and production deployments reached `READY` from the exact release baseline.
+- `dev`, `preview`, `main` and the reserved next-task branch point to the same baseline.
+- `preview` and `main` were fast-forwarded only after the verified preview deployment.
 
 ## Rollback
 
