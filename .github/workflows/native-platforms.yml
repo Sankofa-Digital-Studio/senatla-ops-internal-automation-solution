@@ -106,6 +106,7 @@ jobs:
       - name: Publish current dev APK
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           RELEASE_TAG: dev-${{ github.sha }}
         shell: bash
         run: |
