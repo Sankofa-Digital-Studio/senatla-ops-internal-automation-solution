@@ -18,6 +18,15 @@ export interface CostingRates {
   vat_pct: number;           // 0.15 (15.0%)
 }
 
+export type CostCategory =
+  | 'siteEstablishment'
+  | 'steelDismantling'
+  | 'concreteBreakup'
+  | 'rubbleHaulage'
+  | 'shapingLevelling';
+
+export type CostCategoryApplicability = Partial<Record<CostCategory, boolean>>;
+
 export interface PhaseScopeItem {
   id: string;
   name: string;
@@ -26,6 +35,7 @@ export interface PhaseScopeItem {
   concrete_m3: number;
   rubble_tons?: number;
   struct_rate_override?: number;
+  costCategoryApplicability?: CostCategoryApplicability;
   duration_months: number;
 }
 
@@ -98,6 +108,13 @@ export const DEFAULT_COSTING_RATES: CostingRates = {
 // PRESET TEMPLATES
 // ============================================================================
 
+function villageQuotationCategories(): CostCategoryApplicability {
+  return {
+    concreteBreakup: false,
+    shapingLevelling: false,
+  };
+}
+
 export const PRESET_WEST_GOLD: ProjectCostingModel = {
   id: 'west-gold-plant',
   projectName: 'West Gold Plant Demolition & Rehabilitation',
@@ -124,11 +141,11 @@ export const PRESET_SENATLA_VILLAGES: ProjectCostingModel = {
   durationMonths: 6,
   rates: { ...DEFAULT_COSTING_RATES },
   phases: [
-    { id: 'vil-1', name: 'Boiketlong Village', footprint_m2: 15000, structures: 2, concrete_m3: 384, rubble_tons: 922, struct_rate_override: 21000, duration_months: 1 },
-    { id: 'vil-2', name: 'Polokong Village', footprint_m2: 25000, structures: 3, concrete_m3: 962, rubble_tons: 2310, struct_rate_override: 21000, duration_months: 2 },
-    { id: 'vil-3', name: 'Woolaways Village', footprint_m2: 14000, structures: 2, concrete_m3: 385, rubble_tons: 924, struct_rate_override: 21000, duration_months: 1 },
-    { id: 'vil-4', name: 'Jabulani Village', footprint_m2: 26000, structures: 5, concrete_m3: 962, rubble_tons: 2310, struct_rate_override: 21000, duration_months: 2 },
-    { id: 'vil-5', name: 'Pabalong Village', footprint_m2: 45000, structures: 8, concrete_m3: 2496, rubble_tons: 5992, struct_rate_override: 19500, duration_months: 3 },
+    { id: 'vil-1', name: 'Boiketlong Village', footprint_m2: 15000, structures: 2, concrete_m3: 384, rubble_tons: 922, struct_rate_override: 21000, costCategoryApplicability: villageQuotationCategories(), duration_months: 1 },
+    { id: 'vil-2', name: 'Polokong Village', footprint_m2: 25000, structures: 3, concrete_m3: 962, rubble_tons: 2310, struct_rate_override: 21000, costCategoryApplicability: villageQuotationCategories(), duration_months: 2 },
+    { id: 'vil-3', name: 'Woolaways Village', footprint_m2: 14000, structures: 2, concrete_m3: 385, rubble_tons: 924, struct_rate_override: 21000, costCategoryApplicability: villageQuotationCategories(), duration_months: 1 },
+    { id: 'vil-4', name: 'Jabulani Village', footprint_m2: 26000, structures: 5, concrete_m3: 962, rubble_tons: 2310, struct_rate_override: 21000, costCategoryApplicability: villageQuotationCategories(), duration_months: 2 },
+    { id: 'vil-5', name: 'Pabalong Village', footprint_m2: 45000, structures: 8, concrete_m3: 2496, rubble_tons: 5992, struct_rate_override: 19500, costCategoryApplicability: villageQuotationCategories(), duration_months: 3 },
   ],
 };
 
@@ -162,11 +179,13 @@ export function calculatePhaseDetail(phase: PhaseScopeItem, rates: CostingRates)
 
   const structRate = phase.struct_rate_override || rates.steel_dismantle;
 
-  const estCost = rates.site_est;
-  const steelCost = phase.structures * structRate;
-  const concreteCost = phase.concrete_m3 * rates.concrete_breakup;
-  const haulCost = rubble_tons * rates.rubble_haul;
-  const shapingCost = phase.footprint_m2 * rates.shaping_levelling;
+  const includes = (category: CostCategory) => phase.costCategoryApplicability?.[category] !== false;
+
+  const estCost = includes('siteEstablishment') ? rates.site_est : 0;
+  const steelCost = includes('steelDismantling') ? phase.structures * structRate : 0;
+  const concreteCost = includes('concreteBreakup') ? phase.concrete_m3 * rates.concrete_breakup : 0;
+  const haulCost = includes('rubbleHaulage') ? rubble_tons * rates.rubble_haul : 0;
+  const shapingCost = includes('shapingLevelling') ? phase.footprint_m2 * rates.shaping_levelling : 0;
   const totalDirect = estCost + steelCost + concreteCost + haulCost + shapingCost;
 
   return {

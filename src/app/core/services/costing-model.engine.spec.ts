@@ -34,12 +34,37 @@ describe('CostingModelEngine', () => {
     expect(detail.totalDirect).toBe(526000);
   });
 
+  it('excludes only explicitly inapplicable cost categories', () => {
+    const detail = calculatePhaseDetail({
+      id: 'selective-scope',
+      name: 'Selective Scope',
+      footprint_m2: 10000,
+      structures: 2,
+      concrete_m3: 500,
+      duration_months: 2,
+      costCategoryApplicability: {
+        concreteBreakup: false,
+        shapingLevelling: false,
+      },
+    }, DEFAULT_COSTING_RATES);
+
+    expect(detail.estCost).toBe(35000);
+    expect(detail.steelCost).toBe(42000);
+    expect(detail.concreteCost).toBe(0);
+    expect(detail.haulCost).toBe(144000);
+    expect(detail.shapingCost).toBe(0);
+    expect(detail.totalDirect).toBe(221000);
+  });
+
   it('accurately reproduces Senatla 5-Village quotation waterfall figures', () => {
-    const { waterfall } = calculateWaterfall(
+    const { waterfall, phaseDetails } = calculateWaterfall(
       PRESET_SENATLA_VILLAGES.phases,
       PRESET_SENATLA_VILLAGES.rates,
       PRESET_SENATLA_VILLAGES.durationMonths
     );
+
+    expect(phaseDetails.every((phase) => phase.concreteCost === 0)).toBeTrue();
+    expect(phaseDetails.every((phase) => phase.shapingCost === 0)).toBeTrue();
 
     // Direct spend should be R 2,077,960.00
     expect(Math.round(waterfall.directSpend)).toBe(2077960);
