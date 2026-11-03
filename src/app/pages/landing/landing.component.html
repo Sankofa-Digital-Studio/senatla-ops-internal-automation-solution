@@ -10,13 +10,14 @@
     </div>
   </div>
 
-  <div class="landing-frame relative isolate mx-auto flex min-h-full w-full flex-col px-5 py-6" [attr.inert]="!landingReady() ? '' : null" [attr.aria-hidden]="!landingReady()">
-    <div class="ambient-layer absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
+  <div class="landing-frame relative isolate mx-auto flex min-h-full w-full flex-col px-5 py-6" [attr.aria-hidden]="!landingReady()">
+    <div class="ambient-layer absolute inset-0 -z-10 overflow-hidden pointer-events-none" aria-hidden="true">
       <div class="ambient-orb ambient-orb--lime"></div>
       <div class="ambient-orb ambient-orb--amber"></div>
       <div class="ambient-rule"></div>
     </div>
 
+    <div class="hero-fold flex min-h-[calc(100dvh-3rem)] flex-col justify-between">
     <header class="site-header flex items-center justify-between gap-4">
       <a routerLink="/landing" (click)="scrollToTop($event)" class="flex items-center gap-3" aria-label="Senatla Ops home">
         <span class="brand-mark grid place-items-center rounded-2xl bg-lime-300 text-lg font-black text-slate-950 shadow-xl">S</span>
@@ -31,13 +32,13 @@
         <a href="#assurance" (click)="scrollTo('assurance', $event)">Security</a>
         <a href="/api/download-apk" download target="_blank" rel="noopener noreferrer">Android APK</a>
         <button type="button" *ngIf="isLocalMode()" (click)="showTestCredentials()">Test users</button>
-        <a routerLink="/login" class="nav-login" aria-label="Sign In">
+        <a routerLink="/login" class="nav-login" aria-label="Sign In" title="Sign In">
           <svg class="nav-login-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
             <polyline points="10 17 15 12 10 7"></polyline>
             <line x1="15" y1="12" x2="3" y2="12"></line>
           </svg>
-          <span class="nav-login-text">Sign In</span>
+          <span class="sr-only">Sign In</span>
         </a>
       </nav>
 
@@ -91,7 +92,7 @@
       </section>
     </div>
 
-    <main class="hero-grid grid flex-1 items-center gap-10 py-12">
+    <main class="hero-grid grid flex-1 items-center gap-6 lg:gap-10 py-4 lg:py-6">
       <div class="hero-copy max-w-3xl">
         <div class="hero-tagline-wrap mb-6">
           <p class="hero-tagline text-xs font-bold uppercase tracking-[0.24em] text-lime-200">
@@ -129,7 +130,7 @@
           </svg>
         </div>
       </div>
-
+    </div>
 
     <section id="capabilities" class="landing-section" tabindex="-1" aria-labelledby="capabilities-heading">
       <div class="landing-section__heading"><p class="section-kicker">Capabilities</p><h2 id="capabilities-heading">Useful control, where the work happens.</h2></div>

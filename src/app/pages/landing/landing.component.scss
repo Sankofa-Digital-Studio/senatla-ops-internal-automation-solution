@@ -5,7 +5,7 @@
 
 .landing-shell {
   --frame-max: 72rem;
-  --title-size: clamp(2.75rem, 11vw, 4.75rem);
+  --title-size: clamp(2.25rem, 6vw, 3.5rem);
   min-height: 100%;
   background:
     radial-gradient(circle at 15% 15%, rgba(190, 242, 100, 0.16), transparent 30rem),
@@ -71,8 +71,17 @@
 }
 
 .desktop-menu .nav-login {
+  width: 2.75rem;
+  height: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: #bef264;
   color: #0f172a;
+  transition: transform .2s ease, background .2s ease;
 }
 
 .desktop-menu .nav-login:hover {
@@ -363,7 +372,7 @@
 @media (min-width: 1024px) {
   .landing-shell {
     --frame-max: 76rem;
-    --title-size: clamp(4rem, 6.5vw, 6rem);
+    --title-size: clamp(2.75rem, 4.5vw, 4rem);
   }
 
   .hero-grid {
@@ -380,7 +389,7 @@
 @media (min-width: 1366px) {
   .landing-shell {
     --frame-max: 90rem;
-    --title-size: clamp(5rem, 6vw, 7rem);
+    --title-size: clamp(3rem, 4.2vw, 4.5rem);
   }
 
   .landing-frame {
@@ -400,7 +409,7 @@
 @media (min-width: 1920px) {
   .landing-shell {
     --frame-max: 108rem;
-    --title-size: 7.5rem;
+    --title-size: clamp(3.5rem, 4.5vw, 5rem);
   }
 
   .landing-frame {
@@ -471,7 +480,13 @@
 .cornerstone-loader__progress { width: min(16rem, 100%); height: .25rem; margin: 2rem auto 0; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.18); }
 .cornerstone-loader__progress span { display: block; width: 42%; height: 100%; border-radius: inherit; background: #bef264; animation: loading-rock 1.1s ease-in-out infinite alternate; }
 .cornerstone-card { overflow: hidden; }
-.cornerstone-card img { width: 100%; aspect-ratio: 16 / 10; border-radius: 1.25rem; object-fit: cover; }
+.cornerstone-card img {
+  width: 100%;
+  max-height: clamp(14rem, 28vh, 22rem);
+  aspect-ratio: 16 / 10;
+  border-radius: 1.25rem;
+  object-fit: cover;
+}
 .cornerstone-card__copy { padding: 1rem .4rem .2rem; }
 .cornerstone-card__copy p { margin: 0; color: #fff; font-size: 1rem; font-weight: 800; }
 .cornerstone-card__copy span { display: block; margin-top: .4rem; color: rgba(255,255,255,.6); font-size: .8rem; line-height: 1.45; }
@@ -489,8 +504,8 @@
 
 /* Nav icon & responsive tablet fit */
 .nav-login-icon {
-  width: 1.1rem;
-  height: 1.1rem;
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {
@@ -506,9 +521,7 @@
     font-size: 0.7rem;
     letter-spacing: 0.08em;
   }
-  .desktop-menu .nav-login {
-    padding: 0.55rem 0.9rem;
-  }
+  
 }
 
 /* Hero tagline styling without pill */
@@ -543,7 +556,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  margin: 1.75rem auto 1.5rem;
+  margin: 0.5rem auto 1rem;
   cursor: pointer;
   user-select: none;
   transition: opacity 0.2s;
@@ -614,4 +627,22 @@
   background: #172015;
   border-color: #bef264;
   transform: translateY(-2px);
+}
+
+/* Hero fold viewport alignment */
+.hero-fold {
+  min-height: calc(100dvh - 3rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+@media (max-width: 767px) {
+  .hero-fold {
+    min-height: calc(100dvh - 2rem);
+  }
+}
+
+.ambient-layer {
+  pointer-events: none;
 }

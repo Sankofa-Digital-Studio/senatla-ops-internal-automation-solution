@@ -23,8 +23,6 @@ app-root {
 }
 body {
   @apply bg-gray-900 text-gray-200 font-sans antialiased;
-  overflow-x: hidden;
-  overscroll-behavior-y: contain;
 }
 
 /* Custom Scrollbar for Dashboard feel */
