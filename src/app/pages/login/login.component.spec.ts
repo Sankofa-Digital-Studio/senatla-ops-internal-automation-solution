@@ -135,13 +135,12 @@ describe('LoginComponent', () => {
     expect(page.textContent).toContain('PIN is new and available');
   });
 
-  it('renders instructions on distinct separate lines in recovery mode', () => {
+  it('renders instructions on distinct separate lines in forced recovery mode', async () => {
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl('/login/recovery?forced=1');
     const fix = TestBed.createComponent(LoginComponent);
-    const comp = fix.componentInstance;
-    comp.recoveryMode = true;
     fix.detectChanges();
-    comp.showWizard = false;
-    comp.forcedPasswordChange = true;
+    await fix.whenStable();
     fix.detectChanges();
 
     const page = fix.nativeElement as HTMLElement;
@@ -149,6 +148,7 @@ describe('LoginComponent', () => {
     expect(paragraphs.length).toBeGreaterThanOrEqual(2);
     expect(paragraphs[0].textContent).toContain('temporary password must be replaced');
     expect(paragraphs[1].textContent).toContain('save your personal recovery PIN');
+    await router.navigateByUrl('/login');
   });
 
   it('renders only email and password authentication controls on primary form', () => {
