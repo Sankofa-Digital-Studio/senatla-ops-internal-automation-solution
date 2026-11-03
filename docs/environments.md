@@ -2,7 +2,7 @@
 
 | Environment | Data | Authentication | Purpose |
 |---|---|---|---|
-| Local | Deterministic synthetic records | Local demo or local Supabase | Development and repeatable validation |
+| Local | Deterministic synthetic records | Local Supabase email/password accounts | Development and repeatable validation |
 | Preview | Synthetic or approved test records | Supabase preview project | Pull-request browser and UAT evidence |
 | Production | Senatla Trading operational records | Production Supabase | Authorized internal operations |
 

@@ -104,14 +104,16 @@ jobs:
           name: senatla-ops-dev-apk
           path: artifacts
       - name: Publish current dev APK
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: dev-${{ github.sha }}
-          name: Senatla Ops dev APK (${{ github.sha }})
-          prerelease: true
-          make_latest: false
-          body: Unsigned Android debug build for dev commit ${{ github.sha }}. Install only for UAT testing.
-          files: artifacts/senatla-ops-dev.apk
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: dev-${{ github.sha }}
+        shell: bash
+        run: |
+          gh release create "$RELEASE_TAG" artifacts/senatla-ops-dev.apk \
+            --draft \
+            --title "Senatla Ops dev APK ($GITHUB_SHA)" \
+            --notes "Unsigned Android debug build for dev commit $GITHUB_SHA. Install only for UAT testing."
+          gh release edit "$RELEASE_TAG" --draft=false --prerelease
   ios-simulator:
     needs: changes
     if: needs.changes.outputs.native == 'true'

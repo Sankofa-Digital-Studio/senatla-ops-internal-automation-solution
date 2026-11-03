@@ -12,6 +12,16 @@ Senatla Ops is Senatla Trading's internal operations control platform. It connec
 
 The public Senatla Trading website is maintained outside this repository and remains out of scope.
 
+## Access policy
+
+- Authentication is email and password only; Google sign-in and public registration are not supported.
+- Operational users must use provisioned `@senatlatrading.com` addresses.
+- `thosontula@gmail.com` is the single permanent developer override with cross-workspace management access.
+- Plus-address aliases, including `thosontula+tag@gmail.com`, are ordinary accounts and do not inherit the developer override.
+- New users receive a temporary password and must replace it before opening a workspace.
+
+Current release notes: [v0.5.1](docs/release-notes-0.5.1.md).
+
 ## Product outcome
 
 Senatla Ops gives each operational record an explainable history: who acted, where the work happened, when it changed, which approval applied, and what source evidence supports it. This operational heartbeat helps field, office, and executive users work from the same facts without turning the system into a generic ERP.

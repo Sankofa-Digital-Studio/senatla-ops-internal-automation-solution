@@ -1,8 +1,18 @@
-# Session expiry and user-interface boundary
+# Authentication, session expiry and user-interface boundary
 
 ## Purpose
 
 Senatla Ops must not leave a person's name or protected workspace visible after the application session has expired. The browser applies a ten-minute maximum session window and redirects a protected route to login once that limit is reached.
+
+## Identity and provisioning boundary
+
+- The only interactive sign-in method is email and password. Google authentication and self-registration are removed.
+- Standard accounts are provisioned server-side and must end in `@senatlatrading.com`.
+- `thosontula@gmail.com` is the exact, case-normalized developer override. Gmail plus aliases are not equivalent for privilege checks.
+- Provisioning sends a generated temporary password and sets `app_metadata.must_change_password = true`.
+- The first authenticated journey forces password replacement before workspace routing. Recovery PIN registration is handled separately and never substitutes for the temporary password.
+- Office Administrators have less authority than Directors. Director creation requires approval by an existing Director or the exact developer override.
+- Profile recovery uses immutable profile history and an audited rollback operation; applied history is never edited in place.
 
 ## What the application enforces
 

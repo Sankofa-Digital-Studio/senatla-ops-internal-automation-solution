@@ -15,6 +15,10 @@
 11. Record the release pull request, commit, migration identifiers, deployment URL, approver, owner, and rollback point.
 12. Merge `main` back into `dev` and confirm the branches are no longer diverged.
 
+### Dev APK publication
+
+GitHub Releases are immutable. Native CI must create a commit-specific `dev-<sha>` draft with `senatla-ops-dev.apk` attached, then publish that draft as a prerelease. Never overwrite `dev-latest`. The stable `/api/download-apk` endpoint resolves the newest published dev prerelease and falls back to the last known immutable asset if GitHub's release API is temporarily unavailable.
+
 ## Rollback
 
 Stop new writes when data integrity is uncertain. Restore the prior web artifact first for application-only regressions. Revert through a reviewed pull request; never force-push or rewrite `main`. For schema failures, use the documented compensating migration; do not edit applied migration files. Restore from backup only after Operations and the technical lead confirm data-loss implications.
