@@ -56,7 +56,7 @@ function resolveResponsiveSupabaseEnv() {
     return direct;
   }
 
-  const status = spawnSync('npx', ['--yes', 'supabase@2.107.0', 'status', '-o', 'env'], {
+  const status = spawnSync('npx', ['--no-install', 'supabase', 'status', '-o', 'env'], {
     encoding: 'utf8',
     shell: true,
   });

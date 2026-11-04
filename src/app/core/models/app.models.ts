@@ -584,14 +584,6 @@ export interface ExecutiveOperationalReport {
     };
     invoice: VendorInvoiceRecord;
   };
-  executiveAdvantage: {
-    marginIntegrityScore: number;
-    laborHoursSavedPerWeek: number;
-    costTraceabilityStatus: string;
-    complianceConfidence: string;
-    strategicSummary: string;
-    verdict: string;
-  };
   directorReviewedAt?: string | null;
   directorReviewedBy?: string | null;
   directorNotes?: string | null;

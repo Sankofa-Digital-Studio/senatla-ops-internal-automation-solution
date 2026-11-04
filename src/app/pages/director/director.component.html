@@ -1,5 +1,4 @@
-<div class="min-h-full overflow-y-auto bg-gray-950 font-sans text-gray-200 pb-16">
-  <!-- Executive Strategic Header -->
+<div class="min-h-full bg-gray-950 font-sans text-gray-200 pb-16">
   <header class="border-b border-gray-800 bg-gray-900/90 backdrop-blur px-6 py-6 sticky top-0 z-30 shadow-md">
     <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div>
@@ -15,54 +14,24 @@
           <svg class="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
           Costing & Budgeting Studio
         </a>
-        <div class="flex gap-1 bg-gray-950 p-1 rounded-xl border border-gray-800">
-          <button *ngFor="let mode of ['day', 'month', 'year']" type="button" (click)="viewMode.set($any(mode))" class="rounded-lg px-4 py-1.5 text-xs font-bold uppercase transition" [class.bg-yellow-500]="viewMode() === mode" [class.text-black]="viewMode() === mode" [class.text-gray-400]="viewMode() !== mode">{{ mode }}</button>
-        </div>
       </div>
     </div>
   </header>
 
   <main class="space-y-6 p-4 md:p-8 max-w-7xl mx-auto">
     <!-- Feedback banner -->
-    <div *ngIf="feedback()" class="rounded-xl border border-yellow-500/40 bg-yellow-950/40 p-4 text-xs font-bold text-yellow-200 flex items-center justify-between">
+    <div *ngIf="feedback()" role="status" aria-live="polite" aria-atomic="true" class="rounded-xl border border-yellow-500/40 bg-yellow-950/40 p-4 text-xs font-bold text-yellow-200 flex items-center justify-between">
       <span>{{ feedback() }}</span>
-      <button type="button" (click)="feedback.set('')" class="text-yellow-400 hover:text-white">&times;</button>
+      <button type="button" (click)="feedback.set('')" aria-label="Dismiss notification" class="min-h-11 min-w-11 text-yellow-400 hover:text-white">&times;</button>
     </div>
-
-    <!-- Executive Operations Summary Cards -->
-    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Executive operations summary">
-      <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm hover:border-gray-700 transition">
-        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Attendance today</p>
-        <p class="mt-2 text-2xl font-bold text-white">{{ presentCount() }} <span class="text-sm font-normal text-gray-400">present today</span></p>
-        <p class="text-sm text-red-400 mt-1">{{ absentCount() }} absent today</p>
-      </article>
-
-      <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm hover:border-gray-700 transition">
-        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Asset readiness</p>
-        <p class="mt-2 text-2xl font-bold text-white">{{ assetSummary().ready }} / {{ assetSummary().total }}</p>
-        <p class="text-sm text-amber-300 mt-1">{{ assetSummary().attention }} attention · {{ assetSummary().blocked }} blocked</p>
-      </article>
-
-      <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm hover:border-gray-700 transition">
-        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Pending invoices</p>
-        <p class="mt-2 font-mono text-2xl font-bold text-white">R {{ pendingInvoiceAmount() | number:'1.2-2' }}</p>
-        <p class="text-sm text-gray-400 mt-1">{{ pendingInvoices().length }} awaiting review</p>
-      </article>
-
-      <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm hover:border-gray-700 transition">
-        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Pending approvals</p>
-        <p class="mt-2 text-2xl font-bold text-white">{{ pendingApprovals().length + pendingExecutiveReports().length }}</p>
-        <p class="text-sm text-gray-400 mt-1">Operational and invoice decisions</p>
-      </article>
-    </section>
 
     <!-- ACTIONABLE DECISION CENTER & INBOX: Awaiting Director Review Packs -->
     <section class="rounded-2xl border border-emerald-500/30 bg-gray-900 p-6 shadow-xl space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-800 pb-4">
         <div>
           <div class="flex items-center gap-2">
-            <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            <h2 class="text-base font-bold uppercase tracking-wider text-white">Director Actionable Review & Inbox</h2>
+            <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+            <h2 class="text-base font-bold uppercase tracking-wider text-white">Director review queue</h2>
           </div>
           <p class="text-xs text-gray-400 mt-0.5">Automated 5-record operational packs awaiting executive review and decision sign-off.</p>
         </div>
@@ -152,8 +121,48 @@
       </div>
     </section>
 
+    <section class="space-y-3" aria-labelledby="period-heading">
+      <div class="flex flex-col gap-3 rounded-xl border border-gray-800 bg-gray-900 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 id="period-heading" class="text-sm font-bold uppercase tracking-widest text-white">Period and actuals</h2>
+          <p class="mt-1 text-xs text-gray-400">Change the reporting period without changing the source records.</p>
+        </div>
+        <div class="flex gap-1 rounded-xl border border-gray-800 bg-gray-950 p-1" role="group" aria-label="Reporting period">
+          <button *ngFor="let mode of ['day', 'month', 'year']" type="button" (click)="viewMode.set($any(mode))" class="min-h-11 rounded-lg px-4 py-1.5 text-xs font-bold uppercase transition" [attr.aria-pressed]="viewMode() === mode" [class.bg-yellow-500]="viewMode() === mode" [class.text-black]="viewMode() === mode" [class.text-gray-400]="viewMode() !== mode">{{ mode }}</button>
+        </div>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Actual operating indicators">
+        <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm">
+          <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Attendance today</p>
+          <p class="mt-2 text-2xl font-bold text-white">{{ presentCount() }} <span class="text-sm font-normal text-gray-400">present today</span></p>
+          <p class="text-sm text-red-400 mt-1">{{ absentCount() }} absent today</p>
+        </article>
+        <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm">
+          <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Pending approvals</p>
+          <p class="mt-2 text-2xl font-bold text-white">{{ pendingApprovals().length + pendingExecutiveReports().length }}</p>
+          <p class="text-sm text-gray-400 mt-1">Recorded decisions awaiting review</p>
+        </article>
+        <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm">
+          <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Recognized operating cost</p>
+          <p class="mt-2 font-mono text-2xl font-bold text-white">R {{ operatingExpense() | number:'1.2-2' }}</p>
+          <p class="text-sm text-gray-400 mt-1">Selected reporting period</p>
+        </article>
+        <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm">
+          <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Asset readiness</p>
+          <p class="mt-2 text-2xl font-bold text-white">{{ assetSummary().ready }} / {{ assetSummary().total }}</p>
+          <p class="text-sm text-amber-300 mt-1">{{ assetSummary().attention }} attention · {{ assetSummary().blocked }} blocked</p>
+        </article>
+      </div>
+    </section>
+
     <!-- Operating Costs Breakdown -->
-    <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Recognized operating costs">
+    <section class="space-y-3" aria-labelledby="recognized-costs-heading">
+      <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <h2 id="recognized-costs-heading" class="text-sm font-bold uppercase tracking-widest text-white">Recognized operating costs</h2>
+        <p class="text-xs text-gray-400">Only values recognized by the costing service are included.</p>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm hover:border-gray-700 transition">
         <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">PPE</p>
         <p class="mt-2 font-mono text-2xl font-bold text-white">R {{ ppeExpense() | number:'1.2-2' }}</p>
@@ -189,6 +198,7 @@
         <p class="mt-2 text-2xl font-bold text-white">{{ provisionalLabourSources() }}</p>
         <p class="mt-1 text-xs text-gray-500">Not recognized until rate evidence is authoritative.</p>
       </article>
+      </div>
     </section>
 
     <p *ngIf="costAttribution.error()" class="rounded-xl border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-200">Cost reconciliation unavailable: {{ costAttribution.error() }}</p>
@@ -255,15 +265,23 @@
   </main>
 
   <!-- Detailed Modal for Inspecting the 5 Complete Records -->
-  <div *ngIf="activeReportModal()" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-    <div class="max-w-3xl w-full rounded-2xl border border-gray-700 bg-gray-900 p-6 space-y-5 text-gray-200 shadow-2xl max-h-[90vh] overflow-y-auto">
+  <div *ngIf="activeReportModal()" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div
+      [appAccessibleDialog]="true"
+      (dialogClose)="closeReportModal()"
+      initialFocusSelector="[data-dialog-close]"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="director-report-dialog-title"
+      class="max-w-3xl w-full rounded-2xl border border-gray-700 bg-gray-900 p-6 space-y-5 text-gray-200 shadow-2xl max-h-[90dvh] overflow-y-auto"
+    >
       <div class="flex items-start justify-between border-b border-gray-800 pb-4">
         <div>
           <span class="rounded-lg bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-3 py-1 font-mono text-xs font-bold">{{ activeReportModal()?.reportNumber }}</span>
-          <h3 class="text-xl font-black text-white mt-2">Executive Operational Pack Review</h3>
+          <h3 id="director-report-dialog-title" class="text-xl font-black text-white mt-2">Operational pack review</h3>
           <p class="text-xs text-gray-400">Generated {{ activeReportModal()?.generatedAt | date:'medium' }} by {{ activeReportModal()?.generatedByName }}</p>
         </div>
-        <button type="button" (click)="closeReportModal()" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
+        <button data-dialog-close type="button" (click)="closeReportModal()" aria-label="Close operational pack review" class="min-h-11 min-w-11 text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
       </div>
 
       <!-- 5 Verified Records Detailed Grid -->
@@ -273,35 +291,35 @@
         <!-- Record 1: Site Details -->
         <div class="rounded-xl border border-gray-800 bg-gray-950 p-4">
           <div class="flex justify-between items-center text-xs font-bold text-gray-400 uppercase">
-            <span>Record 1: Controlled Site</span>
+            <span>Record 1: Site</span>
             <span class="text-emerald-400 font-mono">{{ activeReportModal()?.records?.site?.jobNumber }}</span>
           </div>
           <p class="text-base font-bold text-white mt-1">{{ activeReportModal()?.records?.site?.name }}</p>
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 text-xs text-gray-400">
             <div>Location: <strong class="text-gray-200">{{ activeReportModal()?.records?.site?.location }}</strong></div>
             <div>Team: <strong class="text-gray-200">{{ activeReportModal()?.records?.site?.teamName }}</strong></div>
-            <div>Status: <strong class="text-emerald-400">Active Operating Site</strong></div>
+            <div>Status: <strong class="text-emerald-400">{{ activeReportModal()?.records?.site?.isActive ? 'Active' : 'Inactive' }}</strong></div>
           </div>
         </div>
 
         <!-- Record 2: Employee Profile -->
         <div class="rounded-xl border border-gray-800 bg-gray-950 p-4">
           <div class="flex justify-between items-center text-xs font-bold text-gray-400 uppercase">
-            <span>Record 2: Qualified Employee</span>
+            <span>Record 2: Employee profile</span>
             <span class="text-cyan-400 font-mono">{{ activeReportModal()?.records?.employee?.companyNumber }}</span>
           </div>
           <p class="text-base font-bold text-white mt-1">{{ activeReportModal()?.records?.employee?.surname }}, {{ activeReportModal()?.records?.employee?.firstName }}</p>
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 text-xs text-gray-400">
             <div>Role: <strong class="text-gray-200">{{ activeReportModal()?.records?.employee?.role }}</strong></div>
             <div>Designation: <strong class="text-gray-200">{{ activeReportModal()?.records?.employee?.designation }}</strong></div>
-            <div>Qualifications: <strong class="text-yellow-400">HIRA, Medical Fit</strong></div>
+            <div>Status: <strong class="text-yellow-400">{{ activeReportModal()?.records?.employee?.isActive ? 'Active' : 'Inactive' }}</strong></div>
           </div>
         </div>
 
         <!-- Record 3: Asset Details -->
         <div class="rounded-xl border border-gray-800 bg-gray-950 p-4">
           <div class="flex justify-between items-center text-xs font-bold text-gray-400 uppercase">
-            <span>Record 3: Capital Asset Machinery</span>
+            <span>Record 3: Asset</span>
             <span class="text-yellow-400 font-mono">{{ activeReportModal()?.records?.asset?.registrationNumber }}</span>
           </div>
           <p class="text-base font-bold text-white mt-1">{{ activeReportModal()?.records?.asset?.make }} {{ activeReportModal()?.records?.asset?.model }}</p>
@@ -315,21 +333,21 @@
         <!-- Record 4: Shift Timesheet Attendance -->
         <div class="rounded-xl border border-gray-800 bg-gray-950 p-4">
           <div class="flex justify-between items-center text-xs font-bold text-gray-400 uppercase">
-            <span>Record 4: Daily Shift & Labour Verification</span>
+            <span>Record 4: Timesheet</span>
             <span class="text-purple-400 font-mono">{{ activeReportModal()?.records?.timesheet?.date }}</span>
           </div>
           <p class="text-base font-bold text-white mt-1">Shift Attendance: {{ activeReportModal()?.records?.timesheet?.hoursWorked }} Hours Logged</p>
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 text-xs text-gray-400">
-            <div>Status: <strong class="text-emerald-400 uppercase">Present & Verified</strong></div>
+            <div>Status: <strong class="text-emerald-400 uppercase">{{ activeReportModal()?.records?.timesheet?.status }}</strong></div>
             <div>Overtime: <strong class="text-gray-200">{{ activeReportModal()?.records?.timesheet?.overtimeHours }} Hours</strong></div>
-            <div>Supervisor Sign-off: <strong class="text-emerald-400">Confirmed</strong></div>
+            <div>Supervisor sign-off: <strong class="text-emerald-400">{{ activeReportModal()?.records?.timesheet?.supervisorSigned ? 'Confirmed' : 'Pending' }}</strong></div>
           </div>
         </div>
 
         <!-- Record 5: Vendor Invoice Traceability -->
         <div class="rounded-xl border border-gray-800 bg-gray-950 p-4">
           <div class="flex justify-between items-center text-xs font-bold text-gray-400 uppercase">
-            <span>Record 5: Supplier Invoice & PO Traceability</span>
+            <span>Record 5: Vendor invoice</span>
             <span class="text-emerald-400 font-mono">{{ activeReportModal()?.records?.invoice?.internalOrderNumber }}</span>
           </div>
           <p class="text-base font-bold text-white mt-1">R {{ activeReportModal()?.records?.invoice?.total | number:'1.2-2' }} — {{ activeReportModal()?.records?.invoice?.itemsPurchased }}</p>

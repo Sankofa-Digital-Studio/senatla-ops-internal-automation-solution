@@ -165,6 +165,19 @@ describe('OfficeAdminComponent', () => {
     expect(invoice.internalOrderNumber).toBe('INT-44');
     expect(invoice.invoiceNumber).toBe('INV-44');
   });
+
+  it('generates Director review packs without synthetic performance claims', async () => {
+    await TestBed.inject(AuthService).login('thosontula+office@gmail.com', 'test-password');
+    const report = await component.service.generateDirectorReport();
+    const approval = component.service.approvals().find((request) => request.payload['reportId'] === report.id);
+    const serialized = JSON.stringify({ report, approval }).toLowerCase();
+
+    expect(Object.prototype.hasOwnProperty.call(report, 'executiveAdvantage')).toBeFalse();
+    expect(approval?.payload['advantage']).toBeUndefined();
+    for (const forbidden of ['margin integrity', 'labor hours saved', 'zero-harm', 'paper friction', 'audit-proof']) {
+      expect(serialized).not.toContain(forbidden);
+    }
+  });
 });
 
 function outbox(status: 'pending' | 'processing' | 'completed' | 'failed', hour: number) {

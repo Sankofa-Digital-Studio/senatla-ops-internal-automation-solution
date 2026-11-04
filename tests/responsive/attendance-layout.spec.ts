@@ -5,6 +5,7 @@ import { RESPONSIVE_TEST_ACCOUNTS, RESPONSIVE_TEST_PASSWORD } from './accounts';
 const credentials = {
   office: { email: RESPONSIVE_TEST_ACCOUNTS.office.email, password: RESPONSIVE_TEST_PASSWORD },
   site: { email: RESPONSIVE_TEST_ACCOUNTS.site.email, password: RESPONSIVE_TEST_PASSWORD },
+  director: { email: RESPONSIVE_TEST_ACCOUNTS.director.email, password: RESPONSIVE_TEST_PASSWORD },
 };
 
 test('Office Admin attendance queue renders without responsive regressions', async ({ page }, testInfo) => {
@@ -44,7 +45,34 @@ test('Site Manager delivery status renders without exposing other sites', async 
   await page.screenshot({ path: `output/playwright/${testInfo.project.name}-site-attendance.png`, fullPage: true });
 });
 
-async function seedAuthenticatedPage(page: Page, role: 'office' | 'site') {
+test('Director review is actual-only, keyboard reachable, and uses document scrolling', async ({ page }, testInfo) => {
+  await seedAuthenticatedPage(page, 'director');
+  await expect(page.getByRole('heading', { name: 'Director operations review' })).toBeVisible({ timeout: 120000 });
+  await expect(page.getByRole('heading', { name: 'Director review queue' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Period and actuals' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Recognized operating costs' })).toBeVisible();
+  await expect(page.getByText('Margin Target')).toHaveCount(0);
+  await expect(page.getByText('Time Saved')).toHaveCount(0);
+
+  const day = page.getByRole('button', { name: 'day' });
+  await day.focus();
+  await expect(day).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'month' })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'year' })).toBeFocused();
+
+  const nestedVerticalScrollers = await page.locator('body *').evaluateAll((nodes) => nodes.filter((node) => {
+    const element = node as HTMLElement;
+    const overflowY = getComputedStyle(element).overflowY;
+    return (overflowY === 'auto' || overflowY === 'scroll') && element.scrollHeight > element.clientHeight + 1;
+  }).map((node) => (node as HTMLElement).className).slice(0, 10));
+  expect(nestedVerticalScrollers, `Unexpected nested vertical scrollers: ${nestedVerticalScrollers.join(', ')}`).toEqual([]);
+  await assertResponsiveSurface(page);
+  await page.screenshot({ path: `output/playwright/${testInfo.project.name}-director-review.png`, fullPage: true });
+});
+
+async function seedAuthenticatedPage(page: Page, role: 'office' | 'site' | 'director') {
   const supabaseUrl = process.env.SENATLA_SUPABASE_URL || 'http://127.0.0.1:54321';
   const supabaseAnonKey = process.env.SENATLA_SUPABASE_ANON_KEY;
   if (!supabaseAnonKey) throw new Error('SENATLA_SUPABASE_ANON_KEY is required for responsive browser fixtures.');
@@ -63,7 +91,8 @@ async function seedAuthenticatedPage(page: Page, role: 'office' | 'site') {
     localStorage.setItem(key, JSON.stringify(session));
   }, { key: storageKey, session: data.session });
 
-  await page.goto(role === 'office' ? '/office-admin' : '/site-manager');
+  const path = role === 'office' ? '/office-admin' : role === 'director' ? '/director' : '/site-manager';
+  await page.goto(path);
   await page.waitForLoadState('networkidle');
 }
 
