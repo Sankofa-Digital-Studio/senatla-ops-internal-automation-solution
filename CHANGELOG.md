@@ -2,6 +2,30 @@
 
 All notable Senatla Ops changes are recorded here. Versions follow semantic versioning.
 
+## [0.5.3] - 2026-11-04
+
+### Changed
+
+- The Director workspace now starts with the actionable review queue, then period controls, actual operating costs, workforce, risks and invoice evidence.
+- Director indicators are limited to recorded attendance, pending decisions, recognized operating cost and asset readiness.
+- Director report dialogs trap focus, close with Escape, restore focus and announce decision feedback.
+- Responsive tests now exercise the authenticated Director journey across all six supported viewport profiles.
+
+### Removed
+
+- Unsupported margin, fleet, zero-harm and time-saved claims from the Director UI, report model, generator and approval payload.
+- Dormant Gmail OAuth source and the unreachable Gmail communications component; application access remains email/password only.
+- The Director page's nested vertical scroll container.
+
+### Fixed
+
+- Responsive test configuration now uses the repository-pinned Supabase CLI instead of downloading a stale CLI version during local discovery.
+
+### Delivery
+
+- Application, Supabase, responsive, Android and iOS gates passed for application commit `a689c2229500a5ee93f2aba5822f70de87fc8e53`.
+- Preview and production deployments reached `READY`; no database migration was required.
+
 ## [0.5.2] - 2026-11-04
 
 ### Added

@@ -20,7 +20,7 @@ The public Senatla Trading website is maintained outside this repository and rem
 - Plus-address aliases, including `thosontula+tag@gmail.com`, are ordinary accounts and do not inherit the developer override.
 - New users receive a temporary password and must replace it before opening a workspace.
 
-Current release notes: [v0.5.2](docs/release-notes-0.5.2.md).
+Current release notes: [v0.5.3](docs/release-notes-0.5.3.md).
 
 ## Product outcome
 
