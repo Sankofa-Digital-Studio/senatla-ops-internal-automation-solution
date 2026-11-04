@@ -47,12 +47,16 @@ Evidence:
 
 ## Database and migration impact
 
-No database migration is included. Existing row-level security, profile history, role boundaries and approval records are unchanged. Older locally retained Director reports may still contain deprecated extra properties, but the application no longer displays, generates or forwards them.
+The original dashboard release required no database migration. The post-release recovery hotfix adds only the server-restricted `recovery_pin_history` table and its user/time indexes; existing profile history, role boundaries and approval records are unchanged. Older locally retained Director reports may still contain deprecated extra properties, but the application no longer displays, generates or forwards them.
 
 ## Post-release operational update
 
 The production Supabase project `btdavpeyxtirtshovjdu` is active and healthy on the free plan. Physical UAT access was provisioned for `thosontula+tag@gmail.com` as an active Director with a forced password change, and the provisional credential was delivered to `thosontula@gmail.com`. The existing permanent developer account was not reset or modified. No paid-plan upgrade was requested or performed.
 
+### Recovery-PIN hotfix
+
+The repository migration for `recovery_pin_history` had not reached production, causing first-time PIN availability checks to fail before forced password replacement. The missing migration is now applied and reconciled with repository history. Production returns `available: true` for a first PIN. Row-level security is enabled and PIN digests are inaccessible to anonymous and authenticated clients; only the server-side recovery handlers can process them.
+
 ## Rollback
 
-The preceding verified release is tag `v0.5.2`. Because v0.5.3 has no database migration, application rollback requires only redeploying that tag. Immutable APK releases remain available through commit-specific dev tags.
+The preceding verified release is tag `v0.5.2`. Application rollback requires redeploying that tag; the additive recovery history table should remain in place so existing PIN history is preserved and future forward deployment is safe. Immutable APK releases remain available through commit-specific dev tags.

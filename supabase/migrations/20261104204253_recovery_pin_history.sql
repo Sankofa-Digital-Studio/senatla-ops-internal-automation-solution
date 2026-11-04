@@ -11,12 +11,7 @@ create index if not exists idx_recovery_pin_history_user_created on public.recov
 
 alter table public.recovery_pin_history enable row level security;
 
--- Authenticated users can only read their own recovery pin status (not raw pin hashes)
-create policy recovery_pin_read_own
-  on public.recovery_pin_history
-  for select
-  to authenticated
-  using (user_id = auth.uid());
-
--- All insertions and mutations occur via service-role / security-definer API handlers
-revoke insert, update, delete, truncate on public.recovery_pin_history from authenticated, anon;
+-- PIN digests are server-only recovery material. All access occurs through
+-- authenticated server handlers using the service role; clients receive only
+-- availability or verification results and must never read the digest rows.
+revoke all on public.recovery_pin_history from authenticated, anon;

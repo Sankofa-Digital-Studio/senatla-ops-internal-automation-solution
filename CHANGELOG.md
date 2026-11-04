@@ -20,12 +20,15 @@ All notable Senatla Ops changes are recorded here. Versions follow semantic vers
 ### Fixed
 
 - Responsive test configuration now uses the repository-pinned Supabase CLI instead of downloading a stale CLI version during local discovery.
+- Restored first-time recovery-PIN enrollment by applying the missing production history-table migration; first PINs now return available instead of blocking forced password replacement.
+- Restricted recovery PIN digests to server-side access only; anonymous and authenticated clients have no table privileges.
 
 ### Delivery
 
 - Application, Supabase, responsive, Android and iOS gates passed for application commit `a689c2229500a5ee93f2aba5822f70de87fc8e53`.
 - Preview and production deployments reached `READY`; no database migration was required.
 - Post-release verification confirmed production Supabase project `btdavpeyxtirtshovjdu` active and healthy on the free plan; a forced-password-change Director alias was provisioned for physical UAT without modifying the permanent developer account.
+- Hotfix verification passed recovery-PIN and password-completion contracts, lint, type checking, production build, production schema/RLS checks, and a live first-PIN availability request. The local Chrome process failed to attach to Karma; CI remains the authoritative browser gate.
 
 ## [0.5.2] - 2026-11-04
 
