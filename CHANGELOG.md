@@ -2,6 +2,30 @@
 
 All notable Senatla Ops changes are recorded here. Versions follow semantic versioning.
 
+## [0.5.2] - 2026-11-04
+
+### Added
+
+- A typed costing engine and Director costing workspace with phase-level quantities, category rates, responsive results and calculation tests.
+- Optional per-phase cost-category applicability; unspecified categories remain enabled to preserve general costing behavior.
+
+### Changed
+
+- The approved village quotation includes site establishment, steel dismantling and rubble haulage while excluding concrete breakup and shaping.
+- Angular builds now use `@angular/build`, universal CI caching and the Vite development server host allow-list option.
+- The application shell uses native vertical scrolling and clipped horizontal overflow to reduce nested-scroll viewport movement.
+
+### Fixed
+
+- The approved village quotation now reconciles to R2,077,960 instead of the incorrect R5,635,820 calculation.
+- Responsive CI starts successfully with the Angular Vite builder instead of passing the removed `disable-host-check` option.
+- Landing-page wheel scrolling, icon-only sign-in presentation and hero viewport alignment.
+
+### Delivery
+
+- Application, Supabase, responsive, Android and iOS gates passed for application commit `7c93a5b0db372637f494daf4589c2b70ebfbbf9b`.
+- Preview and production deployments reached `READY`; no database migration was required.
+
 ## [0.5.1] - 2026-11-03
 
 ### Added

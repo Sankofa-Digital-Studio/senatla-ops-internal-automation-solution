@@ -20,7 +20,7 @@ The public Senatla Trading website is maintained outside this repository and rem
 - Plus-address aliases, including `thosontula+tag@gmail.com`, are ordinary accounts and do not inherit the developer override.
 - New users receive a temporary password and must replace it before opening a workspace.
 
-Current release notes: [v0.5.1](docs/release-notes-0.5.1.md).
+Current release notes: [v0.5.2](docs/release-notes-0.5.2.md).
 
 ## Product outcome
 
@@ -49,6 +49,7 @@ Senatla Ops gives each operational record an explainable history: who acted, whe
 - Asset identity, custody, compliance, fuel, cost, and maintenance records.
 - Private evidence capture with human-reviewed OCR provenance.
 - Executive readiness and cost views linked to persisted source records.
+- Phase-based costing with explicit category applicability and quotation reconciliation.
 - Immutable audit events and role-negative database contracts.
 - Responsive web delivery plus Android and iOS application foundations.
 
