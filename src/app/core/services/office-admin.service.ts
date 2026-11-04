@@ -2354,7 +2354,7 @@ export class OfficeAdminService {
           status: 'approved',
           directorReviewedAt: new Date().toISOString(),
           directorReviewedBy: request.reviewedByName || 'Director',
-          directorNotes: request.notes || 'Executive sign-off confirmed. Operations and margins validated.',
+          directorNotes: request.notes || 'Director review completed against the stored operational records.',
         };
         this.directorReports.update((reports) => reports.map((r) => r.id === reportId ? approvedReport : r));
       }
@@ -2500,14 +2500,6 @@ export class OfficeAdminService {
         timesheet: timesheetRecord,
         invoice,
       },
-      executiveAdvantage: {
-        marginIntegrityScore: 100,
-        laborHoursSavedPerWeek: 22.5,
-        costTraceabilityStatus: `100% Attributed to Job ${site.jobNumber || 'JOB-KP-2026-08'}`,
-        complianceConfidence: 'Audit-Proof & Zero-Harm Certified',
-        strategicSummary: `Complete digital reconciliation of R${(invoice.total || 94500).toLocaleString()} fuel & equipment dispatch directly attributed to ${site.name} (${site.jobNumber}).`,
-        verdict: 'CLEAR OPERATIONAL ADVANTAGE: Zero paper friction, immediate budget traceability, eliminating duplicate invoices and manual timesheet disputes.',
-      },
       directorReviewedAt: null,
       directorReviewedBy: null,
       directorNotes: null,
@@ -2526,7 +2518,6 @@ export class OfficeAdminService {
       assetName: `${asset.make} ${asset.model}`,
       invoiceNumber: invoice.invoiceNumber || invoice.orderNumber,
       invoiceTotal: invoice.total,
-      advantage: report.executiveAdvantage,
     }, 'Executive operational report pack awaiting Director review and sign-off');
 
     await this.logActivity('director_report_dispatched', 'executive_report', report.id, {
