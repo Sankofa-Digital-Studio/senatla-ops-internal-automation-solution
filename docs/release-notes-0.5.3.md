@@ -49,9 +49,9 @@ Evidence:
 
 No database migration is included. Existing row-level security, profile history, role boundaries and approval records are unchanged. Older locally retained Director reports may still contain deprecated extra properties, but the application no longer displays, generates or forwards them.
 
-## Operational limitation
+## Post-release operational update
 
-The production Supabase project remains paused because the account already has two active free-plan projects. Application deployment is healthy, but production authentication and physical UAT require pausing one of those active projects before the production project can be restored. No paid-plan upgrade was requested or performed.
+The production Supabase project `btdavpeyxtirtshovjdu` is active and healthy on the free plan. Physical UAT access was provisioned for `thosontula+tag@gmail.com` as an active Director with a forced password change, and the provisional credential was delivered to `thosontula@gmail.com`. The existing permanent developer account was not reset or modified. No paid-plan upgrade was requested or performed.
 
 ## Rollback
 

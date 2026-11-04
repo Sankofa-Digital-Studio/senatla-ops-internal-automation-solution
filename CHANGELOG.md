@@ -25,6 +25,7 @@ All notable Senatla Ops changes are recorded here. Versions follow semantic vers
 
 - Application, Supabase, responsive, Android and iOS gates passed for application commit `a689c2229500a5ee93f2aba5822f70de87fc8e53`.
 - Preview and production deployments reached `READY`; no database migration was required.
+- Post-release verification confirmed production Supabase project `btdavpeyxtirtshovjdu` active and healthy on the free plan; a forced-password-change Director alias was provisioned for physical UAT without modifying the permanent developer account.
 
 ## [0.5.2] - 2026-11-04
 
