@@ -4,10 +4,9 @@
     <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div>
         <div class="flex items-center gap-3">
-          <span class="rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-3 py-0.5 text-[10px] font-bold tracking-widest uppercase">Executive Decision Suite</span>
-          <span class="rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-0.5 text-[10px] font-bold tracking-widest uppercase">Strategic Horizons 2026-2027</span>
+          <span class="rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-3 py-0.5 text-[10px] font-bold tracking-widest uppercase">Director workspace</span>
         </div>
-        <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white mt-1">DIRECTOR STRATEGIC COMMAND</h1>
+        <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white mt-1">Director operations review</h1>
         <p class="mt-1 text-xs font-bold uppercase tracking-widest text-yellow-500">Source-backed operations · data as of {{ dataAsOf() | date:'medium' }}</p>
       </div>
 
@@ -29,45 +28,6 @@
       <span>{{ feedback() }}</span>
       <button type="button" (click)="feedback.set('')" class="text-yellow-400 hover:text-white">&times;</button>
     </div>
-
-    <!-- Strategic Vision & Horizons: Where We Want To Go -->
-    <section class="rounded-2xl border border-yellow-500/30 bg-gradient-to-br from-gray-900 via-gray-900 to-yellow-950/20 p-6 shadow-xl relative overflow-hidden">
-      <div class="absolute -right-8 -top-8 w-64 h-64 bg-yellow-500/5 rounded-full blur-3xl pointer-events-none"></div>
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        <div class="space-y-2 max-w-2xl">
-          <div class="flex items-center gap-2 text-yellow-400 text-xs font-black uppercase tracking-wider">
-            <span>Enterprise Roadmap & Vision</span>
-          </div>
-          <h2 class="text-xl md:text-2xl font-black text-white">Scaling Senatla Operations: From Paper Friction to Automated Advantage</h2>
-          <p class="text-xs md:text-sm text-gray-300 leading-relaxed">
-            Eliminating tedious manual logsheets through end-to-end operational traceability. Every excavator, worker shift, and bulk fuel invoice directly attributes to job numbers in real time, giving directors 100% margin certainty.
-          </p>
-        </div>
-
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full lg:w-auto">
-          <div class="rounded-xl border border-gray-800 bg-gray-950/80 p-3 text-center">
-            <p class="text-[10px] uppercase font-bold text-gray-500">Margin Target</p>
-            <p class="text-lg font-black text-emerald-400 mt-1">28.5%</p>
-            <span class="text-[10px] text-gray-400">+4.2% vs 2025</span>
-          </div>
-          <div class="rounded-xl border border-gray-800 bg-gray-950/80 p-3 text-center">
-            <p class="text-[10px] uppercase font-bold text-gray-500">Zero-Harm Record</p>
-            <p class="text-lg font-black text-yellow-400 mt-1">100%</p>
-            <span class="text-[10px] text-gray-400">Zero incidents</span>
-          </div>
-          <div class="rounded-xl border border-gray-800 bg-gray-950/80 p-3 text-center">
-            <p class="text-[10px] uppercase font-bold text-gray-500">Fleet Scaling</p>
-            <p class="text-lg font-black text-cyan-400 mt-1">+15 Heavy</p>
-            <span class="text-[10px] text-gray-400">Planned 2026</span>
-          </div>
-          <div class="rounded-xl border border-gray-800 bg-gray-950/80 p-3 text-center">
-            <p class="text-[10px] uppercase font-bold text-gray-500">Time Saved</p>
-            <p class="text-lg font-black text-purple-400 mt-1">4.5 hrs/day</p>
-            <span class="text-[10px] text-gray-400">Paper eliminated</span>
-          </div>
-        </div>
-      </div>
-    </section>
 
     <!-- Executive Operations Summary Cards -->
     <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Executive operations summary">
@@ -147,15 +107,10 @@
                 </span>
               </div>
 
-              <!-- Executive Advantage Analysis -->
+              <!-- Source-backed review basis -->
               <div class="mt-3 rounded-lg border border-yellow-500/20 bg-yellow-950/20 p-3 text-xs">
-                <p class="font-bold text-yellow-300 uppercase tracking-wide text-[11px]">Executive Advantage Analysis:</p>
-                <p class="text-gray-200 mt-1">{{ report.executiveAdvantage.verdict }}</p>
-                <div class="mt-2 flex flex-wrap gap-4 text-[11px] text-gray-400">
-                  <span>Margin Integrity: <strong class="text-emerald-300">{{ report.executiveAdvantage.marginIntegrityScore }}%</strong></span>
-                  <span>Time Saved: <strong class="text-cyan-300">{{ report.executiveAdvantage.laborHoursSavedPerWeek }} hrs/week</strong></span>
-                  <span>Traceability: <strong class="text-yellow-300">{{ report.executiveAdvantage.costTraceabilityStatus }}</strong></span>
-                </div>
+                <p class="font-bold text-yellow-300 uppercase tracking-wide text-[11px]">Review basis</p>
+                <p class="text-gray-200 mt-1">Decision support is limited to the five stored records shown in this pack. No additional performance claim is inferred.</p>
               </div>
             </div>
 
@@ -386,11 +341,11 @@
         </div>
       </div>
 
-      <!-- Executive Strategic Advantage Verdict -->
+      <!-- Source-backed review basis -->
       <div class="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-4 space-y-2">
-        <h5 class="text-xs font-bold uppercase tracking-wider text-emerald-300">Executive Advantage Assessment:</h5>
-        <p class="text-sm text-gray-200 font-semibold">{{ activeReportModal()?.executiveAdvantage?.verdict }}</p>
-        <p class="text-xs text-gray-400">{{ activeReportModal()?.executiveAdvantage?.strategicSummary }}</p>
+        <h5 class="text-xs font-bold uppercase tracking-wider text-emerald-300">Review basis</h5>
+        <p class="text-sm text-gray-200 font-semibold">Review the stored site, employee, asset, timesheet and invoice records before deciding.</p>
+        <p class="text-xs text-gray-400">The workspace does not infer performance outcomes that are not supported by those records.</p>
       </div>
 
       <!-- Sign-off Controls -->

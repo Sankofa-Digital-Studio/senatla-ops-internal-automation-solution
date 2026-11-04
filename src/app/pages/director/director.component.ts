@@ -39,7 +39,7 @@ export class DirectorComponent {
 
   async approveReport(reportId: string) {
     await this.office.approveDirectorReport(reportId, this.directorNotes());
-    this.feedback.set('Executive operational report approved. Real-time cost & workforce margin locked.');
+    this.feedback.set('Operational report approved and the review decision was recorded.');
     this.closeReportModal();
   }
 

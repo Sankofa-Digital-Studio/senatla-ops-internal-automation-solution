@@ -38,4 +38,13 @@ describe('DirectorComponent', () => {
     expect(text).toContain('present today');
     expect(text).toContain('absent today');
   });
+
+  it('does not present unsupported executive performance claims as facts', () => {
+    const text = fixture.nativeElement.textContent.toLowerCase();
+    for (const forbidden of ['100% margin certainty', 'margin target', 'zero-harm record', 'fleet scaling', 'time saved', 'margin integrity', 'executive advantage']) {
+      expect(text).not.toContain(forbidden);
+    }
+    expect(text).toContain('review basis');
+    expect(text).toContain('no additional performance claim is inferred');
+  });
 });
