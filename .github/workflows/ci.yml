@@ -27,7 +27,7 @@ jobs:
         env:
           SENATLA_API_MODE: local
           SENATLA_AUTH_REVIEW_BYPASS: "false"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: senatla-ops-web
           path: www
@@ -114,7 +114,7 @@ jobs:
         env:
           CI: true
       - if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: responsive-layout-evidence
           path: output/playwright

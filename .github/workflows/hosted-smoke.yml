@@ -81,7 +81,7 @@ jobs:
             '{deploymentUrl:$deploymentUrl,environment:$environment,expectedCommit:$expectedCommit,rollbackCommit:$rollbackCommit,responsibleOwner:$responsibleOwner,result:$result,verifiedAt:$verifiedAt}' \
             > output/deployment-evidence/hosted-smoke.json
       - if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: hosted-deployment-evidence
           path: |
