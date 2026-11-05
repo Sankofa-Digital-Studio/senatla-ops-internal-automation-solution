@@ -2,6 +2,7 @@ name: Senatla Ops quality gates
 
 on:
   pull_request:
+  workflow_dispatch:
   push:
     branches: [dev]
 
@@ -14,10 +15,10 @@ concurrency:
 
 jobs:
   application:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24.15.0
           cache: npm
@@ -33,10 +34,10 @@ jobs:
           if-no-files-found: error
 
   supabase:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24.15.0
           cache: npm
@@ -88,10 +89,10 @@ jobs:
 
 
   responsive-layout:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24.15.0
           cache: npm

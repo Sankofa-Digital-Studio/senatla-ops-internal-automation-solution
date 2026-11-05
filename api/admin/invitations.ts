@@ -1,13 +1,12 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 
-declare const process: { env: Record<string, string | undefined> };
 type AdminProfile = { role: string; is_active: boolean; organization_id: string };
 
 export default async function handler(req: any, res: any) {
   if (!['GET', 'POST', 'DELETE'].includes(req.method)) { res.status(405).json({ error: 'Method not allowed.' }); return; }
-  const url = process.env.SENATLA_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = process.env['SENATLA_SUPABASE_URL'];
+  const serviceKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
   const header = `${req.headers.authorization || ''}`;
   const token = header.startsWith('Bearer ') ? header.slice(7) : '';
   if (!url || !serviceKey) { res.status(500).json({ error: 'Supabase admin configuration is missing.' }); return; }
