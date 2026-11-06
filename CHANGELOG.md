@@ -2,6 +2,22 @@
 
 All notable Senatla Ops changes are recorded here. Versions follow semantic versioning.
 
+## Unreleased
+
+Director guidance and access are integrated on `dev`; historical costing and asset review are pending integration. Production promotion remains pending.
+
+### Added
+
+- Added a mandatory Director workspace walkthrough with route navigation, responsive target scrolling, completion tracking, and a per-user “Don’t show this guide again” preference.
+- Added shared Help, replay-tour, Director management shortcuts, and plain-language troubleshooting guidance.
+- Added bounded sign-out loading and retry feedback plus visible login error handling for failed HTTP responses.
+- Added shared employee, site, assignment, asset, and OCR workflows for the two named developer/director accounts. Ordinary Directors retain oversight access without administrative writes.
+- Added source-labelled historical cost references and explicit additional direct-cost lines to the Director costing model. Preset client names remain provisional pending contract verification.
+
+### Documentation
+
+- Added Director workspace guidance in Markdown, responsive HTML, and Word formats.
+
 ## [0.5.3] - 2026-11-04
 
 ### Changed

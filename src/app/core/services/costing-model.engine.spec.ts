@@ -5,6 +5,9 @@ import {
   calculateWaterfall,
   generateCashflowSchedule,
   exportModelAsCSV,
+  calculateAdditionalCost,
+  calculateHistoricalKmCost,
+  HISTORICAL_COST_REFERENCES,
 } from './costing-model.engine';
 
 describe('CostingModelEngine', () => {
@@ -56,7 +59,7 @@ describe('CostingModelEngine', () => {
     expect(detail.totalDirect).toBe(221000);
   });
 
-  it('accurately reproduces Senatla 5-Village quotation waterfall figures', () => {
+  it('preserves the existing 5-Village scenario calculation with no extra costs', () => {
     const { waterfall, phaseDetails } = calculateWaterfall(
       PRESET_SENATLA_VILLAGES.phases,
       PRESET_SENATLA_VILLAGES.rates,
@@ -122,5 +125,37 @@ describe('CostingModelEngine', () => {
     expect(csv).toContain('MASTER BILL OF QUANTITIES (BOQ) BREAKDOWN');
     expect(csv).toContain('Boiketlong Village');
     expect(csv).toContain('Pabalong Village');
+    expect(csv).toContain('PROVISIONAL - VERIFY CONTRACT PARTY');
+  });
+
+  it('adds reviewed cost lines to direct spend and downstream totals', () => {
+    const item = { id: 'a', category: 'asbestos' as const, description: 'Removal', unit: 'ton', quantity: 2, unitRate: 13300, sourceRef: 'historical example' };
+    const baseline = calculateWaterfall(PRESET_SENATLA_VILLAGES.phases, PRESET_SENATLA_VILLAGES.rates, 6);
+    const result = calculateWaterfall(PRESET_SENATLA_VILLAGES.phases, PRESET_SENATLA_VILLAGES.rates, 6, [item]);
+    expect(calculateAdditionalCost(item)).toBe(26600);
+    expect(result.waterfall.phaseDirectSpend).toBe(baseline.waterfall.directSpend);
+    expect(result.waterfall.additionalDirectSpend).toBe(26600);
+    expect(result.waterfall.directSpend).toBe(baseline.waterfall.directSpend + 26600);
+    expect(result.waterfall.totalTenderPriceInclVat).toBeGreaterThan(baseline.waterfall.totalTenderPriceInclVat);
+    const csv = exportModelAsCSV({ ...PRESET_SENATLA_VILLAGES, additionalCosts: [item] }, result.waterfall, result.phaseDetails);
+    expect(csv).toContain('ADDITIONAL DIRECT COSTS');
+    expect(csv).toContain('26600.00');
+    expect(csv).toContain('historical example');
+  });
+
+  it('rejects invalid costs and keeps historical values outside defaults', () => {
+    expect(() => calculateAdditionalCost({ id: 'x', category: 'other', description: 'x', unit: 'lot', quantity: -1, unitRate: 2 })).toThrow();
+    expect(() => calculateHistoricalKmCost(10, Number.NaN)).toThrow();
+    expect(calculateHistoricalKmCost(12, 2)).toEqual({ ratePerKm: 36, total: 864 });
+    expect(PRESET_SENATLA_VILLAGES.additionalCosts).toBeUndefined();
+    expect(HISTORICAL_COST_REFERENCES.find(r => r.id === 'asbestos-2026')?.rate).toBe(13300);
+  });
+
+  it('escapes spreadsheet formulas in user-supplied CSV text', () => {
+    const model = { ...PRESET_SENATLA_VILLAGES, projectName: '=HYPERLINK("bad")', clientName: '+unsafe' };
+    const { waterfall, phaseDetails } = calculateWaterfall(model.phases, model.rates, model.durationMonths);
+    const csv = exportModelAsCSV(model, waterfall, phaseDetails);
+    expect(csv).toContain("'=HYPERLINK");
+    expect(csv).toContain("'+unsafe");
   });
 });

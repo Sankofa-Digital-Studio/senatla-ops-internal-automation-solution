@@ -5,7 +5,7 @@
       <div>
         <div class="flex items-center gap-2">
           <span class="rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-2.5 py-0.5 text-[10px] font-bold tracking-widest uppercase">Executive Financial Suite</span>
-          <span class="rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2.5 py-0.5 text-[10px] font-bold tracking-widest uppercase">West Gold & Tau 10 Standard</span>
+          <span class="rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2.5 py-0.5 text-[10px] font-bold tracking-widest uppercase">Scenario costing</span>
         </div>
         <h1 class="text-xl md:text-2xl font-black text-white mt-1 uppercase tracking-tight flex items-center gap-3">
           Demolition & Rehabilitation Costing Studio
@@ -70,7 +70,7 @@
             [class.bg-gray-950]="activePresetId() !== 'senatla-5-villages'"
             [class.text-gray-300]="activePresetId() !== 'senatla-5-villages'"
           >
-            5-Village Municipal Quote (R 3.03M)
+            5-Village Scenario
           </button>
 
           <button
@@ -84,7 +84,7 @@
             [class.bg-gray-950]="activePresetId() !== 'west-gold-plant'"
             [class.text-gray-300]="activePresetId() !== 'west-gold-plant'"
           >
-            West Gold Plant (R 26.8M)
+            West Gold Scenario
           </button>
 
           <button
@@ -98,7 +98,7 @@
             [class.bg-gray-950]="activePresetId() !== 'capm-tau-mine-10'"
             [class.text-gray-300]="activePresetId() !== 'capm-tau-mine-10'"
           >
-            CAPM Tau Mine #10 (R 308M)
+            CAPM Tau #10 Scenario
           </button>
 
           <button
@@ -112,9 +112,12 @@
       </div>
 
       <div class="text-xs text-gray-500 text-right">
-        Auto-Calculated in Real Time &bull; 0 Manual Spreadsheets Needed
+        Scenario estimates only &bull; verify rates, scope and contract party before use
       </div>
     </div>
+    <p *ngIf="clientNameProvisional()" class="rounded-lg border border-amber-500/50 bg-amber-950/30 px-4 py-3 text-sm text-amber-200" role="status">
+      Client name is provisional. Confirm the legal contract party against a signed agreement before issuing a proposal.
+    </p>
 
     <!-- Executive KPI Summary Cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -372,7 +375,7 @@
     </section>
 
     <!-- Analysis Tabs Navigation -->
-    <div class="border-b border-gray-800 flex items-center gap-4 text-xs font-bold uppercase tracking-wider">
+    <div class="border-b border-gray-800 flex items-center gap-4 overflow-x-auto text-xs font-bold uppercase tracking-wider" aria-label="Costing views">
       <button
         type="button"
         (click)="activeTab.set('waterfall')"
@@ -408,6 +411,8 @@
       >
         Cashflow S-Curve Forecast
       </button>
+      <button type="button" (click)="activeTab.set('costs')" class="pb-3 border-b-2 whitespace-nowrap" [class.border-yellow-500]="activeTab() === 'costs'" [class.text-yellow-400]="activeTab() === 'costs'">Additional Costs</button>
+      <button type="button" (click)="activeTab.set('history')" class="pb-3 border-b-2 whitespace-nowrap" [class.border-yellow-500]="activeTab() === 'history'" [class.text-yellow-400]="activeTab() === 'history'">Historical References</button>
     </div>
 
     <!-- TAB 1: COMMERCIAL WATERFALL -->
@@ -420,7 +425,7 @@
         <div class="flex items-center justify-between p-3 rounded-lg bg-gray-950 border border-gray-800">
           <div>
             <span class="font-bold text-gray-200">Total Direct Operational Spend</span>
-            <p class="text-[10px] text-gray-500">Site Est + Steel Dismantle + Concrete Breakup + Rubble Haulage + Surface Levelling</p>
+            <p class="text-[10px] text-gray-500">Phase costs {{ waterfall().phaseDirectSpend | currency:'ZAR':'symbol-narrow':'1.2-2' }} + additional costs {{ waterfall().additionalDirectSpend | currency:'ZAR':'symbol-narrow':'1.2-2' }}</p>
           </div>
           <span class="font-mono font-bold text-white text-sm">
             {{ waterfall().directSpend | currency:'ZAR':'symbol-narrow':'1.2-2' }}
@@ -535,16 +540,47 @@
           </tbody>
           <tfoot>
             <tr class="border-t-2 border-yellow-500 bg-gray-950 font-mono font-black text-xs text-white">
-              <td class="py-3 px-3 font-sans uppercase">Total Direct Expenditure</td>
+              <td class="py-3 px-3 font-sans uppercase">Total Phase Direct Expenditure</td>
               <td colspan="5"></td>
               <td class="py-3 px-3 text-right text-yellow-400">
-                {{ waterfall().directSpend | currency:'ZAR':'symbol-narrow':'1.2-2' }}
+                {{ waterfall().phaseDirectSpend | currency:'ZAR':'symbol-narrow':'1.2-2' }}
               </td>
             </tr>
           </tfoot>
         </table>
       </div>
     </div>
+
+    <section *ngIf="activeTab() === 'costs'" class="rounded-2xl border border-gray-800 bg-gray-900/80 p-4 sm:p-6 space-y-4" aria-label="Additional direct costs">
+      <h3 class="text-lg font-bold text-white">Additional direct costs</h3>
+      <p class="text-sm text-gray-300">Add asbestos, labour, equipment, materials or transport only after checking scope, quantities and current supplier rates. These costs feed the financial waterfall.</p>
+      <p *ngIf="costError()" role="alert" class="text-sm text-red-300">{{ costError() }}</p>
+      <form (ngSubmit)="addCost()" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <label class="text-sm text-gray-200">Category<select name="costCategory" [(ngModel)]="newCostCategory" class="mt-1 block w-full rounded bg-gray-950 p-3 border border-gray-600"><option *ngFor="let category of additionalCategories" [value]="category">{{ category }}</option></select></label>
+        <label class="text-sm text-gray-200">Description<input name="costDescription" [(ngModel)]="newCostDescription" required class="mt-1 block w-full rounded bg-gray-950 p-3 border border-gray-600"></label>
+        <label class="text-sm text-gray-200">Unit<input name="costUnit" [(ngModel)]="newCostUnit" required class="mt-1 block w-full rounded bg-gray-950 p-3 border border-gray-600"></label>
+        <label class="text-sm text-gray-200">Quantity<input name="costQuantity" type="number" min="0" step="any" [(ngModel)]="newCostQuantity" required class="mt-1 block w-full rounded bg-gray-950 p-3 border border-gray-600"></label>
+        <label class="text-sm text-gray-200">Unit rate (ZAR)<input name="costRate" type="number" min="0" step="any" [(ngModel)]="newCostRate" required class="mt-1 block w-full rounded bg-gray-950 p-3 border border-gray-600"></label>
+        <label class="text-sm text-gray-200">Source or quote reference<input name="costSource" [(ngModel)]="newCostSource" class="mt-1 block w-full rounded bg-gray-950 p-3 border border-gray-600"></label>
+        <button type="submit" class="rounded bg-yellow-500 text-black font-bold px-4 py-3 self-end">Add cost line</button>
+      </form>
+      <div class="overflow-x-auto"><table class="min-w-full text-sm text-left"><thead><tr><th class="p-2">Category</th><th class="p-2">Description</th><th class="p-2">Quantity × rate</th><th class="p-2">Total</th><th class="p-2">Source</th><th class="p-2">Action</th></tr></thead><tbody><tr *ngFor="let item of additionalCosts()" class="border-t border-gray-700"><td class="p-2">{{ item.category }}</td><td class="p-2">{{ item.description }}</td><td class="p-2">{{ item.quantity }} {{ item.unit }} × {{ item.unitRate | currency:'ZAR':'symbol-narrow' }}</td><td class="p-2">{{ item.quantity * item.unitRate | currency:'ZAR':'symbol-narrow' }}</td><td class="p-2">{{ item.sourceRef || 'User estimate' }}</td><td class="p-2"><button type="button" (click)="removeCost(item.id)" class="text-red-300 underline">Remove</button></td></tr></tbody></table></div>
+      <p class="font-bold text-yellow-300">Additional direct spend: {{ waterfall().additionalDirectSpend | currency:'ZAR':'symbol-narrow' }}</p>
+    </section>
+
+    <section *ngIf="activeTab() === 'history'" class="rounded-2xl border border-gray-800 bg-gray-900/80 p-4 sm:p-6 space-y-4" aria-label="Historical costing references">
+      <h3 class="text-lg font-bold text-white">Historical reference rates</h3>
+      <p class="text-sm text-amber-200">Archived workbook values are examples, not current prices. The village quote has a broken grand-total formula. Schedule P&amp;G rates conflict with assumptions. Check each source and obtain current approval before quoting.</p>
+      <div *ngFor="let reference of historicalReferences" class="rounded-lg border border-gray-700 p-3 text-sm space-y-1">
+        <p class="font-bold text-white">{{ reference.description }} — {{ reference.rate | currency:'ZAR':'symbol-narrow' }} / {{ reference.unit }}</p>
+        <p class="text-gray-300 break-all">{{ reference.sourceFile }} · {{ reference.sourceCell }}</p><p class="text-amber-200">{{ reference.caution }}</p>
+        <button type="button" (click)="useHistoricalReference(reference)" class="underline text-yellow-300">Copy to draft cost line</button>
+      </div>
+      <div class="border-t border-gray-700 pt-4 space-y-3"><h4 class="font-bold">Historical Saaiplaas transport method</h4><p class="text-sm text-gray-300">Archived method raises the kilometre rate with return distance. Confirm today's route, trips and supplier price.</p>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3"><label>Return km<input type="number" min="0" step="any" [(ngModel)]="returnKm" class="block w-full rounded bg-gray-950 p-3 border border-gray-600"></label><label>Trips<input type="number" min="0" step="any" [(ngModel)]="transportTrips" class="block w-full rounded bg-gray-950 p-3 border border-gray-600"></label><label>Base R/km<input type="number" min="0" step="any" [(ngModel)]="transportBaseRate" class="block w-full rounded bg-gray-950 p-3 border border-gray-600"></label><label>Boundary km<input type="number" min="0" step="any" [(ngModel)]="transportBoundaryKm" class="block w-full rounded bg-gray-950 p-3 border border-gray-600"></label></div>
+        <button type="button" (click)="useHistoricalTransport()" class="rounded bg-yellow-500 text-black font-bold px-4 py-3">Copy transport estimate to draft</button>
+      </div>
+    </section>
 
     <!-- TAB 3: CASHFLOW S-CURVE FORECAST -->
     <div *ngIf="activeTab() === 'cashflow'" class="rounded-2xl border border-gray-800 bg-gray-900/80 p-6 shadow-xl space-y-4">

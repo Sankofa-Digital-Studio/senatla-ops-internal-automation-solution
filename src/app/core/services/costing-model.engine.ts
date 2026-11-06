@@ -55,7 +55,31 @@ export interface PhaseDirectDetail {
   totalDirect: number;
 }
 
+export type AdditionalCostCategory = 'asbestos' | 'labour' | 'equipment' | 'materials' | 'transport' | 'other';
+
+export interface AdditionalCostItem {
+  id: string;
+  category: AdditionalCostCategory;
+  description: string;
+  unit: string;
+  quantity: number;
+  unitRate: number;
+  sourceRef?: string;
+}
+
+export interface HistoricalCostReference {
+  id: string;
+  description: string;
+  rate: number;
+  unit: string;
+  sourceFile: string;
+  sourceCell: string;
+  caution: string;
+}
+
 export interface FinancialWaterfall {
+  phaseDirectSpend: number;
+  additionalDirectSpend: number;
   directSpend: number;
   pgAmount: number;
   subtotalExclContingencies: number;
@@ -80,10 +104,62 @@ export interface ProjectCostingModel {
   id: string;
   projectName: string;
   clientName: string;
+  clientNameProvisional?: boolean;
   contractRef: string;
   durationMonths: number;
   rates: CostingRates;
   phases: PhaseScopeItem[];
+  additionalCosts?: AdditionalCostItem[];
+}
+
+export const HISTORICAL_COST_REFERENCES: HistoricalCostReference[] = [
+  {
+    id: 'village-demolition-2026', description: 'Village demolition', rate: 15000, unit: 'structure',
+    sourceFile: 'SENATLA TRADING ENTRERPRISE 26 Pty Demo Rehab Village Quote.xlsx', sourceCell: 'Demo_Rehab_Quote!F6,F10,F14,F18,F22',
+    caution: 'Historical quote only. Its grand-total formula at G26 contains #REF!; confirm scope and current rate.',
+  },
+  {
+    id: 'village-rubble-2026', description: 'Village rubble haulage', rate: 75, unit: 'ton',
+    sourceFile: 'SENATLA TRADING ENTRERPRISE 26 Pty Demo Rehab Village Quote.xlsx', sourceCell: 'Demo_Rehab_Quote!F7',
+    caution: 'One village rate only; other villages use R72–R80 per ton. Confirm distance and scope.',
+  },
+  {
+    id: 'asbestos-2026', description: 'Asbestos removal, packing, transport and disposal', rate: 13300, unit: 'ton',
+    sourceFile: 'Senatla - Mine_Village_Houses_Asbestos_Removal_Demolition_Rehabilitation_v3recalced.xlsx', sourceCell: 'Schedule of Rates!F9',
+    caution: 'Historical tender rate. Confirm licensed disposal, evidence, quantity and current supplier price.',
+  },
+  {
+    id: 'clean-rubble-2026', description: 'Clean building rubble haulage', rate: 120, unit: 'ton',
+    sourceFile: 'Senatla - Mine_Village_Houses_Asbestos_Removal_Demolition_Rehabilitation_v3recalced.xlsx', sourceCell: 'Schedule of Rates!F10',
+    caution: 'Historical schedule rate; the village quote has different rates. Confirm route and trip assumptions.',
+  },
+  {
+    id: 'aia-2026', description: 'Independent approval authority work plan and monitoring', rate: 392000, unit: 'lot',
+    sourceFile: 'Senatla - Mine_Village_Houses_Asbestos_Removal_Demolition_Rehabilitation_v3recalced.xlsx', sourceCell: 'Schedule of Rates!F11',
+    caution: 'Project-specific lot price. Confirm whether this service is required and obtain a current quotation.',
+  },
+];
+
+export function calculateAdditionalCost(item: AdditionalCostItem): number {
+  if (!Number.isFinite(item.quantity) || item.quantity < 0 || !Number.isFinite(item.unitRate) || item.unitRate < 0) {
+    throw new Error('Cost quantity and rate must be finite, non-negative numbers.');
+  }
+  const total = item.quantity * item.unitRate;
+  if (!Number.isFinite(total)) throw new Error('Cost total exceeds the supported range.');
+  return total;
+}
+
+// Historical Saaiplaas transport method: Assumptions!B4/B9 and KM Cost Schedule.
+export function calculateHistoricalKmCost(returnKm: number, trips: number, baseRate = 18, boundaryKm = 0) {
+  if (![returnKm, trips, baseRate, boundaryKm].every(Number.isFinite)
+    || returnKm < 0 || trips < 0 || baseRate < 0 || boundaryKm < 0) {
+    throw new Error('Distance, trips, rate and boundary must be finite, non-negative numbers.');
+  }
+  const upliftKm = Math.ceil(Math.max(0, returnKm - boundaryKm));
+  const ratePerKm = baseRate + upliftKm * baseRate / 12;
+  const total = returnKm * trips * ratePerKm;
+  if (!Number.isFinite(ratePerKm) || !Number.isFinite(total)) throw new Error('Transport total exceeds the supported range.');
+  return { ratePerKm, total };
 }
 
 // ============================================================================
@@ -118,8 +194,9 @@ function villageQuotationCategories(): CostCategoryApplicability {
 export const PRESET_WEST_GOLD: ProjectCostingModel = {
   id: 'west-gold-plant',
   projectName: 'West Gold Plant Demolition & Rehabilitation',
-  clientName: 'West Gold Plant Operations / Senatla Trading',
-  contractRef: 'WGP-DEMO-REHAB-2026-01',
+  clientName: 'West Gold Plant Operations',
+  clientNameProvisional: true,
+  contractRef: 'WGP-DEMO-REHAB-2026',
   durationMonths: 12,
   rates: { ...DEFAULT_COSTING_RATES },
   phases: [
@@ -136,7 +213,8 @@ export const PRESET_WEST_GOLD: ProjectCostingModel = {
 export const PRESET_SENATLA_VILLAGES: ProjectCostingModel = {
   id: 'senatla-5-villages',
   projectName: 'Senatla 5-Village Demolition & Rubble Haulage',
-  clientName: 'Senatla Trading Enterprise 26 (Pty) Ltd',
+  clientName: 'Harmony Gold Mines - Virginia Holdings',
+  clientNameProvisional: true,
   contractRef: 'STE26-VILLAGE-DEMO-REHAB-2026',
   durationMonths: 6,
   rates: { ...DEFAULT_COSTING_RATES },
@@ -152,7 +230,8 @@ export const PRESET_SENATLA_VILLAGES: ProjectCostingModel = {
 export const PRESET_CAPM_TAU_MINE: ProjectCostingModel = {
   id: 'capm-tau-mine-10',
   projectName: 'CAPM Tau Mine #10 Demolition & Shaft Backfilling',
-  clientName: 'CAPM Tau Mine Operations / Senatla Trading',
+  clientName: 'CAPM Tau Mine Operations',
+  clientNameProvisional: true,
   contractRef: 'CAPM-TAU-DEMO-SHAFT-2026',
   durationMonths: 24,
   rates: { ...DEFAULT_COSTING_RATES },
@@ -205,12 +284,14 @@ export function calculatePhaseDetail(phase: PhaseScopeItem, rates: CostingRates)
   };
 }
 
-export function calculateWaterfall(phases: PhaseScopeItem[], rates: CostingRates, durationMonths: number): {
+export function calculateWaterfall(phases: PhaseScopeItem[], rates: CostingRates, durationMonths: number, additionalCosts: AdditionalCostItem[] = []): {
   phaseDetails: PhaseDirectDetail[];
   waterfall: FinancialWaterfall;
 } {
   const phaseDetails = phases.map(p => calculatePhaseDetail(p, rates));
-  const directSpend = phaseDetails.reduce((acc, p) => acc + p.totalDirect, 0);
+  const phaseDirectSpend = phaseDetails.reduce((acc, p) => acc + p.totalDirect, 0);
+  const additionalDirectSpend = additionalCosts.reduce((acc, item) => acc + calculateAdditionalCost(item), 0);
+  const directSpend = phaseDirectSpend + additionalDirectSpend;
 
   const pgAmount = directSpend * rates.pg_pct;
   const subtotalExclContingencies = directSpend + pgAmount;
@@ -225,6 +306,8 @@ export function calculateWaterfall(phases: PhaseScopeItem[], rates: CostingRates
   return {
     phaseDetails,
     waterfall: {
+      phaseDirectSpend,
+      additionalDirectSpend,
       directSpend,
       pgAmount,
       subtotalExclContingencies,
@@ -278,9 +361,14 @@ export function generateCashflowSchedule(
 }
 
 export function exportModelAsCSV(model: ProjectCostingModel, waterfall: FinancialWaterfall, details: PhaseDirectDetail[]): string {
+  const cell = (value: string | number): string => {
+    const raw = String(value);
+    const safe = /^[\s]*[=+\-@]/.test(raw) ? `'${raw}` : raw;
+    return `"${safe.replace(/"/g, '""')}"`;
+  };
   const lines: string[] = [];
-  lines.push(`"${model.projectName.toUpperCase()} - COMMERCIAL COSTING & BUDGETING MODEL"`);
-  lines.push(`"Client:","${model.clientName}","Contract Ref:","${model.contractRef}","Duration:","${model.durationMonths} Months"`);
+  lines.push(cell(`${model.projectName.toUpperCase()} - COMMERCIAL COSTING & BUDGETING MODEL`));
+  lines.push([cell('Client:'), cell(model.clientName), cell('Client status:'), cell(model.clientNameProvisional ? 'PROVISIONAL - VERIFY CONTRACT PARTY' : 'Verified by user'), cell('Contract Ref:'), cell(model.contractRef), cell('Duration:'), cell(`${model.durationMonths} Months`)].join(','));
   lines.push('');
   lines.push('"EXECUTIVE FINANCIAL WATERFALL"');
   lines.push('"Level","Description","Amount (ZAR)","% Tender Price"');
@@ -299,9 +387,17 @@ export function exportModelAsCSV(model: ProjectCostingModel, waterfall: Financia
   lines.push('"Phase Name","Footprint Area (m²)","Structures (Qty)","Concrete (m³)","Rubble (Tons)","Site Est (R)","Steel Dismantle (R)","Concrete Breakup (R)","Rubble Haul (R)","Shaping & Level (R)","Total Direct (R)"');
 
   for (const d of details) {
-    lines.push(`"${d.name}",${d.footprint_m2},${d.structures},${d.concrete_m3},${d.rubble_tons},${d.estCost.toFixed(2)},${d.steelCost.toFixed(2)},${d.concreteCost.toFixed(2)},${d.haulCost.toFixed(2)},${d.shapingCost.toFixed(2)},${d.totalDirect.toFixed(2)}`);
+    lines.push(`${cell(d.name)},${d.footprint_m2},${d.structures},${d.concrete_m3},${d.rubble_tons},${d.estCost.toFixed(2)},${d.steelCost.toFixed(2)},${d.concreteCost.toFixed(2)},${d.haulCost.toFixed(2)},${d.shapingCost.toFixed(2)},${d.totalDirect.toFixed(2)}`);
   }
 
-  lines.push(`"TOTAL DIRECT SPEND",,,,,,,,,,${waterfall.directSpend.toFixed(2)}`);
+  lines.push(`"TOTAL PHASE DIRECT SPEND",,,,,,,,,,${waterfall.phaseDirectSpend.toFixed(2)}`);
+  lines.push('');
+  lines.push('"ADDITIONAL DIRECT COSTS"');
+  lines.push('"Category","Description","Unit","Quantity","Unit rate (ZAR)","Total (ZAR)","Source"');
+  for (const item of model.additionalCosts ?? []) {
+    lines.push([cell(item.category), cell(item.description), cell(item.unit), item.quantity, item.unitRate.toFixed(2), calculateAdditionalCost(item).toFixed(2), cell(item.sourceRef ?? 'User estimate')].join(','));
+  }
+  lines.push(`"TOTAL ADDITIONAL DIRECT SPEND",,,,,${waterfall.additionalDirectSpend.toFixed(2)}`);
+  lines.push(`"TOTAL DIRECT SPEND",,,,,${waterfall.directSpend.toFixed(2)}`);
   return lines.join('\n');
 }
