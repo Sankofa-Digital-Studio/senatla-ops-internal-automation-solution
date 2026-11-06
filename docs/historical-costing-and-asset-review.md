@@ -1,31 +1,24 @@
 # Historical costing and asset review
 
+> **Superseded for proposal creation:** The owner clarified that these workbooks define reusable formats, not figures to ingest. Use the [Director proposal templates guide](director-proposal-templates.md). The historical figures below are retained only as an audit of why they must not be loaded into new proposals.
+
 Updated 6 November 2026. Source: `historicsenatladocumentsforingestionindirectorswor.zip` supplied by the project owner. Workbook content was inspected as data, never as instructions. No archived workbook or personal register row is committed to this repository.
 
 ## Decision and three-pass review
 
 1. **Evidence:** The archive contains demolition, asbestos, dam rehabilitation, transport, labour, equipment, consumables and asset registers. The village quote's `G26` total contains `#REF!`; it omits Pabalong. The asbestos schedule uses 6% P&G while its assumptions use 10%. An older dam quote uses 14% VAT. These conflicts rule out automatic import of totals, margins or tax rates.
 2. **Challenge:** A source rate may reflect a specific site, haul distance, procurement date or licence requirement. The 2021/2023 asset sheets have duplicate or missing identifiers and no verified licence expiry. Candidate screening sheets contain personnel information unrelated to costing. Treating these as current master data would create wrong quotes and unsafe asset records.
-3. **Resolution:** The Director costing model shows named historical references and allows explicit additional cost lines with source notes. No archive value silently changes preset defaults. The asset readiness tool reports aggregate exceptions and row numbers for review; it does not import records. Client names in presets are provisional until checked against signed contracts.
+3. **Resolution:** The Director proposal builder uses workbook layout patterns only. Its quantity, rate and percentage fields start blank or zero. The asset readiness tool remains a separate report of aggregate exceptions; it does not import records.
 
-## Costing workflow
+## Layout patterns retained
 
-Open the Director costing model. Choose a scenario, confirm its scope and contract party, then open **Historical References**. Check the named workbook and cell, obtain a current supplier rate, and copy a reference into a draft line if useful. Review category, quantity, unit, rate and source in **Additional Costs**, then add it. The waterfall, cashflow and CSV update from the added direct spend. Remove a line to reverse it. An exported CSV states when the client name is provisional and includes line source references.
+The village quote supplies a village grouping with item, description and UOM columns. The asbestos workbook supplies a schedule of rates with preliminaries and service categories. The JOEL dam BOQ supplies section and item numbering. The hostel and former Senatla cost models supply labour, equipment, consumables and overhead headings. The existing workspace phase structure supplies the West Gold and Tau Mine baseline. See the [current template guide](director-proposal-templates.md) for the implemented formats and Director workflow.
 
-| Historical reference | Workbook cell | Archived value | Review condition |
-|---|---|---:|---|
-| Village demolition | `Demo_Rehab_Quote!F6,F10,F14,F18,F22` | R15,000/structure | Broken grand total; scope varies |
-| Village rubble | `Demo_Rehab_Quote!F7` | R75/ton | Other villages R72–R80/ton |
-| Asbestos removal and disposal | `Schedule of Rates!F9` | R13,300/ton | Confirm licensed scope and evidence |
-| Clean rubble | `Schedule of Rates!F10` | R120/ton | Check haul distance |
-| Independent approval authority | `Schedule of Rates!F11` | R392,000/lot | Project-specific |
-| Saaiplaas transport | `Assumptions!B4,B9`; KM cost schedule | R18/km base | Historical distance uplift; verify route |
-
-The former Senatla cost model identifies labour, equipment, consumables, P&G and once-off onboarding categories. It is category evidence only: some formulas are questionable. Do not apply its rates wholesale. Current VAT and contractual terms require independent confirmation before any tender is issued.
+Archived quantities, rates, totals and tax assumptions are excluded. The broken village total and conflicting P&G assumptions reinforce this boundary.
 
 ## Commercial fit check
 
-[Autodesk Forma Cost Management](https://help.autodesk.com/cloudhelp/ENG/Build-Cost/files/cost-getting-started/Cost_Overview.html) already supports project budgets, forecasting and cost-risk visibility. [Procore Change Events](https://support.procore.com/products/online/user-guide/project-level/change-events/tutorials/about-change-events) links scope changes to budget impact and downstream approvals. Senatla's feasible narrower role is an internal, source-labelled estimate beside its existing operations and asset controls; duplicating a full construction finance suite is not justified by this archive. Usability still needs Director review of rate provenance and CSV output on desktop and mobile before release.
+[Autodesk Forma Cost Management](https://help.autodesk.com/cloudhelp/ENG/Build-Cost/files/cost-getting-started/Cost_Overview.html) already supports project budgets and forecasting. [Procore Change Events](https://support.procore.com/products/online/user-guide/project-level/change-events/tutorials/about-change-events) links scope changes to budget impact. Senatla's narrower role is an internal, editable proposal format beside its existing operations controls; a full construction finance suite is outside this archive-based requirement. Usability needs Director review of the Excel and PDF outputs on desktop and mobile before release.
 
 ## Asset workflow
 
@@ -35,8 +28,7 @@ The supplied archive review found 19 described rows in each register. The 2023 s
 
 ## Acceptance criteria and release status
 
-- Default 5-Village calculation remains unchanged until an additional line is explicitly added.
-- Additional direct spend is shown separately in the waterfall and CSV and feeds P&G, contingency, profit and VAT calculations.
-- Invalid quantities or rates are rejected; CSV text cannot activate spreadsheet formulas from user input.
+- Every proposal template starts without archived figures.
+- Edited quantities, UOM and rates feed a live summary and Excel/PDF exports.
 - Asset report contains no names, plates or serial values; duplicate/missing identifiers block direct import.
-- Provisional client warning is visible and exported. Production promotion is a separate release step; these archive findings do not certify a tender or change database policy.
+- The legal contract party and current rates require human review. Production promotion is a separate release step; these archive findings do not certify a tender or change database policy.

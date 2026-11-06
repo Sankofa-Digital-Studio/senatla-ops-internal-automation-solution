@@ -1,619 +1,101 @@
-<div class="min-h-full bg-gray-950 font-sans text-gray-200 pb-20">
-  <!-- Top Command Header -->
-  <header class="border-b border-gray-800 bg-gray-900/95 backdrop-blur px-6 py-5 sticky top-0 z-30 shadow-lg">
-    <div class="max-w-7xl mx-auto flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+<div class="min-h-full bg-gray-950 text-gray-100 pb-16">
+  <header class="border-b border-gray-800 bg-gray-900 px-4 sm:px-6 py-5">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-start justify-between gap-4">
       <div>
-        <div class="flex items-center gap-2">
-          <span class="rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-2.5 py-0.5 text-[10px] font-bold tracking-widest uppercase">Executive Financial Suite</span>
-          <span class="rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2.5 py-0.5 text-[10px] font-bold tracking-widest uppercase">Scenario costing</span>
-        </div>
-        <h1 class="text-xl md:text-2xl font-black text-white mt-1 uppercase tracking-tight flex items-center gap-3">
-          Demolition & Rehabilitation Costing Studio
-        </h1>
-        <p class="text-xs text-yellow-500 font-semibold tracking-wider uppercase mt-0.5">
-          {{ clientName() }} &bull; Ref: {{ contractRef() }} &bull; {{ durationMonths() }} Month Program
-        </p>
+        <p class="text-xs font-bold uppercase tracking-widest text-yellow-400">Director workspace</p>
+        <h1 class="text-2xl font-black text-white">Proposal templates</h1>
+        <p class="mt-1 text-sm text-gray-300">Choose a format, edit sections and enter quantities, units and rates. Totals update as you work.</p>
       </div>
-
-      <!-- Action Buttons -->
-      <div class="flex items-center gap-2 flex-wrap">
-        <button
-          type="button"
-          (click)="showRatesDrawer.set(!showRatesDrawer())"
-          class="inline-flex items-center gap-1.5 rounded-lg border border-gray-700 bg-gray-800 px-3.5 py-2 text-xs font-bold text-gray-200 hover:bg-gray-700 transition"
-        >
-          <svg class="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
-          Rates & Multipliers
-        </button>
-
-        <button
-          type="button"
-          (click)="exportCSV()"
-          class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-950/40 px-3.5 py-2 text-xs font-bold text-emerald-300 hover:bg-emerald-900/60 transition shadow-sm"
-        >
-          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-          Export Excel / CSV
-        </button>
-
-        <a
-          routerLink="/director"
-          class="inline-flex items-center gap-1.5 rounded-lg border border-gray-800 bg-gray-900 px-3.5 py-2 text-xs font-bold text-gray-400 hover:text-white transition"
-        >
-          &larr; Director Command
-        </a>
-      </div>
+      <a routerLink="/director" class="rounded-lg border border-gray-700 px-4 py-2 text-sm font-semibold hover:bg-gray-800">Back to Director workspace</a>
     </div>
   </header>
 
-  <!-- Notification Banner -->
-  <div *ngIf="notification()" class="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
-    <div class="rounded-xl border border-yellow-500/40 bg-yellow-950/60 p-3 text-xs font-bold text-yellow-200 flex items-center justify-between shadow-md">
-      <span>{{ notification() }}</span>
-      <button type="button" (click)="notification.set(null)" class="text-yellow-400 hover:text-white">&times;</button>
-    </div>
-  </div>
-
   <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-    <!-- Preset Template Quick Switcher -->
-    <div class="rounded-2xl border border-gray-800 bg-gray-900/60 p-4 backdrop-blur shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <span class="text-xs font-bold uppercase tracking-wider text-gray-400">1-Click Starter Presets:</span>
-        <div class="flex items-center gap-2 flex-wrap">
-          <button
-            type="button"
-            (click)="loadPreset('village')"
-            class="px-3 py-1.5 rounded-lg text-xs font-bold transition border"
-            [class.bg-yellow-500]="activePresetId() === 'senatla-5-villages'"
-            [class.text-black]="activePresetId() === 'senatla-5-villages'"
-            [class.border-yellow-500]="activePresetId() === 'senatla-5-villages'"
-            [class.border-gray-800]="activePresetId() !== 'senatla-5-villages'"
-            [class.bg-gray-950]="activePresetId() !== 'senatla-5-villages'"
-            [class.text-gray-300]="activePresetId() !== 'senatla-5-villages'"
-          >
-            5-Village Scenario
-          </button>
+    <div *ngIf="error()" role="alert" class="rounded-lg border border-red-500 bg-red-950/40 p-3 text-sm text-red-200">{{ error() }}</div>
 
-          <button
-            type="button"
-            (click)="loadPreset('westgold')"
-            class="px-3 py-1.5 rounded-lg text-xs font-bold transition border"
-            [class.bg-yellow-500]="activePresetId() === 'west-gold-plant'"
-            [class.text-black]="activePresetId() === 'west-gold-plant'"
-            [class.border-yellow-500]="activePresetId() === 'west-gold-plant'"
-            [class.border-gray-800]="activePresetId() !== 'west-gold-plant'"
-            [class.bg-gray-950]="activePresetId() !== 'west-gold-plant'"
-            [class.text-gray-300]="activePresetId() !== 'west-gold-plant'"
-          >
-            West Gold Scenario
-          </button>
-
-          <button
-            type="button"
-            (click)="loadPreset('tau10')"
-            class="px-3 py-1.5 rounded-lg text-xs font-bold transition border"
-            [class.bg-yellow-500]="activePresetId() === 'capm-tau-mine-10'"
-            [class.text-black]="activePresetId() === 'capm-tau-mine-10'"
-            [class.border-yellow-500]="activePresetId() === 'capm-tau-mine-10'"
-            [class.border-gray-800]="activePresetId() !== 'capm-tau-mine-10'"
-            [class.bg-gray-950]="activePresetId() !== 'capm-tau-mine-10'"
-            [class.text-gray-300]="activePresetId() !== 'capm-tau-mine-10'"
-          >
-            CAPM Tau #10 Scenario
-          </button>
-
-          <button
-            type="button"
-            (click)="loadPreset('blank')"
-            class="px-3 py-1.5 rounded-lg text-xs font-bold transition border border-gray-800 bg-gray-950 text-gray-400 hover:text-white"
-          >
-            + Blank Custom Scope
-          </button>
-        </div>
+    <section class="rounded-xl border border-gray-700 bg-gray-900 p-4 sm:p-5 space-y-4" aria-labelledby="proposal-setup-heading">
+      <div class="flex flex-wrap items-center justify-between gap-3"><h2 id="proposal-setup-heading" class="text-lg font-bold">Proposal setup</h2><span class="text-xs rounded-full bg-amber-950 px-3 py-1 text-amber-200">Draft until reviewed</span></div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <label class="text-sm text-gray-200">Template
+          <select aria-label="Proposal template" [value]="proposal().templateId" (change)="loadTemplate($any($event.target).value, $any($event.target))" class="mt-1 block w-full min-h-11 rounded-lg border border-gray-600 bg-gray-950 p-3 text-white">
+            <option *ngFor="let layout of layouts" [value]="layout.id">{{ layout.name }}</option>
+          </select>
+        </label>
+        <label class="text-sm text-gray-200">Project name<input [ngModel]="proposal().projectName" (ngModelChange)="updateText('projectName', $event)" class="mt-1 block w-full min-h-11 rounded-lg border border-gray-600 bg-gray-950 p-3 text-white"></label>
+        <label class="text-sm text-gray-200">Client<input [ngModel]="proposal().clientName" (ngModelChange)="updateText('clientName', $event)" class="mt-1 block w-full min-h-11 rounded-lg border border-gray-600 bg-gray-950 p-3 text-white"></label>
+        <label class="text-sm text-gray-200">Reference<input [ngModel]="proposal().contractRef" (ngModelChange)="updateText('contractRef', $event)" class="mt-1 block w-full min-h-11 rounded-lg border border-gray-600 bg-gray-950 p-3 text-white"></label>
+        <label class="text-sm text-gray-200">Duration in months<input type="number" min="0" step="1" [ngModel]="proposal().durationMonths" (ngModelChange)="updateDuration($event)" class="mt-1 block w-full min-h-11 rounded-lg border border-gray-600 bg-gray-950 p-3 text-white"></label>
       </div>
+      <p class="text-sm text-amber-200">The template supplies headings and units only. Confirm the contract party and enter current quantities and rates before issuing a proposal.</p>
+    </section>
 
-      <div class="text-xs text-gray-500 text-right">
-        Scenario estimates only &bull; verify rates, scope and contract party before use
-      </div>
-    </div>
-    <p *ngIf="clientNameProvisional()" class="rounded-lg border border-amber-500/50 bg-amber-950/30 px-4 py-3 text-sm text-amber-200" role="status">
-      Client name is provisional. Confirm the legal contract party against a signed agreement before issuing a proposal.
-    </p>
-
-    <!-- Executive KPI Summary Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <!-- Total Tender Price C -->
-      <div class="rounded-2xl border border-yellow-500/40 bg-gradient-to-br from-gray-900 to-yellow-950/20 p-5 shadow-lg relative overflow-hidden">
-        <div class="absolute -right-4 -top-4 w-20 h-20 bg-yellow-500/10 rounded-full blur-xl pointer-events-none"></div>
-        <p class="text-[10px] uppercase font-bold text-yellow-400 tracking-wider">Tender Price C (Incl. VAT)</p>
-        <p class="text-xl md:text-2xl font-black text-white mt-1">
-          {{ waterfall().totalTenderPriceInclVat | currency:'ZAR':'symbol-narrow':'1.2-2' }}
-        </p>
-        <p class="text-[10px] text-gray-400 mt-1">Subtotal B + 15% SARS VAT</p>
-      </div>
-
-      <!-- Tender Price B -->
-      <div class="rounded-2xl border border-gray-800 bg-gray-900/80 p-5 shadow-md">
-        <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Tender Price B (Excl. VAT)</p>
-        <p class="text-xl md:text-2xl font-black text-emerald-400 mt-1">
-          {{ waterfall().tenderPriceExclVat | currency:'ZAR':'symbol-narrow':'1.2-2' }}
-        </p>
-        <p class="text-[10px] text-emerald-500/90 mt-1 font-semibold">Includes {{ waterfall().profitAmount | currency:'ZAR':'symbol-narrow':'1.0-0' }} ({{ rates().profit_pct * 100 | number:'1.1-1' }}%) Net Profit</p>
-      </div>
-
-      <!-- Project Costs A -->
-      <div class="rounded-2xl border border-gray-800 bg-gray-900/80 p-5 shadow-md">
-        <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Direct + P&G + Contingency</p>
-        <p class="text-xl md:text-2xl font-black text-gray-200 mt-1">
-          {{ waterfall().projectCostsA | currency:'ZAR':'symbol-narrow':'1.2-2' }}
-        </p>
-        <p class="text-[10px] text-gray-400 mt-1">Direct Spend: {{ waterfall().directSpend | currency:'ZAR':'symbol-narrow':'1.0-0' }}</p>
-      </div>
-
-      <!-- Monthly Run-Rate -->
-      <div class="rounded-2xl border border-gray-800 bg-gray-900/80 p-5 shadow-md">
-        <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Monthly Run-Rate ({{ durationMonths() }} Mos)</p>
-        <p class="text-xl md:text-2xl font-black text-blue-400 mt-1">
-          {{ waterfall().monthlyRunRate | currency:'ZAR':'symbol-narrow':'1.2-2' }}
-        </p>
-        <p class="text-[10px] text-gray-400 mt-1">Footprint: {{ totalFootprint() | number }} m² &bull; {{ totalStructures() }} Structs</p>
-      </div>
-    </div>
-
-    <!-- Parameter & Rates Drawer (Expandable) -->
-    <div *ngIf="showRatesDrawer()" class="rounded-2xl border border-yellow-500/30 bg-gray-900/95 p-6 shadow-xl space-y-4">
-      <div class="flex items-center justify-between border-b border-gray-800 pb-3">
-        <h3 class="text-sm font-bold uppercase tracking-wider text-yellow-400 flex items-center gap-2">
-          Master Parameters & Contract Multipliers
-        </h3>
-        <button type="button" (click)="showRatesDrawer.set(false)" class="text-gray-400 hover:text-white text-sm font-bold">&times; Close</button>
-      </div>
-
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div>
-          <label class="block text-[11px] font-bold text-gray-400 uppercase">Preliminaries & General (P&G)</label>
-          <div class="flex items-center mt-1">
-            <input type="number" step="0.01" min="0" max="0.5" [ngModel]="rates().pg_pct" (ngModelChange)="updateRate('pg_pct', $event)" class="w-full rounded-lg bg-gray-950 border border-gray-700 px-3 py-1.5 text-xs text-white" />
-            <span class="ml-2 text-xs text-gray-400">% (e.g. 0.10)</span>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-[11px] font-bold text-gray-400 uppercase">Contingencies Allowance</label>
-          <div class="flex items-center mt-1">
-            <input type="number" step="0.01" min="0" max="0.5" [ngModel]="rates().contingency_pct" (ngModelChange)="updateRate('contingency_pct', $event)" class="w-full rounded-lg bg-gray-950 border border-gray-700 px-3 py-1.5 text-xs text-white" />
-            <span class="ml-2 text-xs text-gray-400">% (e.g. 0.10)</span>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-[11px] font-bold text-yellow-400 uppercase">Contractor Profit Margin</label>
-          <div class="flex items-center mt-1">
-            <input type="number" step="0.005" min="0" max="0.5" [ngModel]="rates().profit_pct" (ngModelChange)="updateRate('profit_pct', $event)" class="w-full rounded-lg bg-yellow-950/40 border border-yellow-500/50 px-3 py-1.5 text-xs text-yellow-200 font-bold" />
-            <span class="ml-2 text-xs text-yellow-400 font-bold">% (e.g. 0.05)</span>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-[11px] font-bold text-gray-400 uppercase">Statutory SARS VAT</label>
-          <div class="flex items-center mt-1">
-            <input type="number" step="0.01" min="0" max="0.3" [ngModel]="rates().vat_pct" (ngModelChange)="updateRate('vat_pct', $event)" class="w-full rounded-lg bg-gray-950 border border-gray-700 px-3 py-1.5 text-xs text-white" />
-            <span class="ml-2 text-xs text-gray-400">% (e.g. 0.15)</span>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-[11px] font-bold text-gray-400 uppercase">Site Establishment / Lot (R)</label>
-          <input type="number" [ngModel]="rates().site_est" (ngModelChange)="updateRate('site_est', $event)" class="mt-1 w-full rounded-lg bg-gray-950 border border-gray-700 px-3 py-1.5 text-xs text-white" />
-        </div>
-
-        <div>
-          <label class="block text-[11px] font-bold text-gray-400 uppercase">Structural Steel / Struct (R)</label>
-          <input type="number" [ngModel]="rates().steel_dismantle" (ngModelChange)="updateRate('steel_dismantle', $event)" class="mt-1 w-full rounded-lg bg-gray-950 border border-gray-700 px-3 py-1.5 text-xs text-white" />
-        </div>
-
-        <div>
-          <label class="block text-[11px] font-bold text-gray-400 uppercase">Concrete Breakup / m³ (R)</label>
-          <input type="number" [ngModel]="rates().concrete_breakup" (ngModelChange)="updateRate('concrete_breakup', $event)" class="mt-1 w-full rounded-lg bg-gray-950 border border-gray-700 px-3 py-1.5 text-xs text-white" />
-        </div>
-
-        <div>
-          <label class="block text-[11px] font-bold text-gray-400 uppercase">Rubble Haul / Ton (R)</label>
-          <input type="number" [ngModel]="rates().rubble_haul" (ngModelChange)="updateRate('rubble_haul', $event)" class="mt-1 w-full rounded-lg bg-gray-950 border border-gray-700 px-3 py-1.5 text-xs text-white" />
-        </div>
-      </div>
-    </div>
-
-    <!-- Minimal SOW Entry & Phase Management Section -->
-    <section class="rounded-2xl border border-gray-800 bg-gray-900/80 p-6 shadow-xl space-y-4">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-800 pb-4">
-        <div>
-          <h2 class="text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
-            Scope of Work Matrix: Minimal Crucial Inputs
-          </h2>
-          <p class="text-xs text-gray-400">
-            Define work packages, villages, or mining zones. Quantities automatically compute rubble tonnage and direct activities.
-          </p>
-        </div>
-
-        <div class="text-xs font-bold text-yellow-400">
-          {{ phases().length }} Active Zones &bull; {{ totalFootprint() | number }} m² Total Footprint
-        </div>
-      </div>
-
-      <!-- SOW Table -->
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
-          <thead>
-            <tr class="border-b border-gray-800 bg-gray-950 text-gray-400 uppercase tracking-wider text-[10px]">
-              <th class="py-3 px-3">Phase / Village Name</th>
-              <th class="py-3 px-3 text-right">Footprint (m²)</th>
-              <th class="py-3 px-3 text-right">Structures (Qty)</th>
-              <th class="py-3 px-3 text-right">Concrete (m³)</th>
-              <th class="py-3 px-3 text-right">Est. Rubble (Tons)</th>
-              <th class="py-3 px-3 text-right">Duration (Mos)</th>
-              <th class="py-3 px-3 text-right">Calculated Direct (ZAR)</th>
-              <th class="py-3 px-3 text-center">Action</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-800/60 font-medium">
-            <tr *ngFor="let p of phases(); let i = index" class="hover:bg-gray-800/40 transition">
-              <td class="py-2.5 px-3">
-                <input
-                  type="text"
-                  [value]="p.name"
-                  (input)="updatePhaseField(i, 'name', $any($event.target).value)"
-                  class="rounded bg-gray-950 border border-gray-800 px-2 py-1 text-xs text-white w-full max-w-[200px]"
-                />
-              </td>
-              <td class="py-2.5 px-3 text-right">
-                <input
-                  type="number"
-                  [value]="p.footprint_m2"
-                  (input)="updatePhaseField(i, 'footprint_m2', +$any($event.target).value)"
-                  class="rounded bg-gray-950 border border-gray-800 px-2 py-1 text-xs text-white w-24 text-right"
-                />
-              </td>
-              <td class="py-2.5 px-3 text-right">
-                <input
-                  type="number"
-                  [value]="p.structures"
-                  (input)="updatePhaseField(i, 'structures', +$any($event.target).value)"
-                  class="rounded bg-gray-950 border border-gray-800 px-2 py-1 text-xs text-white w-16 text-right"
-                />
-              </td>
-              <td class="py-2.5 px-3 text-right">
-                <input
-                  type="number"
-                  [value]="p.concrete_m3"
-                  (input)="updatePhaseField(i, 'concrete_m3', +$any($event.target).value)"
-                  class="rounded bg-gray-950 border border-gray-800 px-2 py-1 text-xs text-white w-20 text-right"
-                />
-              </td>
-              <td class="py-2.5 px-3 text-right font-mono text-gray-300">
-                {{ phaseDetails()[i]?.rubble_tons | number }} t
-              </td>
-              <td class="py-2.5 px-3 text-right">
-                <input
-                  type="number"
-                  [value]="p.duration_months"
-                  (input)="updatePhaseField(i, 'duration_months', +$any($event.target).value)"
-                  class="rounded bg-gray-950 border border-gray-800 px-2 py-1 text-xs text-white w-16 text-right"
-                />
-              </td>
-              <td class="py-2.5 px-3 text-right font-mono font-bold text-yellow-400">
-                {{ phaseDetails()[i]?.totalDirect | currency:'ZAR':'symbol-narrow':'1.2-2' }}
-              </td>
-              <td class="py-2.5 px-3 text-center">
-                <button
-                  type="button"
-                  (click)="removePhase(i)"
-                  class="text-red-400 hover:text-red-300 px-2 py-0.5 rounded text-xs font-bold"
-                  title="Remove phase"
-                >
-                  &times;
-                </button>
-              </td>
-            </tr>
-
-            <!-- Quick Add Row -->
-            <tr class="bg-gray-950/80">
-              <td class="py-2.5 px-3">
-                <input
-                  type="text"
-                  placeholder="+ New Phase / Village Name"
-                  [(ngModel)]="newPhaseName"
-                  class="rounded bg-gray-900 border border-gray-700 px-2 py-1 text-xs text-white w-full max-w-[200px]"
-                />
-              </td>
-              <td class="py-2.5 px-3 text-right">
-                <input
-                  type="number"
-                  placeholder="Area m²"
-                  [(ngModel)]="newPhaseArea"
-                  class="rounded bg-gray-900 border border-gray-700 px-2 py-1 text-xs text-white w-24 text-right"
-                />
-              </td>
-              <td class="py-2.5 px-3 text-right">
-                <input
-                  type="number"
-                  placeholder="Structs"
-                  [(ngModel)]="newPhaseStructures"
-                  class="rounded bg-gray-900 border border-gray-700 px-2 py-1 text-xs text-white w-16 text-right"
-                />
-              </td>
-              <td class="py-2.5 px-3 text-right">
-                <input
-                  type="number"
-                  placeholder="Conc m³"
-                  [(ngModel)]="newPhaseConcrete"
-                  class="rounded bg-gray-900 border border-gray-700 px-2 py-1 text-xs text-white w-20 text-right"
-                />
-              </td>
-              <td class="py-2.5 px-3 text-right text-gray-500 italic">auto</td>
-              <td class="py-2.5 px-3 text-right">
-                <input
-                  type="number"
-                  placeholder="Mos"
-                  [(ngModel)]="newPhaseDuration"
-                  class="rounded bg-gray-900 border border-gray-700 px-2 py-1 text-xs text-white w-16 text-right"
-                />
-              </td>
-              <td class="py-2.5 px-3 text-right">
-                <button
-                  type="button"
-                  (click)="addPhase()"
-                  class="rounded bg-yellow-500 text-black px-3 py-1 font-bold text-xs hover:bg-yellow-400 transition"
-                >
-                  Add Zone
-                </button>
-              </td>
-              <td></td>
-            </tr>
-          </tbody>
-        </table>
+    <section aria-labelledby="proposal-summary-heading">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3"><h2 id="proposal-summary-heading" class="text-lg font-bold">Live summary</h2><span class="text-sm text-amber-200" aria-live="polite">{{ summary().pricedLines }} priced · {{ summary().unpricedLines }} unpriced lines</span></div>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3" aria-live="polite">
+        <div class="rounded-xl border border-gray-700 bg-gray-900 p-4"><p class="text-xs text-gray-300">Direct spend</p><p class="text-lg sm:text-xl font-black text-white">{{ summary().directSpend | currency:'ZAR':'symbol-narrow':'1.2-2' }}</p></div>
+        <div class="rounded-xl border border-gray-700 bg-gray-900 p-4"><p class="text-xs text-gray-300">Project cost</p><p class="text-lg sm:text-xl font-black text-white">{{ summary().projectCost | currency:'ZAR':'symbol-narrow':'1.2-2' }}</p></div>
+        <div class="rounded-xl border border-gray-700 bg-gray-900 p-4"><p class="text-xs text-gray-300">Tender excl. VAT</p><p class="text-lg sm:text-xl font-black text-white">{{ summary().tenderExclVat | currency:'ZAR':'symbol-narrow':'1.2-2' }}</p></div>
+        <div class="rounded-xl border border-yellow-500/60 bg-yellow-950/30 p-4"><p class="text-xs text-yellow-200">Tender incl. VAT</p><p class="text-lg sm:text-xl font-black text-yellow-300">{{ summary().tenderInclVat | currency:'ZAR':'symbol-narrow':'1.2-2' }}</p></div>
       </div>
     </section>
 
-    <!-- Analysis Tabs Navigation -->
-    <div class="border-b border-gray-800 flex items-center gap-4 overflow-x-auto text-xs font-bold uppercase tracking-wider" aria-label="Costing views">
-      <button
-        type="button"
-        (click)="activeTab.set('waterfall')"
-        class="pb-3 border-b-2 transition"
-        [class.border-yellow-500]="activeTab() === 'waterfall'"
-        [class.text-yellow-400]="activeTab() === 'waterfall'"
-        [class.border-transparent]="activeTab() !== 'waterfall'"
-        [class.text-gray-400]="activeTab() !== 'waterfall'"
-      >
-        Commercial Waterfall & Profit
-      </button>
-
-      <button
-        type="button"
-        (click)="activeTab.set('boq')"
-        class="pb-3 border-b-2 transition"
-        [class.border-yellow-500]="activeTab() === 'boq'"
-        [class.text-yellow-400]="activeTab() === 'boq'"
-        [class.border-transparent]="activeTab() !== 'boq'"
-        [class.text-gray-400]="activeTab() !== 'boq'"
-      >
-        Master BOQ Schedule
-      </button>
-
-      <button
-        type="button"
-        (click)="activeTab.set('cashflow')"
-        class="pb-3 border-b-2 transition"
-        [class.border-yellow-500]="activeTab() === 'cashflow'"
-        [class.text-yellow-400]="activeTab() === 'cashflow'"
-        [class.border-transparent]="activeTab() !== 'cashflow'"
-        [class.text-gray-400]="activeTab() !== 'cashflow'"
-      >
-        Cashflow S-Curve Forecast
-      </button>
-      <button type="button" (click)="activeTab.set('costs')" class="pb-3 border-b-2 whitespace-nowrap" [class.border-yellow-500]="activeTab() === 'costs'" [class.text-yellow-400]="activeTab() === 'costs'">Additional Costs</button>
-      <button type="button" (click)="activeTab.set('history')" class="pb-3 border-b-2 whitespace-nowrap" [class.border-yellow-500]="activeTab() === 'history'" [class.text-yellow-400]="activeTab() === 'history'">Historical References</button>
-    </div>
-
-    <!-- TAB 1: COMMERCIAL WATERFALL -->
-    <div *ngIf="activeTab() === 'waterfall'" class="rounded-2xl border border-gray-800 bg-gray-900/80 p-6 shadow-xl space-y-4">
-      <h3 class="text-sm font-bold uppercase tracking-wider text-white">
-        Commercial Cost Waterfall & Profit Margin Calculation
-      </h3>
-
-      <div class="space-y-2 text-xs">
-        <div class="flex items-center justify-between p-3 rounded-lg bg-gray-950 border border-gray-800">
-          <div>
-            <span class="font-bold text-gray-200">Total Direct Operational Spend</span>
-            <p class="text-[10px] text-gray-500">Phase costs {{ waterfall().phaseDirectSpend | currency:'ZAR':'symbol-narrow':'1.2-2' }} + additional costs {{ waterfall().additionalDirectSpend | currency:'ZAR':'symbol-narrow':'1.2-2' }}</p>
-          </div>
-          <span class="font-mono font-bold text-white text-sm">
-            {{ waterfall().directSpend | currency:'ZAR':'symbol-narrow':'1.2-2' }}
-          </span>
-        </div>
-
-        <div class="flex items-center justify-between p-3 rounded-lg bg-gray-950/70 border border-gray-800">
-          <div>
-            <span class="font-bold text-gray-300">+ Preliminaries & General ({{ rates().pg_pct * 100 | number:'1.0-0' }}%)</span>
-            <p class="text-[10px] text-gray-500">Contractual general management, safety compliance, site facilities</p>
-          </div>
-          <span class="font-mono font-bold text-gray-300">
-            {{ waterfall().pgAmount | currency:'ZAR':'symbol-narrow':'1.2-2' }}
-          </span>
-        </div>
-
-        <div class="flex items-center justify-between p-3 rounded-lg bg-blue-950/20 border border-blue-900/40">
-          <span class="font-bold text-blue-300">Subtotal (Excluding Contingencies)</span>
-          <span class="font-mono font-bold text-blue-300">
-            {{ waterfall().subtotalExclContingencies | currency:'ZAR':'symbol-narrow':'1.2-2' }}
-          </span>
-        </div>
-
-        <div class="flex items-center justify-between p-3 rounded-lg bg-gray-950/70 border border-gray-800">
-          <div>
-            <span class="font-bold text-gray-300">+ Contingencies Allowance ({{ rates().contingency_pct * 100 | number:'1.0-0' }}%)</span>
-            <p class="text-[10px] text-gray-500">Subsurface risk reserve and unforeseen ground conditions</p>
-          </div>
-          <span class="font-mono font-bold text-gray-300">
-            {{ waterfall().contingencyAmount | currency:'ZAR':'symbol-narrow':'1.2-2' }}
-          </span>
-        </div>
-
-        <div class="flex items-center justify-between p-3.5 rounded-lg bg-gray-900 border border-gray-700">
-          <div>
-            <span class="font-black text-white text-sm">TOTAL PROJECT COSTS A (EXCL. VAT)</span>
-            <p class="text-[10px] text-gray-400">Total project delivery expenditure base</p>
-          </div>
-          <span class="font-mono font-black text-white text-base">
-            {{ waterfall().projectCostsA | currency:'ZAR':'symbol-narrow':'1.2-2' }}
-          </span>
-        </div>
-
-        <div class="flex items-center justify-between p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/40">
-          <div>
-            <span class="font-bold text-emerald-300">+ Contractor Net Profit Margin ({{ rates().profit_pct * 100 | number:'1.1-1' }}%)</span>
-            <p class="text-[10px] text-emerald-400/80">Operating commercial return on executed capital</p>
-          </div>
-          <span class="font-mono font-bold text-emerald-300 text-sm">
-            {{ waterfall().profitAmount | currency:'ZAR':'symbol-narrow':'1.2-2' }}
-          </span>
-        </div>
-
-        <div class="flex items-center justify-between p-3.5 rounded-lg bg-gray-950 border border-yellow-500/50">
-          <div>
-            <span class="font-black text-yellow-400 text-sm">SUB-TOTAL (B) TENDER PRICE (EXCL. VAT)</span>
-            <p class="text-[10px] text-yellow-500/80">Net Commercial Proposal for Client Submission</p>
-          </div>
-          <span class="font-mono font-black text-yellow-400 text-base">
-            {{ waterfall().tenderPriceExclVat | currency:'ZAR':'symbol-narrow':'1.2-2' }}
-          </span>
-        </div>
-
-        <div class="flex items-center justify-between p-3 rounded-lg bg-gray-950/70 border border-gray-800">
-          <span class="font-bold text-gray-400">+ Statutory SARS VAT ({{ rates().vat_pct * 100 | number:'1.0-0' }}%)</span>
-          <span class="font-mono font-bold text-gray-400">
-            {{ waterfall().vatAmount | currency:'ZAR':'symbol-narrow':'1.2-2' }}
-          </span>
-        </div>
-
-        <div class="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-yellow-500/20 via-yellow-500/10 to-transparent border border-yellow-500">
-          <div>
-            <span class="font-black text-white text-base">TOTAL PROJECT COSTS C (TENDER PRICE INCL. VAT)</span>
-            <p class="text-xs text-yellow-400">Final Statutory Tender Contract Value</p>
-          </div>
-          <span class="font-mono font-black text-yellow-300 text-xl">
-            {{ waterfall().totalTenderPriceInclVat | currency:'ZAR':'symbol-narrow':'1.2-2' }}
-          </span>
-        </div>
+    <section class="rounded-xl border border-gray-700 bg-gray-900 p-4 sm:p-5" aria-labelledby="commercial-heading">
+      <h2 id="commercial-heading" class="text-lg font-bold mb-3">Commercial allowances</h2>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <label class="text-sm">P&amp;G %<input type="number" min="0" max="100" step="any" [ngModel]="proposal().pgPct" (ngModelChange)="updatePercentage('pgPct', $event)" class="mt-1 block w-full min-h-11 rounded-lg border border-gray-600 bg-gray-950 p-3"></label>
+        <label class="text-sm">Contingency %<input type="number" min="0" max="100" step="any" [ngModel]="proposal().contingencyPct" (ngModelChange)="updatePercentage('contingencyPct', $event)" class="mt-1 block w-full min-h-11 rounded-lg border border-gray-600 bg-gray-950 p-3"></label>
+        <label class="text-sm">Profit %<input type="number" min="0" max="100" step="any" [ngModel]="proposal().profitPct" (ngModelChange)="updatePercentage('profitPct', $event)" class="mt-1 block w-full min-h-11 rounded-lg border border-gray-600 bg-gray-950 p-3"></label>
+        <label class="text-sm">VAT %<input type="number" min="0" max="100" step="any" [ngModel]="proposal().vatPct" (ngModelChange)="updatePercentage('vatPct', $event)" class="mt-1 block w-full min-h-11 rounded-lg border border-gray-600 bg-gray-950 p-3"></label>
       </div>
-    </div>
-
-    <!-- TAB 2: MASTER BOQ SCHEDULE -->
-    <div *ngIf="activeTab() === 'boq'" class="rounded-2xl border border-gray-800 bg-gray-900/80 p-6 shadow-xl space-y-4">
-      <h3 class="text-sm font-bold uppercase tracking-wider text-white">
-        Consolidated Bill of Quantities Direct Breakdown
-      </h3>
-
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
-          <thead>
-            <tr class="border-b border-gray-800 bg-gray-950 text-gray-400 uppercase text-[10px]">
-              <th class="py-2.5 px-3">Work Package / Phase</th>
-              <th class="py-2.5 px-3 text-right">Site Est (R)</th>
-              <th class="py-2.5 px-3 text-right">Steel Dismantle (R)</th>
-              <th class="py-2.5 px-3 text-right">Concrete Breakup (R)</th>
-              <th class="py-2.5 px-3 text-right">Rubble Haul (R)</th>
-              <th class="py-2.5 px-3 text-right">Shaping & Levelling (R)</th>
-              <th class="py-2.5 px-3 text-right">Total Phase Direct (R)</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-800/60 font-mono">
-            <tr *ngFor="let d of phaseDetails()" class="hover:bg-gray-800/40 transition">
-              <td class="py-2.5 px-3 font-sans font-bold text-white">{{ d.name }}</td>
-              <td class="py-2.5 px-3 text-right text-gray-300">{{ d.estCost | currency:'ZAR':'symbol-narrow':'1.0-0' }}</td>
-              <td class="py-2.5 px-3 text-right text-gray-300">{{ d.steelCost | currency:'ZAR':'symbol-narrow':'1.0-0' }}</td>
-              <td class="py-2.5 px-3 text-right text-gray-300">{{ d.concreteCost | currency:'ZAR':'symbol-narrow':'1.0-0' }}</td>
-              <td class="py-2.5 px-3 text-right text-gray-300">{{ d.haulCost | currency:'ZAR':'symbol-narrow':'1.0-0' }}</td>
-              <td class="py-2.5 px-3 text-right text-gray-300">{{ d.shapingCost | currency:'ZAR':'symbol-narrow':'1.0-0' }}</td>
-              <td class="py-2.5 px-3 text-right font-bold text-yellow-400">{{ d.totalDirect | currency:'ZAR':'symbol-narrow':'1.2-2' }}</td>
-            </tr>
-          </tbody>
-          <tfoot>
-            <tr class="border-t-2 border-yellow-500 bg-gray-950 font-mono font-black text-xs text-white">
-              <td class="py-3 px-3 font-sans uppercase">Total Phase Direct Expenditure</td>
-              <td colspan="5"></td>
-              <td class="py-3 px-3 text-right text-yellow-400">
-                {{ waterfall().phaseDirectSpend | currency:'ZAR':'symbol-narrow':'1.2-2' }}
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </div>
-
-    <section *ngIf="activeTab() === 'costs'" class="rounded-2xl border border-gray-800 bg-gray-900/80 p-4 sm:p-6 space-y-4" aria-label="Additional direct costs">
-      <h3 class="text-lg font-bold text-white">Additional direct costs</h3>
-      <p class="text-sm text-gray-300">Add asbestos, labour, equipment, materials or transport only after checking scope, quantities and current supplier rates. These costs feed the financial waterfall.</p>
-      <p *ngIf="costError()" role="alert" class="text-sm text-red-300">{{ costError() }}</p>
-      <form (ngSubmit)="addCost()" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        <label class="text-sm text-gray-200">Category<select name="costCategory" [(ngModel)]="newCostCategory" class="mt-1 block w-full rounded bg-gray-950 p-3 border border-gray-600"><option *ngFor="let category of additionalCategories" [value]="category">{{ category }}</option></select></label>
-        <label class="text-sm text-gray-200">Description<input name="costDescription" [(ngModel)]="newCostDescription" required class="mt-1 block w-full rounded bg-gray-950 p-3 border border-gray-600"></label>
-        <label class="text-sm text-gray-200">Unit<input name="costUnit" [(ngModel)]="newCostUnit" required class="mt-1 block w-full rounded bg-gray-950 p-3 border border-gray-600"></label>
-        <label class="text-sm text-gray-200">Quantity<input name="costQuantity" type="number" min="0" step="any" [(ngModel)]="newCostQuantity" required class="mt-1 block w-full rounded bg-gray-950 p-3 border border-gray-600"></label>
-        <label class="text-sm text-gray-200">Unit rate (ZAR)<input name="costRate" type="number" min="0" step="any" [(ngModel)]="newCostRate" required class="mt-1 block w-full rounded bg-gray-950 p-3 border border-gray-600"></label>
-        <label class="text-sm text-gray-200">Source or quote reference<input name="costSource" [(ngModel)]="newCostSource" class="mt-1 block w-full rounded bg-gray-950 p-3 border border-gray-600"></label>
-        <button type="submit" class="rounded bg-yellow-500 text-black font-bold px-4 py-3 self-end">Add cost line</button>
-      </form>
-      <div class="overflow-x-auto"><table class="min-w-full text-sm text-left"><thead><tr><th class="p-2">Category</th><th class="p-2">Description</th><th class="p-2">Quantity × rate</th><th class="p-2">Total</th><th class="p-2">Source</th><th class="p-2">Action</th></tr></thead><tbody><tr *ngFor="let item of additionalCosts()" class="border-t border-gray-700"><td class="p-2">{{ item.category }}</td><td class="p-2">{{ item.description }}</td><td class="p-2">{{ item.quantity }} {{ item.unit }} × {{ item.unitRate | currency:'ZAR':'symbol-narrow' }}</td><td class="p-2">{{ item.quantity * item.unitRate | currency:'ZAR':'symbol-narrow' }}</td><td class="p-2">{{ item.sourceRef || 'User estimate' }}</td><td class="p-2"><button type="button" (click)="removeCost(item.id)" class="text-red-300 underline">Remove</button></td></tr></tbody></table></div>
-      <p class="font-bold text-yellow-300">Additional direct spend: {{ waterfall().additionalDirectSpend | currency:'ZAR':'symbol-narrow' }}</p>
+      <p class="mt-3 text-xs text-gray-300">Enter percentages required for this proposal. The template does not assume historical percentages or prices.</p>
     </section>
 
-    <section *ngIf="activeTab() === 'history'" class="rounded-2xl border border-gray-800 bg-gray-900/80 p-4 sm:p-6 space-y-4" aria-label="Historical costing references">
-      <h3 class="text-lg font-bold text-white">Historical reference rates</h3>
-      <p class="text-sm text-amber-200">Archived workbook values are examples, not current prices. The village quote has a broken grand-total formula. Schedule P&amp;G rates conflict with assumptions. Check each source and obtain current approval before quoting.</p>
-      <div *ngFor="let reference of historicalReferences" class="rounded-lg border border-gray-700 p-3 text-sm space-y-1">
-        <p class="font-bold text-white">{{ reference.description }} — {{ reference.rate | currency:'ZAR':'symbol-narrow' }} / {{ reference.unit }}</p>
-        <p class="text-gray-300 break-all">{{ reference.sourceFile }} · {{ reference.sourceCell }}</p><p class="text-amber-200">{{ reference.caution }}</p>
-        <button type="button" (click)="useHistoricalReference(reference)" class="underline text-yellow-300">Copy to draft cost line</button>
-      </div>
-      <div class="border-t border-gray-700 pt-4 space-y-3"><h4 class="font-bold">Historical Saaiplaas transport method</h4><p class="text-sm text-gray-300">Archived method raises the kilometre rate with return distance. Confirm today's route, trips and supplier price.</p>
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3"><label>Return km<input type="number" min="0" step="any" [(ngModel)]="returnKm" class="block w-full rounded bg-gray-950 p-3 border border-gray-600"></label><label>Trips<input type="number" min="0" step="any" [(ngModel)]="transportTrips" class="block w-full rounded bg-gray-950 p-3 border border-gray-600"></label><label>Base R/km<input type="number" min="0" step="any" [(ngModel)]="transportBaseRate" class="block w-full rounded bg-gray-950 p-3 border border-gray-600"></label><label>Boundary km<input type="number" min="0" step="any" [(ngModel)]="transportBoundaryKm" class="block w-full rounded bg-gray-950 p-3 border border-gray-600"></label></div>
-        <button type="button" (click)="useHistoricalTransport()" class="rounded bg-yellow-500 text-black font-bold px-4 py-3">Copy transport estimate to draft</button>
-      </div>
+    <div class="flex flex-wrap items-center gap-3 border-b border-gray-700" aria-label="Proposal views">
+      <button type="button" (click)="view.set('edit')" class="min-h-11 px-4 border-b-2 font-semibold" [class.border-yellow-400]="view() === 'edit'" [class.text-yellow-300]="view() === 'edit'">Edit sections</button>
+      <button type="button" (click)="view.set('preview')" class="min-h-11 px-4 border-b-2 font-semibold" [class.border-yellow-400]="view() === 'preview'" [class.text-yellow-300]="view() === 'preview'">Preview spreadsheet</button>
+    </div>
+
+    <section *ngIf="view() === 'edit'" class="space-y-5" aria-label="Edit proposal sections">
+      <article *ngFor="let section of proposal().sections" class="rounded-xl border border-gray-700 bg-gray-900 p-4 sm:p-5 space-y-3">
+        <div class="flex flex-wrap items-end gap-3 justify-between">
+          <label class="flex-1 min-w-48 text-sm font-bold">Section title<input [ngModel]="section.title" (ngModelChange)="updateSection(section.id, $event)" class="mt-1 block w-full min-h-11 rounded-lg border border-gray-600 bg-gray-950 p-3 text-white"></label>
+          <button type="button" (click)="removeSection(section.id)" [attr.aria-label]="'Remove section ' + section.title" class="min-h-11 rounded-lg border border-red-700 px-3 text-red-200 hover:bg-red-950">Remove section</button>
+        </div>
+        <div *ngFor="let line of section.lines" class="grid grid-cols-2 lg:grid-cols-[6rem_minmax(12rem,1fr)_7rem_8rem_9rem_9rem_auto] gap-2 items-end rounded-lg border border-gray-700 bg-gray-950/50 p-3">
+          <label class="text-xs text-gray-300">Item<input aria-label="Item number" [ngModel]="line.itemNo" (ngModelChange)="updateLineText(section.id, line.id, 'itemNo', $event)" class="mt-1 block w-full min-h-11 rounded border border-gray-600 bg-gray-950 p-2 text-sm text-white"></label>
+          <label class="col-span-2 lg:col-span-1 text-xs text-gray-300">Description<input [attr.aria-label]="'Description for ' + line.itemNo" [ngModel]="line.description" (ngModelChange)="updateLineText(section.id, line.id, 'description', $event)" class="mt-1 block w-full min-h-11 rounded border border-gray-600 bg-gray-950 p-2 text-sm text-white"></label>
+          <label class="text-xs text-gray-300">UOM<input [attr.aria-label]="'Unit for ' + line.itemNo" [ngModel]="line.uom" (ngModelChange)="updateLineText(section.id, line.id, 'uom', $event)" class="mt-1 block w-full min-h-11 rounded border border-gray-600 bg-gray-950 p-2 text-sm text-white"></label>
+          <label class="text-xs text-gray-300">Quantity<input type="number" min="0" step="any" [attr.aria-label]="'Quantity for ' + line.itemNo" [ngModel]="line.quantity" (ngModelChange)="updateLineNumber(section.id, line.id, 'quantity', $event)" class="mt-1 block w-full min-h-11 rounded border border-gray-600 bg-gray-950 p-2 text-sm text-white"></label>
+          <label class="text-xs text-gray-300">Rate (ZAR)<input type="number" min="0" step="any" [attr.aria-label]="'Rate for ' + line.itemNo" [ngModel]="line.rate" (ngModelChange)="updateLineNumber(section.id, line.id, 'rate', $event)" class="mt-1 block w-full min-h-11 rounded border border-gray-600 bg-gray-950 p-2 text-sm text-white"></label>
+          <div class="text-xs text-gray-300">Amount<p class="min-h-11 flex items-center text-sm font-bold text-yellow-300">{{ amount(line) === null ? '—' : (amount(line) | currency:'ZAR':'symbol-narrow':'1.2-2') }}</p></div>
+          <button type="button" (click)="removeLine(section.id, line.id)" [attr.aria-label]="'Remove item ' + line.itemNo" class="min-h-11 rounded border border-red-800 px-2 text-sm text-red-200 hover:bg-red-950">Remove</button>
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-2"><button type="button" (click)="addLine(section.id)" class="min-h-11 rounded-lg border border-yellow-600 px-4 text-sm font-bold text-yellow-300">Add item</button><p class="font-bold">Section subtotal: {{ summary().sectionTotals[section.id] | currency:'ZAR':'symbol-narrow':'1.2-2' }}</p></div>
+      </article>
+      <button type="button" (click)="addSection()" class="min-h-11 rounded-lg bg-yellow-500 px-5 font-bold text-black">Add section</button>
     </section>
 
-    <!-- TAB 3: CASHFLOW S-CURVE FORECAST -->
-    <div *ngIf="activeTab() === 'cashflow'" class="rounded-2xl border border-gray-800 bg-gray-900/80 p-6 shadow-xl space-y-4">
-      <h3 class="text-sm font-bold uppercase tracking-wider text-white">
-        {{ durationMonths() }}-Month Phased Cashflow & S-Curve Schedule
-      </h3>
+    <section *ngIf="view() === 'preview'" class="rounded-xl border border-gray-700 bg-white p-3 sm:p-6 text-gray-900" aria-label="Spreadsheet preview">
+      <h2 class="text-xl font-bold">{{ proposal().projectName }}</h2>
+      <p class="text-sm">Client: {{ proposal().clientName }} · Reference: {{ proposal().contractRef || 'Not entered' }} · {{ proposal().templateName }}</p>
+      <p class="text-sm font-bold text-amber-800">Draft · {{ summary().unpricedLines }} unpriced line(s)</p>
+      <div class="mt-4 max-w-md text-sm space-y-1" aria-label="Workbook financial summary"><div class="flex justify-between"><span>Direct spend</span><strong>{{ summary().directSpend | currency:'ZAR':'symbol-narrow':'1.2-2' }}</strong></div><div class="flex justify-between"><span>P&amp;G ({{ proposal().pgPct }}%)</span><span>{{ summary().pgAmount | currency:'ZAR':'symbol-narrow':'1.2-2' }}</span></div><div class="flex justify-between"><span>Contingency ({{ proposal().contingencyPct }}%)</span><span>{{ summary().contingencyAmount | currency:'ZAR':'symbol-narrow':'1.2-2' }}</span></div><div class="flex justify-between"><span>Profit ({{ proposal().profitPct }}%)</span><span>{{ summary().profitAmount | currency:'ZAR':'symbol-narrow':'1.2-2' }}</span></div><div class="flex justify-between"><span>VAT ({{ proposal().vatPct }}%)</span><span>{{ summary().vatAmount | currency:'ZAR':'symbol-narrow':'1.2-2' }}</span></div><div class="flex justify-between border-t-2 border-gray-700 pt-2 text-base"><strong>Tender including VAT</strong><strong>{{ summary().tenderInclVat | currency:'ZAR':'symbol-narrow':'1.2-2' }}</strong></div></div>
+      <div class="overflow-x-auto mt-4"><table class="min-w-[760px] w-full border-collapse text-sm">
+        <thead class="bg-slate-800 text-white"><tr><th class="p-2 text-left">Item</th><th class="p-2 text-left">Description</th><th class="p-2 text-left">UOM</th><th class="p-2 text-right">Quantity</th><th class="p-2 text-right">Rate (ZAR)</th><th class="p-2 text-right">Amount (ZAR)</th></tr></thead>
+        <tbody>
+          <ng-container *ngFor="let section of proposal().sections">
+            <tr class="bg-slate-200"><th colspan="6" class="p-2 text-left">{{ section.title }}</th></tr>
+            <tr *ngFor="let line of section.lines" class="border-b border-gray-300"><td class="p-2">{{ line.itemNo }}</td><td class="p-2">{{ line.description }}</td><td class="p-2">{{ line.uom }}</td><td class="p-2 text-right">{{ line.quantity ?? '—' }}</td><td class="p-2 text-right">{{ line.rate === null ? '—' : (line.rate | number:'1.2-2') }}</td><td class="p-2 text-right">{{ amount(line) === null ? '—' : (amount(line) | number:'1.2-2') }}</td></tr>
+            <tr class="border-b-2 border-gray-400 font-bold"><td colspan="5" class="p-2">{{ section.title }} subtotal</td><td class="p-2 text-right">{{ summary().sectionTotals[section.id] | number:'1.2-2' }}</td></tr>
+          </ng-container>
+        </tbody>
+      </table></div>
+    </section>
 
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
-          <thead>
-            <tr class="border-b border-gray-800 bg-gray-950 text-gray-400 uppercase text-[10px]">
-              <th class="py-2.5 px-3">Month</th>
-              <th class="py-2.5 px-3 text-right">Monthly Forecast Spend (ZAR)</th>
-              <th class="py-2.5 px-3 text-right">Cumulative Cashflow (ZAR)</th>
-              <th class="py-2.5 px-3 text-right">Progress S-Curve (%)</th>
-              <th class="py-2.5 px-3 w-48">Progress Bar</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-800/60 font-mono">
-            <tr *ngFor="let c of cashflow()" class="hover:bg-gray-800/40 transition">
-              <td class="py-2.5 px-3 font-sans font-bold text-white">Month {{ c.month }}</td>
-              <td class="py-2.5 px-3 text-right text-gray-200">{{ c.spend | currency:'ZAR':'symbol-narrow':'1.2-2' }}</td>
-              <td class="py-2.5 px-3 text-right text-blue-300 font-bold">{{ c.cumulativeSpend | currency:'ZAR':'symbol-narrow':'1.2-2' }}</td>
-              <td class="py-2.5 px-3 text-right text-yellow-400 font-bold">{{ c.sCurvePct | number:'1.1-1' }}%</td>
-              <td class="py-2.5 px-3">
-                <div class="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
-                  <div class="bg-yellow-500 h-2 rounded-full" [style.width.%]="c.sCurvePct"></div>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <div class="flex flex-wrap items-center gap-3 border-t border-gray-700 pt-5">
+      <button type="button" (click)="exportFile('xlsx')" [disabled]="isExporting()" class="min-h-11 rounded-lg bg-emerald-600 px-5 font-bold text-white disabled:opacity-50">{{ isExporting() ? 'Preparing download…' : 'Export Excel' }}</button>
+      <button type="button" (click)="exportFile('pdf')" [disabled]="isExporting()" class="min-h-11 rounded-lg bg-yellow-500 px-5 font-bold text-black disabled:opacity-50">Save PDF</button>
+      <span class="text-xs text-gray-300">Downloads are marked draft when lines are unpriced.</span>
     </div>
   </main>
 </div>
