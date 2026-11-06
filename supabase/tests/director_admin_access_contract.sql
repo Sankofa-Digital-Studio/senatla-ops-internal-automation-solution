@@ -35,8 +35,10 @@ select ok(public.is_office_admin(),'exact developer can administer');
 select lives_ok($$insert into public.assets(registration_number,make,model,type,license_expiry,status,assigned_site_id,organization_id) values('DIRECTOR-CONTRACT-ONE','Test','One','Light Vehicle',current_date,'Active','82000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000001')$$,'exact developer can register an organization asset');
 select throws_ok($$select public.apply_employee_site_assignment_director(array['83000000-0000-4000-8000-000000000002']::uuid[],'82000000-0000-4000-8000-000000000001','accept',null)$$,'42501','Employee assignment selection is outside the active organization','cross-organization employee assignment is rejected');
 select throws_ok($$select public.apply_employee_site_assignment_director(array['83000000-0000-4000-8000-000000000001']::uuid[],'82000000-0000-4000-8000-000000000002','accept',null)$$,'55000','Select an active organization site','cross-organization site assignment is rejected');
-select is((with changed as (update public.employees set first_name='Tampered' where id='83000000-0000-4000-8000-000000000002' returning id) select count(*) from changed),0::bigint,'cross-organization employee update changes no rows');
-select is((with changed as (update public.sites set name='Tampered' where id='82000000-0000-4000-8000-000000000002' returning id) select count(*) from changed),0::bigint,'cross-organization site update changes no rows');
+with changed as (update public.employees set first_name='Tampered' where id='83000000-0000-4000-8000-000000000002' returning id)
+select is((select count(*) from changed),0::bigint,'cross-organization employee update changes no rows');
+with changed as (update public.sites set name='Tampered' where id='82000000-0000-4000-8000-000000000002' returning id)
+select is((select count(*) from changed),0::bigint,'cross-organization site update changes no rows');
 
 select set_config('request.jwt.claims','{"sub":"81000000-0000-4000-8000-000000000002","email":"thosontula+tag@gmail.com","role":"authenticated","exp":4102444800}',true);
 select ok(public.is_developer_director(),'named alias is elevated');
@@ -49,12 +51,14 @@ select ok(not public.is_developer_director(),'ordinary Director is not elevated'
 select ok(not public.is_office_admin(),'ordinary Director cannot administer');
 select throws_ok($$select public.apply_employee_site_assignment_director(array['83000000-0000-4000-8000-000000000001']::uuid[],'82000000-0000-4000-8000-000000000001','accept',null)$$,'42501','Only the authorised developer Directors can use this workflow','ordinary Director cannot invoke assignment');
 select throws_ok($$insert into public.assets(registration_number,make,model,type,license_expiry,status,assigned_site_id,organization_id) values('DIRECTOR-CONTRACT-BLOCK','Test','Blocked','Light Vehicle',current_date,'Active','82000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000001')$$,'42501',null,'ordinary Director cannot register assets');
-select is((with changed as (update public.employees set first_name='Tampered' where id='83000000-0000-4000-8000-000000000001' returning id) select count(*) from changed),0::bigint,'ordinary Director cannot update employees');
+with changed as (update public.employees set first_name='Tampered' where id='83000000-0000-4000-8000-000000000001' returning id)
+select is((select count(*) from changed),0::bigint,'ordinary Director cannot update employees');
 
 select set_config('request.jwt.claims','{"sub":"81000000-0000-4000-8000-000000000004","email":"office@senatlatrading.com","role":"authenticated","exp":4102444800}',true);
 select ok(public.is_office_admin(),'Office Admin keeps administration access');
 select ok(not public.is_developer_director(),'Office Admin does not inherit developer identity');
-select is((with changed as (update public.employees set first_name='Updated' where id='83000000-0000-4000-8000-000000000001' returning id) select count(*) from changed),1::bigint,'Office Admin can update own-organization employee');
+with changed as (update public.employees set first_name='Updated' where id='83000000-0000-4000-8000-000000000001' returning id)
+select is((select count(*) from changed),1::bigint,'Office Admin can update own-organization employee');
 
 select * from finish();
 rollback;
