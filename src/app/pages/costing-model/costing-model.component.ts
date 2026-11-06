@@ -1,263 +1,132 @@
 import { Component, computed, signal } from '@angular/core';
-import { CommonModule, CurrencyPipe, DecimalPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
-  CostingRates,
-  AdditionalCostCategory,
-  AdditionalCostItem,
-  HISTORICAL_COST_REFERENCES,
-  calculateAdditionalCost,
-  calculateHistoricalKmCost,
-  PhaseScopeItem,
-  ProjectCostingModel,
-  DEFAULT_COSTING_RATES,
-  PRESET_WEST_GOLD,
-  PRESET_SENATLA_VILLAGES,
-  PRESET_CAPM_TAU_MINE,
-  calculateWaterfall,
-  generateCashflowSchedule,
-  exportModelAsCSV,
-} from '../../core/services/costing-model.engine';
+  ProposalDocument, ProposalLine, ProposalSection, ProposalTemplateId, PROPOSAL_LAYOUTS,
+  calculateProposal, createProposal, lineAmount,
+} from '../../core/services/proposal-template.engine';
+import { createProposalPdf, createProposalWorkbook, proposalFilename } from '../../core/services/proposal-export.service';
 
 @Component({
   selector: 'app-costing-model',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CurrencyPipe, DecimalPipe],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './costing-model.component.html',
   styleUrls: ['./costing-model.component.scss'],
 })
 export class CostingModelComponent {
-  // Active Project State
-  projectName = signal<string>(PRESET_SENATLA_VILLAGES.projectName);
-  clientName = signal<string>(PRESET_SENATLA_VILLAGES.clientName);
-  clientNameProvisional = signal<boolean>(true);
-  contractRef = signal<string>(PRESET_SENATLA_VILLAGES.contractRef);
-  durationMonths = signal<number>(PRESET_SENATLA_VILLAGES.durationMonths);
-  activePresetId = signal<string>(PRESET_SENATLA_VILLAGES.id);
+  readonly layouts = PROPOSAL_LAYOUTS;
+  proposal = signal<ProposalDocument>(createProposal('west-gold'));
+  summary = computed(() => calculateProposal(this.proposal()));
+  view = signal<'edit' | 'preview'>('edit');
+  error = signal<string | null>(null);
+  isExporting = signal(false);
+  private sequence = 0;
 
-  // Rates & Commercial Multipliers
-  rates = signal<CostingRates>({ ...DEFAULT_COSTING_RATES });
-
-  // Phase Scope List
-  phases = signal<PhaseScopeItem[]>([
-    ...PRESET_SENATLA_VILLAGES.phases.map(p => ({ ...p })),
-  ]);
-  additionalCosts = signal<AdditionalCostItem[]>([]);
-  readonly historicalReferences = HISTORICAL_COST_REFERENCES;
-  readonly additionalCategories: AdditionalCostCategory[] = ['asbestos', 'labour', 'equipment', 'materials', 'transport', 'other'];
-  newCostCategory: AdditionalCostCategory = 'other';
-  newCostDescription = '';
-  newCostUnit = 'lot';
-  newCostQuantity = 1;
-  newCostRate = 0;
-  newCostSource = '';
-  returnKm = 0;
-  transportTrips = 1;
-  transportBaseRate = 18;
-  transportBoundaryKm = 0;
-  costError = signal<string | null>(null);
-
-  // UI state
-  activeTab = signal<'waterfall' | 'boq' | 'cashflow' | 'costs' | 'history'>('waterfall');
-  showRatesDrawer = signal<boolean>(false);
-  notification = signal<string | null>(null);
-
-  // New Phase Form State
-  newPhaseName = '';
-  newPhaseArea = 10000;
-  newPhaseStructures = 2;
-  newPhaseConcrete = 500;
-  newPhaseDuration = 2;
-
-  // Computed Calculations
-  calculation = computed(() => {
-    return calculateWaterfall(this.phases(), this.rates(), this.durationMonths(), this.additionalCosts());
-  });
-
-  waterfall = computed(() => this.calculation().waterfall);
-  phaseDetails = computed(() => this.calculation().phaseDetails);
-
-  cashflow = computed(() => {
-    return generateCashflowSchedule(this.waterfall(), this.durationMonths());
-  });
-
-  totalFootprint = computed(() => {
-    return this.phases().reduce((acc, p) => acc + (p.footprint_m2 || 0), 0);
-  });
-
-  totalStructures = computed(() => {
-    return this.phases().reduce((acc, p) => acc + (p.structures || 0), 0);
-  });
-
-  totalConcrete = computed(() => {
-    return this.phases().reduce((acc, p) => acc + (p.concrete_m3 || 0), 0);
-  });
-
-  totalRubble = computed(() => {
-    return this.phaseDetails().reduce((acc, p) => acc + (p.rubble_tons || 0), 0);
-  });
-
-  // Preset Loaders
-  loadPreset(presetType: 'village' | 'westgold' | 'tau10' | 'blank') {
-    let target: ProjectCostingModel;
-    if (presetType === 'village') {
-      target = PRESET_SENATLA_VILLAGES;
-    } else if (presetType === 'westgold') {
-      target = PRESET_WEST_GOLD;
-    } else if (presetType === 'tau10') {
-      target = PRESET_CAPM_TAU_MINE;
-    } else {
-      target = {
-        id: 'custom-blank',
-        projectName: 'New Demolition & Rehabilitation Proposal',
-        clientName: 'Confirm client name',
-        clientNameProvisional: true,
-        contractRef: `PROP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-        durationMonths: 6,
-        rates: { ...DEFAULT_COSTING_RATES },
-        phases: [
-          { id: 'p-1', name: 'Zone 1 - Main Operational Site', footprint_m2: 12000, structures: 3, concrete_m3: 850, duration_months: 2 },
-        ],
-      };
-    }
-
-    this.activePresetId.set(target.id);
-    this.projectName.set(target.projectName);
-    this.clientName.set(target.clientName);
-    this.clientNameProvisional.set(target.clientNameProvisional ?? false);
-    this.contractRef.set(target.contractRef);
-    this.durationMonths.set(target.durationMonths);
-    this.rates.set({ ...target.rates });
-    this.phases.set(target.phases.map(p => ({ ...p })));
-    this.additionalCosts.set((target.additionalCosts ?? []).map(item => ({ ...item })));
-
-    this.showNotify(`Loaded template: ${target.projectName}`);
-  }
-
-  // Phase Manipulation
-  addPhase() {
-    if (!this.newPhaseName.trim()) return;
-
-    const newPhase: PhaseScopeItem = {
-      id: `p-${Date.now()}`,
-      name: this.newPhaseName.trim(),
-      footprint_m2: Number(this.newPhaseArea) || 0,
-      structures: Number(this.newPhaseStructures) || 0,
-      concrete_m3: Number(this.newPhaseConcrete) || 0,
-      duration_months: Number(this.newPhaseDuration) || 1,
-    };
-
-    this.phases.update(list => [...list, newPhase]);
-    this.newPhaseName = '';
-    this.showNotify(`Added phase: ${newPhase.name}`);
-  }
-
-  removePhase(index: number) {
-    this.phases.update(list => list.filter((_, idx) => idx !== index));
-    this.showNotify('Phase removed');
-  }
-
-  updatePhaseField(index: number, field: keyof PhaseScopeItem, value: any) {
-    this.phases.update(list => {
-      const copy = [...list];
-      copy[index] = { ...copy[index], [field]: value };
-      return copy;
-    });
-  }
-
-  updateRate(field: keyof CostingRates, value: number) {
-    this.rates.update(r => ({ ...r, [field]: Number(value) }));
-  }
-
-  addCost() {
-    const description = this.newCostDescription.trim();
-    const unit = this.newCostUnit.trim();
-    if (!description || !unit) {
-      this.costError.set('Enter a description and unit.');
+  loadTemplate(id: ProposalTemplateId, select?: HTMLSelectElement) {
+    if (id === this.proposal().templateId) return;
+    const original = createProposal(this.proposal().templateId);
+    if (JSON.stringify(this.proposal()) !== JSON.stringify(original)
+      && !window.confirm('Selecting another template will replace the current proposal. Continue?')) {
+      if (select) select.value = this.proposal().templateId;
       return;
     }
-    const item: AdditionalCostItem = {
-      id: crypto.randomUUID(), category: this.newCostCategory, description, unit,
-      quantity: Number(this.newCostQuantity), unitRate: Number(this.newCostRate),
-      sourceRef: this.newCostSource.trim() || undefined,
-    };
+    this.proposal.set(createProposal(id));
+    this.view.set('edit');
+    this.error.set(null);
+  }
+
+  updateText(field: 'projectName' | 'clientName' | 'contractRef', value: string) {
+    this.proposal.update(current => ({ ...current, [field]: value }));
+  }
+
+  updateDuration(value: number | null) {
+    const parsed = value === null || value === undefined ? null : Number(value);
+    if (parsed !== null && (!Number.isFinite(parsed) || parsed < 0)) return this.setError('Duration must be zero or more.');
+    this.proposal.update(current => ({ ...current, durationMonths: parsed }));
+    this.error.set(null);
+  }
+
+  updatePercentage(field: 'pgPct' | 'contingencyPct' | 'profitPct' | 'vatPct', value: number | null) {
+    const parsed = value === null || value === undefined ? 0 : Number(value);
+    if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) return this.setError('Each percentage must be between 0 and 100.');
+    this.proposal.update(current => ({ ...current, [field]: parsed }));
+    this.error.set(null);
+  }
+
+  addSection() {
+    const id = this.nextId();
+    this.proposal.update(current => ({ ...current, sections: [...current.sections, {
+      id, title: 'New section', lines: [{ id: this.nextId(), itemNo: `${current.sections.length + 1}.1`, description: '', uom: 'lot', quantity: null, rate: null }],
+    }] }));
+  }
+
+  removeSection(sectionId: string) {
+    this.proposal.update(current => ({ ...current, sections: current.sections.filter(section => section.id !== sectionId) }));
+  }
+
+  updateSection(sectionId: string, title: string) {
+    this.updateSections(section => section.id === sectionId ? { ...section, title } : section);
+  }
+
+  addLine(sectionId: string) {
+    this.updateSections(section => section.id === sectionId ? {
+      ...section, lines: [...section.lines, {
+        id: this.nextId(), itemNo: `${this.proposal().sections.indexOf(section) + 1}.${section.lines.length + 1}`,
+        description: '', uom: 'lot', quantity: null, rate: null,
+      }],
+    } : section);
+  }
+
+  removeLine(sectionId: string, lineId: string) {
+    this.updateSections(section => section.id === sectionId ? { ...section, lines: section.lines.filter(line => line.id !== lineId) } : section);
+  }
+
+  updateLineText(sectionId: string, lineId: string, field: 'itemNo' | 'description' | 'uom', value: string) {
+    this.updateLine(sectionId, lineId, line => ({ ...line, [field]: value }));
+  }
+
+  updateLineNumber(sectionId: string, lineId: string, field: 'quantity' | 'rate', value: number | null) {
+    const parsed = value === null || value === undefined ? null : Number(value);
+    if (parsed !== null && (!Number.isFinite(parsed) || parsed < 0 || parsed > 1e12)) return this.setError('Quantity and rate must be between zero and one trillion.');
+    this.updateLine(sectionId, lineId, line => ({ ...line, [field]: parsed }));
+    this.error.set(null);
+  }
+
+  amount(line: ProposalLine): number | null { return lineAmount(line); }
+
+  async exportFile(kind: 'xlsx' | 'pdf') {
+    if (this.isExporting()) return;
+    if (!this.proposal().projectName.trim() || !this.proposal().clientName.trim()) return this.setError('Enter a project and client name before export.');
+    if (!this.summary().pricedLines) return this.setError('Enter at least one quantity and rate before export.');
+    this.isExporting.set(true);
+    this.error.set(null);
     try {
-      calculateAdditionalCost(item);
-      this.additionalCosts.update(items => [...items, item]);
-      this.costError.set(null);
-      this.newCostDescription = '';
-      this.newCostSource = '';
+      const document = this.proposal();
+      const summary = this.summary();
+      const blob = kind === 'xlsx' ? await createProposalWorkbook(document, summary) : await createProposalPdf(document, summary);
+      const url = URL.createObjectURL(blob);
+      const link = window.document.createElement('a');
+      link.href = url;
+      link.download = proposalFilename(document, kind);
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch {
-      this.costError.set('Enter a valid quantity and rate of zero or more.');
+      this.setError(`The ${kind.toUpperCase()} download failed. Please retry.`);
+    } finally {
+      this.isExporting.set(false);
     }
   }
 
-  removeCost(id: string) {
-    this.additionalCosts.update(items => items.filter(item => item.id !== id));
+  private setError(message: string) { this.error.set(message); }
+  private nextId() { return `draft-${Date.now()}-${++this.sequence}`; }
+  private updateSections(change: (section: ProposalSection) => ProposalSection) {
+    this.proposal.update(current => ({ ...current, sections: current.sections.map(change) }));
   }
-
-  useHistoricalReference(reference: typeof HISTORICAL_COST_REFERENCES[number]) {
-    this.newCostCategory = reference.id.includes('asbestos') ? 'asbestos' : 'other';
-    this.newCostDescription = reference.description;
-    this.newCostUnit = reference.unit;
-    this.newCostQuantity = 1;
-    this.newCostRate = reference.rate;
-    this.newCostSource = `${reference.sourceFile} / ${reference.sourceCell} — historical; verify current quote`;
-    this.activeTab.set('costs');
-  }
-
-  useHistoricalTransport() {
-    try {
-      const result = calculateHistoricalKmCost(Number(this.returnKm), Number(this.transportTrips), Number(this.transportBaseRate), Number(this.transportBoundaryKm));
-      this.newCostCategory = 'transport';
-      this.newCostDescription = 'Historical Saaiplaas kilometre transport estimate';
-      this.newCostUnit = 'trip';
-      this.newCostQuantity = Number(this.transportTrips);
-      this.newCostRate = Number(this.returnKm) * result.ratePerKm;
-      this.newCostSource = 'Saaiplaas 3 Hostel Info22.xlsx / Assumptions!B4,B9; KM Cost Schedule — historical; verify route and rate';
-      this.costError.set(null);
-      this.activeTab.set('costs');
-    } catch {
-      this.costError.set('Enter valid non-negative distance, trips, base rate and boundary.');
-    }
-  }
-
-  exportCSV() {
-    const model: ProjectCostingModel = {
-      id: this.activePresetId(),
-      projectName: this.projectName(),
-      clientName: this.clientName(),
-      clientNameProvisional: this.clientNameProvisional(),
-      contractRef: this.contractRef(),
-      durationMonths: this.durationMonths(),
-      rates: this.rates(),
-      phases: this.phases(),
-      additionalCosts: this.additionalCosts(),
-    };
-
-    const csvContent = exportModelAsCSV(model, this.waterfall(), this.phaseDetails());
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `${this.projectName().replace(/[^a-zA-Z0-9]/g, '_')}_Model.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    this.showNotify('Exported model to CSV / Excel sheet');
-  }
-
-  printProposal() {
-    window.print();
-  }
-
-  private showNotify(msg: string) {
-    this.notification.set(msg);
-    setTimeout(() => {
-      if (this.notification() === msg) {
-        this.notification.set(null);
-      }
-    }, 3500);
+  private updateLine(sectionId: string, lineId: string, change: (line: ProposalLine) => ProposalLine) {
+    this.updateSections(section => section.id === sectionId ? {
+      ...section, lines: section.lines.map(line => line.id === lineId ? change(line) : line),
+    } : section);
   }
 }

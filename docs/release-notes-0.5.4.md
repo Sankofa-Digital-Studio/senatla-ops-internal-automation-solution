@@ -1,6 +1,6 @@
 # Senatla Ops v0.5.4 draft integration notes
 
-Updated: 2026-11-06
+Updated: 2026-11-07
 Status: Director changes merged to `dev`; `preview` and `main` promotion pending. The v0.5.4 SEO/analytics release checklist remains open.
 
 ## Scope
@@ -33,14 +33,16 @@ This release improves the Director workspace entry experience, expands Director 
 - [Director workspace guidance](director-workspace-guidance.md)
 - [Responsive HTML guide](director-workspace-guidance.html)
 - [Word guide](director-workspace-guidance.docx)
-- [Historical costing and asset review](historical-costing-and-asset-review.md), with [responsive HTML](historical-costing-and-asset-review.html) and [Word](historical-costing-and-asset-review.docx) versions.
+- [Historical source audit](historical-costing-and-asset-review.md), superseded for proposal creation.
+- [Director proposal templates](director-proposal-templates.md), with [responsive HTML](director-proposal-templates.html) and [Word](director-proposal-templates.docx) versions.
 
-## Historical source review pending integration
+## Director proposal formats pending integration
 
-- The costing screen now provides source-labelled historical reference rates and explicitly added direct-cost lines for asbestos, labour, equipment, materials and transport. Archived rates do not alter scenario defaults by themselves.
-- Three scenario client names are marked provisional on screen and in CSV pending signed-contract verification.
-- The asset readiness review flags missing and duplicate identifiers without importing historical asset or personnel records.
+- The owner clarified that historical workbooks provide layout patterns rather than figures. The new builder offers West Gold, Tau Mine, village, asbestos, civil BOQ, detailed breakdown and blank formats. Quantities, rates and percentages start empty or zero.
+- Directors can add and remove sections and items, enter units, preview the spreadsheet, and download a formula-based Excel workbook or draft PDF.
+- All formats start with the editable client label Harmony Gold Mines. The exact legal contract party remains subject to review.
+- The prior historical costing and asset report remains available as a source audit; its rate-ingestion workflow is superseded. No asset or personnel record is imported.
 
 ## Verification note
 
-The Director access migration was applied to the linked Supabase project and focused policy and application checks passed during PR #105. Production UI deployment has not been asserted here. Historical costing references are examples only; the archived village grand-total formula is broken, and preset client names remain provisional until confirmed against contracts.
+The Director access migration was applied to the linked Supabase project and focused policy and application checks passed during PR #105. Production UI deployment has not been asserted here. The proposal format update requires its own verification before integration; archived figures are not loaded into its templates.
