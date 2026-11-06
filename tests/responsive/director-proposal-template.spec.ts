@@ -17,7 +17,13 @@ test('Director builds, previews and downloads a proposal on mobile and desktop',
   });
   if (error || !data.session) throw new Error(error?.message || 'Director fixture sign-in failed.');
   const storageKey = `sb-${new URL(supabaseUrl).hostname.split('.')[0]}-auth-token`;
-  await page.addInitScript(({ key, session }) => localStorage.setItem(key, JSON.stringify(session)), { key: storageKey, session: data.session });
+  await page.addInitScript(({ key, session }) => {
+    localStorage.setItem(key, JSON.stringify(session));
+    // This journey starts after the mandatory Director guide has been completed.
+    const preferenceKey = `${session.user.id}:director`;
+    localStorage.setItem('senatla_ops_onboarding_v1', JSON.stringify([preferenceKey]));
+    localStorage.setItem('senatla_ops_onboarding_preferences_v2', JSON.stringify([preferenceKey]));
+  }, { key: storageKey, session: data.session });
   await page.goto('/costing-model');
   await expect(page.getByRole('heading', { name: 'Proposal templates' })).toBeVisible({ timeout: 30000 });
   await expect(page.getByRole('combobox', { name: 'Proposal template' })).toHaveValue('west-gold');
