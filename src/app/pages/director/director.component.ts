@@ -5,12 +5,14 @@ import { StaffDataService } from 'src/app/core/services/staff-data.service';
 import { OfficeAdminService } from 'src/app/core/services/office-admin.service';
 import { CostAttributionService } from 'src/app/core/services/cost-attribution.service';
 import { AccessibleDialogDirective } from 'src/app/core/accessibility/accessible-dialog.directive';
+import { AuthService } from 'src/app/core/services/auth.service';
 
 @Component({
   selector: 'app-director', templateUrl: './director.component.html', styleUrls: ['./director.component.scss'], standalone: true,
   imports: [CommonModule, DecimalPipe, DatePipe, RouterLink, AccessibleDialogDirective],
 })
 export class DirectorComponent {
+  readonly auth = inject(AuthService);
   readonly service = inject(StaffDataService);
   readonly office = inject(OfficeAdminService);
   readonly costAttribution = inject(CostAttributionService);

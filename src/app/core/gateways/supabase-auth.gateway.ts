@@ -3,7 +3,7 @@ import { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { AppRole, AuthSession } from '../models/app.models';
 import { cappedSessionExpiry } from '../auth/session-policy';
 import { isAllowedAccessEmail, normalizeAccessEmail, requireAllowedAccessEmail } from '../auth/access-email-policy';
-import { AuthGateway, PasswordResetRequestResult } from './auth.gateway';
+import { AuthGateway, AuthRequestError, PasswordResetRequestResult } from './auth.gateway';
 import { injectSupabaseClient } from './supabase.client';
 
 type ProfileRow = {
@@ -40,7 +40,11 @@ export class SupabaseAuthGateway implements AuthGateway {
     const email = normalizeAccessEmail(username);
     if (!isAllowedAccessEmail(email)) return null;
     const { data, error } = await this.supabase.auth.signInWithPassword({ email, password });
-    if (error || !data.user || !data.session) return null;
+    if (error) {
+      const status = typeof (error as any).status === 'number' ? (error as any).status : undefined;
+      throw new AuthRequestError(this.userSafeMessage(status), status, (error as any).code);
+    }
+    if (!data.user || !data.session) return null;
 
     const session = await this.buildSession(data.user.id, data.user.email ?? email, data.session);
     if (!session) return null;
@@ -90,6 +94,16 @@ export class SupabaseAuthGateway implements AuthGateway {
   async logout(): Promise<void> {
     void this.recordAuthEvent('logout').catch(() => undefined);
     await this.supabase.auth.signOut();
+  }
+
+  private userSafeMessage(status?: number) {
+    if (status === 400) return 'The sign-in details could not be accepted. Check your email and password and try again.';
+    if (status === 401) return 'The email or password is not correct. Check both fields and try again.';
+    if (status === 403) return 'This account is not allowed to enter this workspace. Contact your administrator.';
+    if (status === 408) return 'The sign-in request took too long. Check your connection and try again.';
+    if (status === 429) return 'There have been too many attempts. Wait a moment and try again.';
+    if (status && status >= 500) return 'The sign-in service is temporarily unavailable. Try again shortly.';
+    return 'We could not complete sign in. Check your connection and try again.';
   }
 
   subscribeToSession(listener: (session: AuthSession | null) => void): () => void {

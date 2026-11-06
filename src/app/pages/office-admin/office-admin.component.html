@@ -131,7 +131,7 @@
         </div>
       </section>
 
-      <section *ngIf="activeTab() === 'people'" class="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+      <section data-tour="admin-people" *ngIf="activeTab() === 'people'" class="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
         <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -153,7 +153,7 @@
             <select [ngModel]="bulkSiteId()" (ngModelChange)="setBulkSiteId($event)" class="min-h-11 rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white">
               <option value="">Assignment target site</option><option *ngFor="let site of service.activeSites()" [value]="site.id">{{ site.name }}</option>
             </select>
-            <button type="button" (click)="reviewBulkSiteAssignment()" [disabled]="busy() || !selectedEmployeeIds().length || !bulkSiteId()" class="min-h-11 rounded-lg border border-yellow-700 px-3 py-2 text-xs font-bold uppercase tracking-wider text-yellow-200 disabled:opacity-40">Review assignment</button>
+            <button data-tour="employee-site-assignment" type="button" (click)="reviewBulkSiteAssignment()" [disabled]="busy() || !selectedEmployeeIds().length || !bulkSiteId()" class="min-h-11 rounded-lg border border-yellow-700 px-3 py-2 text-xs font-bold uppercase tracking-wider text-yellow-200 disabled:opacity-40">Review assignment</button>
           </div>
           <section *ngIf="assignmentReview() as review" aria-live="polite" class="mt-3 rounded-xl border border-gray-700 bg-gray-950 p-3">
             <div class="flex flex-wrap items-center justify-between gap-2"><div><p class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Human-reviewed assignment</p><h3 class="text-sm font-bold text-white">{{ review.outcome | titlecase }} - {{ review.items.length }} resource(s)</h3></div><span class="rounded-full px-2 py-1 text-[10px] font-bold uppercase" [class.bg-red-950]="review.outcome === 'blocked'" [class.text-red-300]="review.outcome === 'blocked'" [class.bg-amber-950]="review.outcome === 'warning' || review.outcome === 'unknown'" [class.text-amber-300]="review.outcome === 'warning' || review.outcome === 'unknown'" [class.bg-emerald-950]="review.outcome === 'ready'" [class.text-emerald-300]="review.outcome === 'ready'">{{ review.outcome }}</span></div>
@@ -494,7 +494,7 @@
         </div>
       </section>
 
-      <section *ngIf="activeTab() === 'assets'" class="space-y-4">
+      <section data-tour="admin-assets" *ngIf="activeTab() === 'assets'" class="space-y-4">
         <!-- Asset Header & Quick Controls -->
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-gray-800 bg-gray-900 p-4">
           <div>

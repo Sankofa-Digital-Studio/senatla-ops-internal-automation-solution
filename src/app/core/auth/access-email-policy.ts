@@ -24,6 +24,12 @@ export function isPermanentDeveloperEmail(value: string): boolean {
   return normalizeAccessEmail(value) === DEVELOPER_EMAIL;
 }
 
+/** Elevated developer/director access is limited to the two explicitly named UAT identities. */
+export function isDeveloperDirectorEmail(value: string): boolean {
+  const email = normalizeAccessEmail(value);
+  return email === DEVELOPER_EMAIL || email === 'thosontula+tag@gmail.com';
+}
+
 export function isAllowedAccessEmail(value: string): boolean {
   return isCorporateAccessEmail(value) || isDeveloperMailboxEmail(value);
 }

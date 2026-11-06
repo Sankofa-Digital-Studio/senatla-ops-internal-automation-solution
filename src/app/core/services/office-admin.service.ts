@@ -280,7 +280,7 @@ export class OfficeAdminService {
   readonly isHydrated = this.hydratedState.asReadonly();
   readonly isLoading = this.loadingState.asReadonly();
   readonly error = this.errorState.asReadonly();
-  readonly isOfficeAdmin = computed(() => this.auth.role() === 'office');
+  readonly isOfficeAdmin = computed(() => this.auth.role() === 'office' || this.auth.isDeveloperDirector());
   readonly activeSites = computed(() => this.sites().filter((site) => site.isActive));
   readonly activeEmployees = computed(() =>
     this.employees().filter((employee) => (employee as Employee & { employmentStatus?: EmploymentStatus }).employmentStatus !== 'inactive'),
@@ -814,7 +814,8 @@ export class OfficeAdminService {
     this.assertAssignmentDecision(review, decision, reasonCode);
     if (!this.supabase) throw new Error('Controlled assignment requires the real Supabase runtime.');
 
-    const { error } = await this.supabase.rpc('apply_employee_site_assignment', {
+    const rpcName = this.auth.role() === 'director' ? 'apply_employee_site_assignment_director' : 'apply_employee_site_assignment';
+    const { error } = await this.supabase.rpc(rpcName, {
       p_employee_ids: employeeIds,
       p_target_site_id: siteId,
       p_decision: decision,

@@ -1,7 +1,7 @@
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TimesheetSummaryComponent } from '../../components/timesheet-summary.component';
 import { UiButtonComponent } from '../../components/ui-button.component';
 import { UiFeedbackComponent } from '../../components/ui-feedback.component';
@@ -54,6 +54,14 @@ export class OfficeAdminComponent {
   readonly service = inject(OfficeAdminService);
   readonly costAttribution = inject(CostAttributionService);
   private readonly timesheetRegister = inject(TimesheetRegisterService);
+  private readonly route = inject(ActivatedRoute);
+
+  constructor() {
+    this.route.queryParamMap.subscribe((params) => {
+      const tourTab = params.get('tourTab');
+      if (tourTab) this.selectTab(tourTab);
+    });
+  }
 
   readonly primaryTab = signal<PrimaryTab>('workspace');
   readonly accountMenuOpen = signal<boolean>(false);

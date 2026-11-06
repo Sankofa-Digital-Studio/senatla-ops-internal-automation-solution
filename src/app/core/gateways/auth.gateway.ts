@@ -1,6 +1,13 @@
 import { InjectionToken } from '@angular/core';
 import { AuthSession } from '../models/app.models';
 
+export class AuthRequestError extends Error {
+  constructor(message: string, readonly status?: number, readonly reference?: string) {
+    super(message);
+    this.name = 'AuthRequestError';
+  }
+}
+
 export interface PasswordResetRequestResult {
   message: string;
   resetLink?: string | null;

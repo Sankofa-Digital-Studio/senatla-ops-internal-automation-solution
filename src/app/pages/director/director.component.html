@@ -1,5 +1,5 @@
 <div class="min-h-full bg-gray-950 font-sans text-gray-200 pb-16">
-  <header class="border-b border-gray-800 bg-gray-900/90 backdrop-blur px-6 py-6 sticky top-0 z-30 shadow-md">
+  <header data-tour="director-overview" class="border-b border-gray-800 bg-gray-900/90 backdrop-blur px-6 py-6 sticky top-0 z-30 shadow-md">
     <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div>
         <div class="flex items-center gap-3">
@@ -10,6 +10,12 @@
       </div>
 
       <div class="flex items-center gap-3 flex-wrap">
+        <ng-container *ngIf="auth.isDeveloperDirector()">
+        <a routerLink="/office-admin" [queryParams]="{ tourTab: 'people' }" class="rounded-xl border border-cyan-500/50 bg-cyan-950/40 px-3.5 py-1.5 text-xs font-bold text-cyan-200 hover:bg-cyan-900/60 transition flex items-center gap-1.5 shadow-sm">People &amp; assignments</a>
+        <a routerLink="/office-admin" [queryParams]="{ tourTab: 'sites' }" class="rounded-xl border border-sky-500/50 bg-sky-950/40 px-3.5 py-1.5 text-xs font-bold text-sky-200 hover:bg-sky-900/60 transition flex items-center gap-1.5 shadow-sm">Sites</a>
+        <a routerLink="/office-admin" [queryParams]="{ tourTab: 'assets' }" class="rounded-xl border border-emerald-500/50 bg-emerald-950/40 px-3.5 py-1.5 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 transition flex items-center gap-1.5 shadow-sm">Assets</a>
+        <a routerLink="/asset-register" class="rounded-xl border border-purple-500/50 bg-purple-950/40 px-3.5 py-1.5 text-xs font-bold text-purple-200 hover:bg-purple-900/60 transition flex items-center gap-1.5 shadow-sm">Asset OCR</a>
+        </ng-container>
         <a routerLink="/costing-model" class="rounded-xl border border-yellow-500/50 bg-yellow-950/40 px-3.5 py-1.5 text-xs font-bold text-yellow-300 hover:bg-yellow-900/60 transition flex items-center gap-1.5 shadow-sm">
           <svg class="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
           Costing & Budgeting Studio
@@ -26,7 +32,7 @@
     </div>
 
     <!-- ACTIONABLE DECISION CENTER & INBOX: Awaiting Director Review Packs -->
-    <section class="rounded-2xl border border-emerald-500/30 bg-gray-900 p-6 shadow-xl space-y-4">
+    <section data-tour="director-review-queue" class="rounded-2xl border border-emerald-500/30 bg-gray-900 p-6 shadow-xl space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-800 pb-4">
         <div>
           <div class="flex items-center gap-2">
