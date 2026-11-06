@@ -8,3 +8,8 @@
     radial-gradient(circle at top, rgba(190, 242, 100, 0.12), transparent 24rem),
     linear-gradient(180deg, #020617 0%, #0f172a 100%);
 }
+
+.login-options { line-height: 1.35; }
+.login-checkbox { display:flex; align-items:center; gap:.75rem; min-height:2.75rem; cursor:pointer; }
+.login-checkbox input { width:1.25rem; height:1.25rem; min-width:1.25rem; accent-color:#bef264; }
+.login-checkbox span { font-size:.875rem; color:#cbd5e1; }

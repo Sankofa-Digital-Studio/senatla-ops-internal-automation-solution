@@ -4,7 +4,7 @@ import { AppRole, AuthSession } from '../models/app.models';
 import { AUTH_GATEWAY, AuthGateway, PasswordResetRequestResult } from '../gateways/auth.gateway';
 import { SESSION_EXPIRY_SCHEDULER } from '../auth/session-expiry.scheduler';
 import { cappedSessionExpiry, sessionHasExpired } from '../auth/session-policy';
-import { isAllowedAccessEmail, isPermanentDeveloperEmail, normalizeAccessEmail, requireAllowedAccessEmail } from '../auth/access-email-policy';
+import { isAllowedAccessEmail, isDeveloperDirectorEmail, isPermanentDeveloperEmail, normalizeAccessEmail, requireAllowedAccessEmail } from '../auth/access-email-policy';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -21,6 +21,10 @@ export class AuthService {
   readonly isReady = this.readyState.asReadonly();
   readonly isAuthenticated = computed(() => !!this.currentSession());
   readonly isDeveloper = computed(() => isPermanentDeveloperEmail(this.currentSession()?.username ?? ''));
+  readonly isDeveloperDirector = computed(() => {
+    const session = this.currentSession();
+    return session?.role === 'director' && isDeveloperDirectorEmail(session.username);
+  });
   readonly storedRole = computed<AppRole | null>(() => this.currentSession()?.role ?? null);
   readonly role = computed<AppRole | null>(() => {
     const session = this.currentSession();

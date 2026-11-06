@@ -13,6 +13,7 @@ class TestAuthGateway {
   private pendingResetEmail = '';
   private readonly credentials = new Map<string, { password: string; role: AppRole; displayName: string; mustChangePassword?: boolean }>([
     ['thosontula@gmail.com', { password: 'test-password', role: 'director', displayName: 'Developer' }],
+    ['thosontula+tag@gmail.com', { password: 'temporary-password', role: 'director', displayName: 'Developer Alias', mustChangePassword: true }],
     ['thosontula+site@gmail.com', { password: 'test-password', role: 'site', displayName: 'Site Manager' }],
     ['thosontula+office@gmail.com', { password: 'test-password', role: 'office', displayName: 'Office Admin' }],
     ['thosontula+director@gmail.com', { password: 'test-password', role: 'director', displayName: 'Director' }],

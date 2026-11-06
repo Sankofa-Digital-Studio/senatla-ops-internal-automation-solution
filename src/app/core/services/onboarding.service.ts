@@ -5,9 +5,14 @@ export type OnboardingFeature = {
   title: string;
   summary: string;
   action: string;
+  route?: string;
+  tab?: string;
+  target?: string;
+  query?: Record<string, string>;
 };
 
 const STORAGE_KEY = 'senatla_ops_onboarding_v1';
+const PREFERENCE_KEY = 'senatla_ops_onboarding_preferences_v2';
 
 @Injectable({ providedIn: 'root' })
 export class OnboardingService {
@@ -26,9 +31,13 @@ export class OnboardingService {
       { title: 'Keep the audit trail clean', summary: 'Every sensitive admin and asset action is recorded for review and release readiness.', action: 'Use approvals and activity history before making irreversible changes.' },
     ],
     director: [
-      { title: 'Read the operating picture', summary: 'Use Director for executive visibility across compliance, risk, cost, and operational status.', action: 'Open Director when reviewing cross-site trends and blockers.' },
-      { title: 'Approve only with separation', summary: 'Maker-checker controls keep requesters from approving their own sensitive actions.', action: 'Review pending approvals before accepting or rejecting them.' },
-      { title: 'Register strategic assets', summary: 'Directors can register organization assets while RLS keeps site users scoped to permitted sites.', action: 'Use Asset Register when executive asset capture is required.' },
+      { title: 'Read the operating picture', summary: 'Use Director for executive visibility across compliance, risk, cost, and operational status.', action: 'Start here when reviewing cross-site trends and blockers.', route: '/director', target: '[data-tour="director-overview"]' },
+      { title: 'Open the detail behind a signal', summary: 'The dashboard shows the summary first, with source-backed review queues, site cards, cost views, and operational risks below.', action: 'Scroll through the dashboard and open a review pack when you need the underlying records.', route: '/director', target: '[data-tour="director-review-queue"]' },
+      { title: 'Manage employees', summary: 'Directors can use the shared administration workspace to inspect, update, activate, deactivate, and assign employees.', action: 'Open People in Office Admin for the full employee register.', route: '/office-admin', tab: 'people', target: '[data-tour="admin-people"]', query: { tourTab: 'people' } },
+      { title: 'Assign employees to sites', summary: 'Bulk assignment is reviewed before it is applied and remains recorded in the audit trail.', action: 'Select employees, choose a site, review the readiness result, then accept or reject the assignment.', route: '/office-admin', tab: 'people', target: '[data-tour="employee-site-assignment"]', query: { tourTab: 'people' } },
+      { title: 'Manage sites and assets', summary: 'Directors can maintain site records and the organization asset register with the same controlled workflows as Office Admin.', action: 'Use Sites and Assets when oversight needs an operational change.', route: '/office-admin', tab: 'assets', target: '[data-tour="admin-assets"]', query: { tourTab: 'assets' } },
+      { title: 'Use asset OCR', summary: 'Capture or upload asset evidence, review extracted values, correct anything that is wrong, and verify before saving.', action: 'Open Advanced Intake & Evidence from Assets when a document or licence disc needs OCR assistance.', route: '/asset-register', target: '[data-tour="asset-ocr"]' },
+      { title: 'Get help and sign out safely', summary: 'Help is always available in the header. Sign out shows a progress state and gives you a retry option if the network is slow.', action: 'Use the information icon whenever you need the tour or plain-language troubleshooting.', route: '/director', target: '[data-tour="workspace-help"]' },
     ],
   };
 
@@ -41,16 +50,44 @@ export class OnboardingService {
     return this.completedKeys().has(this.keyFor(userId, role));
   }
 
-  complete(userId: string, role: AppRole) {
+  shouldAutoOpen(userId: string | null | undefined, role: AppRole | null | undefined) {
+    if (!userId || !role) return false;
+    return role === 'director' ? !this.isSuppressed(userId, role) : !this.isComplete(userId, role);
+  }
+
+  complete(userId: string, role: AppRole, suppressFuture = false) {
     const keys = this.completedKeys();
     keys.add(this.keyFor(userId, role));
     localStorage.setItem(STORAGE_KEY, JSON.stringify([...keys]));
+    if (suppressFuture) this.setSuppressed(userId, role, true);
   }
 
   reset(userId: string, role: AppRole) {
     const keys = this.completedKeys();
     keys.delete(this.keyFor(userId, role));
     localStorage.setItem(STORAGE_KEY, JSON.stringify([...keys]));
+    this.setSuppressed(userId, role, false);
+  }
+
+  isSuppressed(userId: string | null | undefined, role: AppRole | null | undefined) {
+    if (!userId || !role) return false;
+    return this.preferenceKeys().has(this.keyFor(userId, role));
+  }
+
+  private setSuppressed(userId: string, role: AppRole, value: boolean) {
+    const keys = this.preferenceKeys();
+    const key = this.keyFor(userId, role);
+    if (value) keys.add(key); else keys.delete(key);
+    localStorage.setItem(PREFERENCE_KEY, JSON.stringify([...keys]));
+  }
+
+  private preferenceKeys() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(PREFERENCE_KEY) || '[]');
+      return new Set(Array.isArray(parsed) ? parsed.filter((entry): entry is string => typeof entry === 'string') : []);
+    } catch {
+      return new Set<string>();
+    }
   }
 
   private completedKeys() {

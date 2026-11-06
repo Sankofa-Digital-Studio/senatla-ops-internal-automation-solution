@@ -1,6 +1,7 @@
 import {
   ACCESS_EMAIL_ERROR,
   isAllowedAccessEmail,
+  isDeveloperDirectorEmail,
   isPermanentDeveloperEmail,
   normalizeAccessEmail,
   requireAllowedAccessEmail,
@@ -20,6 +21,13 @@ describe('access email policy', () => {
   it('grants permanent developer identity only to the exact base address', () => {
     expect(isPermanentDeveloperEmail('thosontula@gmail.com')).toBeTrue();
     expect(isPermanentDeveloperEmail('thosontula+director@gmail.com')).toBeFalse();
+  });
+
+  it('limits elevated developer-director access to the exact base and named UAT alias', () => {
+    expect(isDeveloperDirectorEmail('thosontula@gmail.com')).toBeTrue();
+    expect(isDeveloperDirectorEmail('thosontula+tag@gmail.com')).toBeTrue();
+    expect(isDeveloperDirectorEmail('thosontula+director@gmail.com')).toBeFalse();
+    expect(isDeveloperDirectorEmail('director@senatlatrading.com')).toBeFalse();
   });
 
   it('rejects lookalike and unrelated addresses', () => {

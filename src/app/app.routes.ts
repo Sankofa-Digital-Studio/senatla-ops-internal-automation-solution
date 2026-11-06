@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { roleCanActivate, roleCanMatch } from './core/guards/auth.guard';
+import { adminWorkspaceCanActivate, adminWorkspaceCanMatch, roleCanActivate, roleCanMatch } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -35,8 +35,8 @@ export const routes: Routes = [
   },
   {
     path: 'office-admin',
-    canMatch: [roleCanMatch('office')],
-    canActivate: [roleCanActivate('office')],
+    canMatch: [adminWorkspaceCanMatch()],
+    canActivate: [adminWorkspaceCanActivate()],
     loadComponent: () => import('./pages/office-admin/office-admin.component').then((m) => m.OfficeAdminComponent),
   },
   {

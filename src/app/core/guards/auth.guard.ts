@@ -57,6 +57,17 @@ async function hasAccess(expectedRole?: RoleRequirement, requestedUrl: string = 
   return true;
 }
 
+async function hasAdminWorkspaceAccess(requestedUrl: string) {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  await auth.ensureReady();
+  if (auth.requiresPasswordChange()) return router.createUrlTree(['/login/recovery'], { queryParams: { forced: '1' } });
+  if (!auth.canAccess()) return getLoginTree(router, ['office', 'director'], requestedUrl);
+  if (auth.role() === 'office' || auth.isDeveloperDirector()) return true;
+  void auth.logout();
+  return getLoginTree(router, 'office', requestedUrl);
+}
+
 export function roleCanMatch(expectedRole?: RoleRequirement, preferredLoginRole?: AppRole): CanMatchFn {
   return async (_route: Route, segments: UrlSegment[]) => {
     const requestedUrl = '/' + segments.map((segment) => segment.path).join('/');
@@ -66,4 +77,12 @@ export function roleCanMatch(expectedRole?: RoleRequirement, preferredLoginRole?
 
 export function roleCanActivate(expectedRole?: RoleRequirement, preferredLoginRole?: AppRole): CanActivateFn {
   return async (_route, state) => await hasAccess(expectedRole, state.url || '/', preferredLoginRole);
+}
+
+export function adminWorkspaceCanMatch(): CanMatchFn {
+  return async (_route, segments) => await hasAdminWorkspaceAccess('/' + segments.map((segment) => segment.path).join('/'));
+}
+
+export function adminWorkspaceCanActivate(): CanActivateFn {
+  return async (_route, state) => await hasAdminWorkspaceAccess(state.url || '/office-admin');
 }

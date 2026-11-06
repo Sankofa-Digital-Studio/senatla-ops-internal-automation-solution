@@ -77,6 +77,31 @@ describe('LoginComponent', () => {
     await TestBed.inject(Router).navigateByUrl('/login');
   });
 
+  it('completes the named Director alias forced-password journey before workspace access', async () => {
+    component.username = 'thosontula+tag@gmail.com';
+    component.password = 'temporary-password';
+
+    await component.handleLogin();
+
+    expect(TestBed.inject(Router).url).toBe('/login/recovery?forced=1');
+    expect(component.auth.requiresPasswordChange()).toBeTrue();
+
+    component.recoveryPassword = 'NewAliasPassword_2026!';
+    component.confirmRecoveryPassword = 'NewAliasPassword_2026!';
+    component.recoveryPin = '58291';
+    component.onPasswordChange(component.recoveryPassword);
+    await component.handlePasswordUpdate();
+
+    expect(component.errorMsg).toBe('');
+    expect(component.recoveryMsg).toContain('Password updated');
+
+    component.password = 'NewAliasPassword_2026!';
+    await component.handleLogin();
+
+    expect(TestBed.inject(Router).url).toBe('/director');
+    expect(component.auth.isDeveloper()).toBeFalse();
+  });
+
   it('renders strength meter and hides recovery PIN until password is valid', () => {
     const fix = TestBed.createComponent(LoginComponent);
     const comp = fix.componentInstance;

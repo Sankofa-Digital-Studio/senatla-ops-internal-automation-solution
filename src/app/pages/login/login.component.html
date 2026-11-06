@@ -147,10 +147,10 @@
             <p class="text-[11px] text-slate-400">Verification is required before sending password recovery to @senatlatrading.com.</p>
           </div>
 
-          <div class="grid gap-2 rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-xs text-slate-300">
-            <label *ngIf="!recoveryMode" class="flex cursor-pointer items-center gap-2"><input type="checkbox" [(ngModel)]="showPassword" name="showPassword" class="accent-lime-300"><span>Show password</span></label>
-            <label *ngIf="recoveryMode" class="flex cursor-pointer items-center gap-2"><input type="checkbox" [(ngModel)]="showRecoveryPassword" name="showRecoveryPassword" class="accent-lime-300"><span>Show recovery password</span></label>
-            <label class="flex cursor-pointer items-start gap-2"><input type="checkbox" [(ngModel)]="rememberLogin" name="rememberLogin" class="mt-0.5 accent-lime-300"><span class="text-[11px] text-slate-400">Save work email on this device</span></label>
+          <div class="login-options grid gap-2 rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-sm text-slate-300">
+            <label *ngIf="!recoveryMode" class="login-checkbox"><input type="checkbox" [(ngModel)]="showPassword" name="showPassword"><span>Show password</span></label>
+            <label *ngIf="recoveryMode" class="login-checkbox"><input type="checkbox" [(ngModel)]="showRecoveryPassword" name="showRecoveryPassword"><span>Show recovery password</span></label>
+            <label class="login-checkbox"><input type="checkbox" [(ngModel)]="rememberLogin" name="rememberLogin"><span>Save work email on this device</span></label>
           </div>
           <div *ngIf="errorMsg" class="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300" role="alert" aria-live="assertive" aria-atomic="true">{{ errorMsg }}</div>
           <div *ngIf="recoveryMsg" class="break-words rounded-xl border border-lime-500/30 bg-lime-500/10 p-3 text-xs text-lime-100" role="status" aria-live="polite" aria-atomic="true">{{ recoveryMsg }}</div>

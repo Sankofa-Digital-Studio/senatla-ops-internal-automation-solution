@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subscription, combineLatest } from 'rxjs';
 import { AppRole, AuthSession } from 'src/app/core/models/app.models';
 import { AuthService } from 'src/app/core/services/auth.service';
+import { AuthRequestError } from 'src/app/core/gateways/auth.gateway';
 import { OnboardingFeature, OnboardingService } from 'src/app/core/services/onboarding.service';
 import { evaluatePassword, PasswordValidationResult } from 'src/app/core/auth/password-policy';
 
@@ -223,8 +224,8 @@ export class LoginComponent implements OnInit, OnDestroy {
 
       if (session) {
         this.persistLoginPreference();
+        if (session.role !== 'director') this.onboarding.complete(session.userId, session.role);
         await this.fetchRoleResources(session);
-        this.onboarding.complete(session.userId, session.role);
         const targetPath = this.redirectUrl || this.getRolePath(session.role);
         await this.router.navigateByUrl(targetPath);
         return;
@@ -237,6 +238,10 @@ export class LoginComponent implements OnInit, OnDestroy {
       }
 
       this.errorMsg = 'Access denied. Account not recognized or not provisioned for Senatla Operations.';
+    } catch (error) {
+      const authError = error as AuthRequestError;
+      const reference = authError?.status ? ` Reference: AUTH-${authError.status}.` : '';
+      this.errorMsg = `${authError?.message || 'We could not complete sign in. Check your connection and try again.'}${reference}`;
     } finally {
       this.isFetchingResources = false;
       this.isSubmitting = false;
