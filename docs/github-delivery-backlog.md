@@ -1,5 +1,5 @@
 # Senatla Ops GitHub Delivery Backlog
-Updated 31 October 2026
+Updated 6 November 2026
 
 This backlog converts the repository audit into implementation-ready work. The broad issues remain as outcome epics; the new tasks define smaller delivery boundaries with acceptance criteria, dependencies, estimates, owners, milestones, and board fields.
 
@@ -10,6 +10,48 @@ This backlog converts the repository audit into implementation-ready work. The b
 - Repository milestones now separate governance, operational foundations, controlled pilot work, UAT and release, and reusable foundations.
 - The board uses corrected Target Date, Delivery Stage, Risk Category, and Client Decision fields.
 - Pull request 82 is classified as P0 Security work in Code Review because technical review, database proof, and deployment evidence remain incomplete.
+- v0.5.3 closeout evidence: physical UAT confirmed successful forced-password replacement and Director navigation for the exact `thosontula+tag@gmail.com` account; the exact `thosontula@gmail.com` developer override and alias anti-escalation regressions are covered locally.
+- #87 remains externally unverified for GitHub branch-protection settings; #88 has public production runtime evidence, but authenticated hosted smoke still requires the canonical Vercel project and protected QA credentials.
+- Historical costing and asset source review is integrated as a separate development change. Its archived rates are optional references; three scenario client names remain provisional. No asset rows or candidate records are auto-imported.
+
+## Ordered micro-task and version register
+
+| Order | Version | Micro-task | Completion evidence |
+|---:|---|---|---|
+| 1 | v0.5.3 closeout | Physically sign in with `thosontula+tag@gmail.com`, change the temporary password, and confirm Director navigation | Successful forced-password journey and authenticated Director workspace |
+| 2 | v0.5.3 closeout | Verify exact `thosontula@gmail.com` still receives permanent cross-workspace access | Role-route assertions; no credential reset |
+| 3 | v0.5.3 closeout | Add regression coverage distinguishing the exact developer address from Gmail aliases | Exact address gets override; alias receives only assigned Director access |
+| 4 | v0.5.4 | Audit current metadata, robots rules, sitemap and public/authenticated route boundaries | Route-indexing matrix |
+| 5 | v0.5.4 | Index only `/landing` | Canonical, indexable landing page |
+| 6 | v0.5.4 | Add `noindex, nofollow, noarchive` to login, recovery and protected routes | Automated metadata tests |
+| 7 | v0.5.4 | Add canonical origin runtime configuration | Production canonical resolves to the landing URL |
+| 8 | v0.5.4 | Add factual Open Graph, Twitter and SoftwareApplication metadata | Structured-data and social-card validation |
+| 9 | v0.5.4 | Add accessible Accept/Decline analytics consent | Keyboard-operable, versioned local preference |
+| 10 | v0.5.4 | Add runtime-configurable GA4 loader | Blank measurement ID disables all analytics |
+| 11 | v0.5.4 | Implement the three-event allow-list | Landing view, sign-in click and APK download only |
+| 12 | v0.5.4 | Add analytics privacy tests | No identities, operational data, amounts or authenticated-route events |
+| 13 | v0.5.4 | Clone and adapt the analytics workbook | Formula-preserving, GA4 import-ready `.xlsx` with no synthetic results |
+| 14 | v0.5.4 | Run SEO, consent, accessibility and responsive verification | Green focused tests and full verification |
+| 15 | v0.5.4 | Deploy, record release evidence and stop | Preview/production URLs, changelog, README, release notes and version commit |
+| 16 | v0.5.5 | Group Office Admin navigation into five operational areas | Today, People & Sites, Finance, Assets, Governance |
+| 17 | v0.5.5 | Reduce dashboard scroll density | One primary action and one exception queue per view |
+| 18 | v0.5.5 | Split the 1,375-line template into focused components | Preserved authorization and behavior |
+| 19 | v0.5.5 | Remove nested vertical scrolling and defer inactive tabs | Stable viewport and reduced initial rendering |
+| 20 | v0.5.5 | Verify Office Admin accessibility | Focus order, modal restoration, announcements and long-table behavior |
+| 21 | v0.5.5 | Deploy, document and stop | Green release checkpoint |
+| 22 | v0.5.6 | Convert the Site Manager workflow into a progressive mobile sequence | Setup → attendance → safety → evidence → review → sync |
+| 23 | v0.5.6 | Collapse completed workflow sections | Less repeat scrolling without hiding status |
+| 24 | v0.5.6 | Keep connectivity and save/sync state persistent | Offline and retry evidence |
+| 25 | v0.5.6 | Stabilize evidence images and lightbox navigation | Images render correctly; buttons work; no swipe-only dependency |
+| 26 | v0.5.6 | Validate the sticky final action | Never covers inputs, errors or keyboard focus |
+| 27 | v0.5.6 | Deploy, document and stop | Green mobile-first release checkpoint |
+| 28 | v0.5.7 | Complete the cross-role accessibility matrix | Site Manager, Office Admin and Director keyboard/screen-reader journeys |
+| 29 | v0.5.7 | Complete remaining route-negative and error-feedback tests | Unauthorized routes rejected and HTTP feedback announced on time |
+| 30 | v0.5.7 | Add external release-link health monitoring | Scheduled checks for landing, APK and published release links |
+| 31 | v0.5.7 | Final consistency and dead-CTA audit | Every visible control has a verified destination or action |
+| 32 | v0.5.7 | Final release, documentation and board reconciliation | All branches, issues, board state and release history agree |
+
+Implementation-ready tasks: Make dev the integration default and protect main releases [#87](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/87); verify Vercel runtime configuration and authenticated preview smoke tests [#88](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/issues/88).
 
 ## Delivery roadmap
 
@@ -78,3 +120,7 @@ Authentication, negative RLS contracts, deterministic verification, attendance r
 ### Pass 3 Reconciled backlog
 
 The final tasks target observable remaining boundaries: live GitHub configuration, hosted deployment proof, missing persisted fields, mutable history, controlled import, absent inspection and safety-block contracts, database-enforced return approval, private evidence representation, source-backed metrics, reproducible documents, cross-role UAT, and reusable CI.
+
+### Deferred dependency modernization
+
+- **Vitest migration (deferred):** keep the current Karma/browser test runner until Angular's existing-project migration is stable enough for this repository's full browser, responsive, and native release gates. Reassess after a later Angular/toolchain upgrade; acceptance requires equivalent coverage, deterministic CI, and no loss of screen-reader or responsive journeys.

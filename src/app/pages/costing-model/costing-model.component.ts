@@ -4,6 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
   CostingRates,
+  AdditionalCostCategory,
+  AdditionalCostItem,
+  HISTORICAL_COST_REFERENCES,
+  calculateAdditionalCost,
+  calculateHistoricalKmCost,
   PhaseScopeItem,
   ProjectCostingModel,
   DEFAULT_COSTING_RATES,
@@ -26,6 +31,7 @@ export class CostingModelComponent {
   // Active Project State
   projectName = signal<string>(PRESET_SENATLA_VILLAGES.projectName);
   clientName = signal<string>(PRESET_SENATLA_VILLAGES.clientName);
+  clientNameProvisional = signal<boolean>(true);
   contractRef = signal<string>(PRESET_SENATLA_VILLAGES.contractRef);
   durationMonths = signal<number>(PRESET_SENATLA_VILLAGES.durationMonths);
   activePresetId = signal<string>(PRESET_SENATLA_VILLAGES.id);
@@ -37,9 +43,23 @@ export class CostingModelComponent {
   phases = signal<PhaseScopeItem[]>([
     ...PRESET_SENATLA_VILLAGES.phases.map(p => ({ ...p })),
   ]);
+  additionalCosts = signal<AdditionalCostItem[]>([]);
+  readonly historicalReferences = HISTORICAL_COST_REFERENCES;
+  readonly additionalCategories: AdditionalCostCategory[] = ['asbestos', 'labour', 'equipment', 'materials', 'transport', 'other'];
+  newCostCategory: AdditionalCostCategory = 'other';
+  newCostDescription = '';
+  newCostUnit = 'lot';
+  newCostQuantity = 1;
+  newCostRate = 0;
+  newCostSource = '';
+  returnKm = 0;
+  transportTrips = 1;
+  transportBaseRate = 18;
+  transportBoundaryKm = 0;
+  costError = signal<string | null>(null);
 
   // UI state
-  activeTab = signal<'waterfall' | 'boq' | 'phases' | 'cashflow' | 'rates'>('waterfall');
+  activeTab = signal<'waterfall' | 'boq' | 'cashflow' | 'costs' | 'history'>('waterfall');
   showRatesDrawer = signal<boolean>(false);
   notification = signal<string | null>(null);
 
@@ -52,7 +72,7 @@ export class CostingModelComponent {
 
   // Computed Calculations
   calculation = computed(() => {
-    return calculateWaterfall(this.phases(), this.rates(), this.durationMonths());
+    return calculateWaterfall(this.phases(), this.rates(), this.durationMonths(), this.additionalCosts());
   });
 
   waterfall = computed(() => this.calculation().waterfall);
@@ -91,7 +111,8 @@ export class CostingModelComponent {
       target = {
         id: 'custom-blank',
         projectName: 'New Demolition & Rehabilitation Proposal',
-        clientName: 'Senatla Trading Enterprise 26',
+        clientName: 'Confirm client name',
+        clientNameProvisional: true,
         contractRef: `PROP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
         durationMonths: 6,
         rates: { ...DEFAULT_COSTING_RATES },
@@ -104,10 +125,12 @@ export class CostingModelComponent {
     this.activePresetId.set(target.id);
     this.projectName.set(target.projectName);
     this.clientName.set(target.clientName);
+    this.clientNameProvisional.set(target.clientNameProvisional ?? false);
     this.contractRef.set(target.contractRef);
     this.durationMonths.set(target.durationMonths);
     this.rates.set({ ...target.rates });
     this.phases.set(target.phases.map(p => ({ ...p })));
+    this.additionalCosts.set((target.additionalCosts ?? []).map(item => ({ ...item })));
 
     this.showNotify(`Loaded template: ${target.projectName}`);
   }
@@ -147,15 +170,70 @@ export class CostingModelComponent {
     this.rates.update(r => ({ ...r, [field]: Number(value) }));
   }
 
+  addCost() {
+    const description = this.newCostDescription.trim();
+    const unit = this.newCostUnit.trim();
+    if (!description || !unit) {
+      this.costError.set('Enter a description and unit.');
+      return;
+    }
+    const item: AdditionalCostItem = {
+      id: crypto.randomUUID(), category: this.newCostCategory, description, unit,
+      quantity: Number(this.newCostQuantity), unitRate: Number(this.newCostRate),
+      sourceRef: this.newCostSource.trim() || undefined,
+    };
+    try {
+      calculateAdditionalCost(item);
+      this.additionalCosts.update(items => [...items, item]);
+      this.costError.set(null);
+      this.newCostDescription = '';
+      this.newCostSource = '';
+    } catch {
+      this.costError.set('Enter a valid quantity and rate of zero or more.');
+    }
+  }
+
+  removeCost(id: string) {
+    this.additionalCosts.update(items => items.filter(item => item.id !== id));
+  }
+
+  useHistoricalReference(reference: typeof HISTORICAL_COST_REFERENCES[number]) {
+    this.newCostCategory = reference.id.includes('asbestos') ? 'asbestos' : 'other';
+    this.newCostDescription = reference.description;
+    this.newCostUnit = reference.unit;
+    this.newCostQuantity = 1;
+    this.newCostRate = reference.rate;
+    this.newCostSource = `${reference.sourceFile} / ${reference.sourceCell} — historical; verify current quote`;
+    this.activeTab.set('costs');
+  }
+
+  useHistoricalTransport() {
+    try {
+      const result = calculateHistoricalKmCost(Number(this.returnKm), Number(this.transportTrips), Number(this.transportBaseRate), Number(this.transportBoundaryKm));
+      this.newCostCategory = 'transport';
+      this.newCostDescription = 'Historical Saaiplaas kilometre transport estimate';
+      this.newCostUnit = 'trip';
+      this.newCostQuantity = Number(this.transportTrips);
+      this.newCostRate = Number(this.returnKm) * result.ratePerKm;
+      this.newCostSource = 'Saaiplaas 3 Hostel Info22.xlsx / Assumptions!B4,B9; KM Cost Schedule — historical; verify route and rate';
+      this.costError.set(null);
+      this.activeTab.set('costs');
+    } catch {
+      this.costError.set('Enter valid non-negative distance, trips, base rate and boundary.');
+    }
+  }
+
   exportCSV() {
     const model: ProjectCostingModel = {
       id: this.activePresetId(),
       projectName: this.projectName(),
       clientName: this.clientName(),
+      clientNameProvisional: this.clientNameProvisional(),
       contractRef: this.contractRef(),
       durationMonths: this.durationMonths(),
       rates: this.rates(),
       phases: this.phases(),
+      additionalCosts: this.additionalCosts(),
     };
 
     const csvContent = exportModelAsCSV(model, this.waterfall(), this.phaseDetails());
