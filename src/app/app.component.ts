@@ -8,6 +8,7 @@ import { TimeControlsComponent } from './components/time-controls.component';
 import { AccessibleDialogDirective } from './core/accessibility/accessible-dialog.directive';
 import { AuthService } from './core/services/auth.service';
 import { OnboardingFeature, OnboardingService } from './core/services/onboarding.service';
+import { SeoService } from './core/services/seo.service';
 
 @Component({
   selector: 'app-root',
@@ -19,6 +20,7 @@ export class AppComponent {
   readonly auth = inject(AuthService);
   private readonly onboarding = inject(OnboardingService);
   private readonly router = inject(Router);
+  private readonly seo = inject(SeoService);
   readonly showDebugControls = !environment.production;
   readonly isOffline = signal(typeof navigator !== 'undefined' ? !navigator.onLine : false);
   readonly currentPath = signal(this.router.url || '/landing');
@@ -77,6 +79,7 @@ export class AppComponent {
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe((e) => {
         this.currentPath.set(e.urlAfterRedirects || e.url);
+        this.seo.applyRoute(e.urlAfterRedirects || e.url);
       });
 
     if (typeof window !== 'undefined') {

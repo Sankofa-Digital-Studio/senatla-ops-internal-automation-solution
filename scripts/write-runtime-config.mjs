@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
 const outputPath = resolve('src/assets/runtime-config.json');
+const canonicalOrigin = (process.env.SENATLA_CANONICAL_ORIGIN || 'https://senatla-ops.vercel.app').trim().replace(/\/$/, '');
 const envPaths = [resolve('.env'), resolve('.env.local')];
 
 for (const envPath of envPaths) {
@@ -23,7 +24,18 @@ const config = {
     commitSha: firstEnvValue('VERCEL_GIT_COMMIT_SHA', 'GITHUB_SHA'),
     environment: firstEnvValue('VERCEL_ENV', 'SENATLA_DEPLOYMENT_ENV'),
   },
+  seo: { canonicalOrigin },
+  analytics: { measurementId: (process.env.SENATLA_GA4_MEASUREMENT_ID || '').trim() },
 };
+
+if (config.analytics.measurementId && !/^G-[A-Z0-9]{6,20}$/.test(config.analytics.measurementId)) {
+  throw new Error('SENATLA_GA4_MEASUREMENT_ID must be blank or a valid GA4 measurement ID.');
+}
+
+const parsedOrigin = new URL(canonicalOrigin);
+if (parsedOrigin.protocol !== 'https:' || parsedOrigin.origin !== canonicalOrigin) {
+  throw new Error('SENATLA_CANONICAL_ORIGIN must be an HTTPS origin without a path, query, or fragment.');
+}
 
 if (!['local', 'supabase'].includes(config.api.mode)) {
   throw new Error('SENATLA_API_MODE must be either local or supabase.');
