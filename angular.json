@@ -17,7 +17,7 @@
               "base": "www",
               "browser": ""
             },
-            "index": "src/index.html",
+            "index": "src/.generated/index.html",
             "polyfills": [
               "src/polyfills.ts"
             ],
@@ -28,6 +28,11 @@
                 "glob": "**/*",
                 "input": "src/assets",
                 "output": "assets"
+              },
+              {
+                "glob": "**/*",
+                "input": "src/.generated-public",
+                "output": "/"
               },
               "src/manifest.webmanifest",
               "src/sw.js"

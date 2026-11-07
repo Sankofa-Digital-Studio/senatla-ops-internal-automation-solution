@@ -2,6 +2,9 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
 const outputPath = resolve('src/assets/runtime-config.json');
+const generatedRoot = resolve('src/.generated-public');
+const canonicalOrigin = (process.env.SENATLA_CANONICAL_ORIGIN || 'https://senatla-ops.vercel.app').trim().replace(/\/$/, '');
+const canonicalUrl = `${canonicalOrigin}/landing`;
 const envPaths = [resolve('.env'), resolve('.env.local')];
 
 for (const envPath of envPaths) {
@@ -23,7 +26,13 @@ const config = {
     commitSha: firstEnvValue('VERCEL_GIT_COMMIT_SHA', 'GITHUB_SHA'),
     environment: firstEnvValue('VERCEL_ENV', 'SENATLA_DEPLOYMENT_ENV'),
   },
+  seo: { canonicalOrigin },
 };
+
+const parsedOrigin = new URL(canonicalOrigin);
+if (parsedOrigin.protocol !== 'https:' || parsedOrigin.origin !== canonicalOrigin) {
+  throw new Error('SENATLA_CANONICAL_ORIGIN must be an HTTPS origin without a path, query, or fragment.');
+}
 
 if (!['local', 'supabase'].includes(config.api.mode)) {
   throw new Error('SENATLA_API_MODE must be either local or supabase.');
@@ -46,6 +55,18 @@ if (
 
 mkdirSync(dirname(outputPath), { recursive: true });
 writeFileSync(outputPath, JSON.stringify(config, null, 2));
+mkdirSync(generatedRoot, { recursive: true });
+writeFileSync(resolve(generatedRoot, 'robots.txt'),
+  `User-agent: *\nAllow: /\nSitemap: ${canonicalOrigin}/sitemap.xml\n`);
+writeFileSync(resolve(generatedRoot, 'sitemap.xml'),
+  `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>${canonicalUrl}</loc></url></urlset>\n`);
+try {
+  const indexTemplate = readFileSync(resolve('src/index.html'), 'utf8');
+  mkdirSync(resolve('src/.generated'), { recursive: true });
+  writeFileSync(resolve('src/.generated/index.html'), indexTemplate.replaceAll('__SENATLA_CANONICAL_ORIGIN__', canonicalOrigin));
+} catch (error) {
+  if (error?.code !== 'ENOENT') throw error;
+}
 
 function firstEnvValue(...keys) {
   for (const key of keys) {
