@@ -9,6 +9,8 @@ export interface RuntimeConfig {
     supabaseUrl: string;
     supabaseAnonKey: string;
   };
+  seo?: { canonicalOrigin: string };
+  analytics?: { measurementId: string };
 }
 
 export const DEFAULT_RUNTIME_CONFIG: RuntimeConfig = {
@@ -18,6 +20,8 @@ export const DEFAULT_RUNTIME_CONFIG: RuntimeConfig = {
     supabaseUrl: '',
     supabaseAnonKey: '',
   },
+  seo: { canonicalOrigin: 'https://senatla-ops.vercel.app' },
+  analytics: { measurementId: '' },
 };
 
 export const RUNTIME_CONFIG = new InjectionToken<RuntimeConfig>('RUNTIME_CONFIG');
@@ -32,7 +36,11 @@ export async function loadRuntimeConfig(): Promise<RuntimeConfig> {
     if (!response.ok) throw new Error(`Runtime configuration request failed with ${response.status}.`);
 
     const parsed = (await response.json()) as Partial<RuntimeConfig>;
-    const config = { api: { ...DEFAULT_RUNTIME_CONFIG.api, ...parsed.api } };
+    const config: RuntimeConfig = {
+      api: { ...DEFAULT_RUNTIME_CONFIG.api, ...parsed.api },
+      seo: parsed.seo?.canonicalOrigin ? { canonicalOrigin: parsed.seo.canonicalOrigin } : DEFAULT_RUNTIME_CONFIG.seo,
+      analytics: { measurementId: parsed.analytics?.measurementId || '' },
+    };
     if (
       config.api.supabaseUrl.includes('your-project.supabase.co') ||
       config.api.supabaseAnonKey === 'your-anon-key'

@@ -40,16 +40,16 @@ select lives_ok($$ select count(*) from public.assets $$, 'office user can read 
 
 set local "request.jwt.claims" = '{"sub":"10000000-0000-4000-8000-000000000002","role":"authenticated","exp":4102444800}';
 select ok(public.can_read_admin_workspace(), 'director can read the administrative workspace');
-select lives_ok(
+select throws_ok(
   $$ insert into public.assets (registration_number, make, model, type, license_expiry, status, assigned_site_id, organization_id) values ('RLS TEST', 'Test', 'Test', 'Light Vehicle', current_date, 'Active', '11000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000001') $$,
-  'director can register organization assets from Asset Register'
+  '42501', null, 'ordinary director cannot register organization assets'
 );
 
 set local "request.jwt.claims" = '{"sub":"10000000-0000-4000-8000-000000000003","role":"authenticated","exp":4102444800}';
 select ok(not public.can_read_admin_workspace(), 'site role does not receive admin workspace access');
 select is((select count(*) from public.employees where site_id = '11000000-0000-4000-8000-000000000001'), 1::bigint, 'site role can read employees at an assigned site');
 select is((select count(*) from public.employees where site_id = '11000000-0000-4000-8000-000000000002'), 0::bigint, 'site role cannot read employees at another site');
-select is((select count(*) from public.assets where assigned_site_id = '11000000-0000-4000-8000-000000000001'), 2::bigint, 'site role can read assets at an assigned site');
+select is((select count(*) from public.assets where assigned_site_id = '11000000-0000-4000-8000-000000000001'), 1::bigint, 'site role can read assets at an assigned site');
 select lives_ok(
   $$ insert into public.assets (registration_number, make, model, type, license_expiry, status, assigned_site_id, organization_id) values ('SITE NEW', 'Site', 'New', 'Light Vehicle', current_date, 'Active', '11000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000001') $$,
   'site role can register assets for an assigned site'

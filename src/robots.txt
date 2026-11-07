@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://senatla-ops.vercel.app/sitemap.xml

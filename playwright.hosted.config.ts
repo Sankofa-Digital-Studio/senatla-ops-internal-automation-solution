@@ -13,7 +13,10 @@ export default defineConfig({
   use: {
     baseURL,
     viewport: { width: 1440, height: 900 },
-    extraHTTPHeaders: bypassSecret ? { 'x-vercel-protection-bypass': bypassSecret } : undefined,
+    extraHTTPHeaders: bypassSecret ? {
+      'x-vercel-protection-bypass': bypassSecret,
+      'x-vercel-set-bypass-cookie': 'true',
+    } : undefined,
     screenshot: 'only-on-failure',
     trace: 'off',
     video: 'off',

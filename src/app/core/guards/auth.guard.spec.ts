@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { resetTestStorage, TEST_APP_PROVIDERS } from '../../test-providers';
-import { roleCanActivate } from './auth.guard';
+import { adminWorkspaceCanActivate, roleCanActivate } from './auth.guard';
 
 describe('roleCanActivate', () => {
   beforeEach(async () => {
@@ -97,7 +97,18 @@ describe('roleCanActivate', () => {
 
   it('blocks developer aliases from cross-workspace switching (anti-escalation)', async () => {
     const auth = TestBed.inject(AuthService);
-    await auth.login('thosontula+site@gmail.com', 'test-password');
+    await auth.login('thosontula+tag@gmail.com', 'temporary-password');
+
+    // The named UAT alias is a Director account, but it is not the permanent
+    // developer identity and must never gain cross-workspace switching.
+    expect(auth.storedRole()).toBe('director');
+    expect(auth.isDeveloper()).toBeFalse();
+    expect(() => auth.switchWorkspace('office')).toThrowError(
+      'Cross-workspace switching is restricted to the authorized developer account.',
+    );
+
+    await auth.updatePassword('NewAliasPassword_2026!', 'thosontula+tag@gmail.com');
+    await auth.login('thosontula+tag@gmail.com', 'NewAliasPassword_2026!');
 
     expect(auth.isDeveloper()).toBeFalse();
     expect(() => auth.switchWorkspace('office')).toThrowError(
@@ -109,5 +120,37 @@ describe('roleCanActivate', () => {
     );
     expect(officeResult).not.toBeTrue();
     expect(auth.isAuthenticated()).toBeFalse(); // Logged out
+  });
+
+  it('keeps the exact developer override distinct from the named Gmail alias', async () => {
+    const auth = TestBed.inject(AuthService);
+
+    await auth.login('thosontula@gmail.com', 'test-password');
+    expect(auth.isDeveloper()).toBeTrue();
+    expect(auth.role()).toBe('director');
+    auth.switchWorkspace('site');
+    expect(auth.role()).toBe('site');
+    await auth.logout();
+
+    await auth.login('thosontula+tag@gmail.com', 'temporary-password');
+    await auth.updatePassword('NewAliasPassword_2026!', 'thosontula+tag@gmail.com');
+    await auth.login('thosontula+tag@gmail.com', 'NewAliasPassword_2026!');
+    expect(auth.isDeveloper()).toBeFalse();
+    expect(auth.role()).toBe('director');
+    expect(() => auth.switchWorkspace('site')).toThrowError(
+      'Cross-workspace switching is restricted to the authorized developer account.',
+    );
+  });
+
+  it('blocks an ordinary Director from the elevated administration workspace', async () => {
+    const auth = TestBed.inject(AuthService);
+    await auth.login('thosontula+director@gmail.com', 'test-password');
+
+    const result = await TestBed.runInInjectionContext(() =>
+      adminWorkspaceCanActivate()({} as never, { url: '/office-admin' } as never),
+    );
+
+    expect(result).not.toBeTrue();
+    expect(auth.isAuthenticated()).toBeFalse();
   });
 });
