@@ -25,7 +25,12 @@ const config = {
     environment: firstEnvValue('VERCEL_ENV', 'SENATLA_DEPLOYMENT_ENV'),
   },
   seo: { canonicalOrigin },
+  analytics: { measurementId: (process.env.SENATLA_GA4_MEASUREMENT_ID || '').trim() },
 };
+
+if (config.analytics.measurementId && !/^G-[A-Z0-9]{6,20}$/.test(config.analytics.measurementId)) {
+  throw new Error('SENATLA_GA4_MEASUREMENT_ID must be blank or a valid GA4 measurement ID.');
+}
 
 const parsedOrigin = new URL(canonicalOrigin);
 if (parsedOrigin.protocol !== 'https:' || parsedOrigin.origin !== canonicalOrigin) {

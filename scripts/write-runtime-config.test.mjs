@@ -61,6 +61,7 @@ test('runtime config generator and Vercel rewrites stay aligned', async () => {
     assert.equal(parsed.build.commitSha, 'abc123');
     assert.equal(parsed.build.environment, 'preview');
     assert.equal(parsed.seo.canonicalOrigin, 'https://senatla-ops.vercel.app');
+    assert.equal(parsed.analytics.measurementId, '');
   } finally {
     await rm(supabaseAliasResult.cwd, { recursive: true, force: true });
   }
@@ -129,6 +130,15 @@ test('runtime config generator and Vercel rewrites stay aligned', async () => {
     await rm(invalidOriginResult.cwd, { recursive: true, force: true });
   }
 
+  const analyticsResult = await runGenerator({ SENATLA_GA4_MEASUREMENT_ID: 'G-ABCDEF12' });
+  try {
+    assert.equal(analyticsResult.code, 0, analyticsResult.stderr);
+    const parsed = JSON.parse(await readFile(resolve(analyticsResult.cwd, 'src/assets/runtime-config.json'), 'utf8'));
+    assert.equal(parsed.analytics.measurementId, 'G-ABCDEF12');
+  } finally {
+    await rm(analyticsResult.cwd, { recursive: true, force: true });
+  }
+
   const config = JSON.parse(await readFile(resolve('vercel.json'), 'utf8'));
   const indexTemplate = await readFile(resolve('src/index.html'), 'utf8');
   assert.match(indexTemplate, /rel="canonical" href="https:\/\/senatla-ops\.vercel\.app\/landing"/);
@@ -141,7 +151,7 @@ test('runtime config generator and Vercel rewrites stay aligned', async () => {
   const robots = await readFile(resolve('src/robots.txt'), 'utf8');
   assert.match(sitemap, /<loc>https:\/\/senatla-ops\.vercel\.app\/landing<\/loc>/);
   assert.equal((sitemap.match(/<url>/g) || []).length, 1);
-  assert.match(robots, /Allow: \/\n/);
+  assert.match(robots, /Allow: \/\r?\n/);
   assert.doesNotMatch(robots, /Disallow:/);
   const rewrites = config.rewrites;
   const runtimeIndex = rewrites.findIndex((rule) => rule.source === '/assets/runtime-config.json');

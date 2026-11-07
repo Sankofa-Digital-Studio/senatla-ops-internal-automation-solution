@@ -646,3 +646,33 @@
 .ambient-layer {
   pointer-events: none;
 }
+.analytics-consent {
+  position: fixed;
+  z-index: 100;
+  inset-inline: max(1rem, env(safe-area-inset-left)) max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  max-width: 36rem;
+  margin-inline: auto;
+  padding: 1.25rem;
+  border: 1px solid rgba(190, 242, 100, .45);
+  border-radius: 1rem;
+  background: #102033;
+  color: white;
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, .5);
+}
+.analytics-consent h2 { font-size: 1.15rem; font-weight: 700; }
+.analytics-consent p { margin-block: .5rem 1rem; line-height: 1.5; }
+.analytics-consent__actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+.analytics-consent__actions button, .analytics-choice-link {
+  min-height: 44px;
+  padding: .5rem 1rem;
+  border: 1px solid #bef264;
+  border-radius: .5rem;
+  color: #bef264;
+  font-weight: 700;
+}
+.analytics-consent__actions button:last-child { background: #bef264; color: #102033; }
+.analytics-consent button:focus-visible, .analytics-choice-link:focus-visible {
+  outline: 3px solid white;
+  outline-offset: 3px;
+}

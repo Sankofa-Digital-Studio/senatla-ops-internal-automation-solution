@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { AnalyticsService } from '../../core/services/analytics.service';
 import { RUNTIME_CONFIG } from '../../core/config/runtime-config';
 import { AccessibleDialogDirective } from '../../core/accessibility/accessible-dialog.directive';
 
@@ -14,6 +15,8 @@ import { AccessibleDialogDirective } from '../../core/accessibility/accessible-d
 })
 export class LandingComponent implements OnInit {
   readonly auth = inject(AuthService);
+  readonly analytics = inject(AnalyticsService);
+  readonly consentVisible = signal(false);
   readonly runtimeConfig = inject(RUNTIME_CONFIG);
   readonly landingReady = signal(false);
   readonly testCredentialsVisible = signal(false);
@@ -28,12 +31,28 @@ export class LandingComponent implements OnInit {
   ];
 
   async ngOnInit() {
+    this.analytics.record('landing_view');
+    this.consentVisible.set(this.analytics.enabled && this.analytics.choice() === null);
     await this.auth.ensureReady();
     this.landingReady.set(true);
     if (typeof window !== 'undefined' && window.location.hash) {
       const id = window.location.hash.replace('#', '');
       requestAnimationFrame(() => this.scrollTo(id));
     }
+  }
+
+  chooseAnalytics(accepted: boolean): void {
+    if (accepted) this.analytics.accept();
+    else this.analytics.decline();
+    this.consentVisible.set(false);
+  }
+
+  trackSignIn(): void {
+    this.analytics.record('sign_in_click');
+  }
+
+  trackApkDownload(): void {
+    this.analytics.record('apk_download');
   }
 
   scrollTo(elementId: string, event?: Event) {
