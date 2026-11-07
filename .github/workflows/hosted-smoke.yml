@@ -31,7 +31,7 @@ permissions:
 jobs:
   hosted-smoke:
     runs-on: ubuntu-26.04
-    environment: hosted-qa
+    environment: Preview
     steps:
       - uses: actions/checkout@v7
       - name: Check protected deployment access and public runtime
@@ -59,11 +59,11 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Validate protected QA inputs
         env:
-          QA_EMAIL: ${{ secrets.SENATLA_HOSTED_QA_EMAIL }}
-          QA_PASSWORD: ${{ secrets.SENATLA_HOSTED_QA_PASSWORD }}
+          QA_EMAIL: ${{ secrets.SENATLA_QA_EMAIL }}
+          QA_PASSWORD: ${{ secrets.SENATLA_QA_PASSWORD }}
         run: |
-          test -n "$QA_EMAIL" || { echo "SENATLA_HOSTED_QA_EMAIL is required." >&2; exit 1; }
-          test -n "$QA_PASSWORD" || { echo "SENATLA_HOSTED_QA_PASSWORD is required." >&2; exit 1; }
+          test -n "$QA_EMAIL" || { echo "SENATLA_QA_EMAIL is required in Preview." >&2; exit 1; }
+          test -n "$QA_PASSWORD" || { echo "SENATLA_QA_PASSWORD is required in Preview." >&2; exit 1; }
       - id: smoke
         name: Run protected hosted smoke
         continue-on-error: true
@@ -73,8 +73,8 @@ jobs:
           SENATLA_HOSTED_URL: ${{ inputs.deployment_url }}
           SENATLA_EXPECTED_COMMIT: ${{ inputs.expected_commit }}
           SENATLA_EXPECTED_ENVIRONMENT: ${{ inputs.environment }}
-          SENATLA_HOSTED_QA_EMAIL: ${{ secrets.SENATLA_HOSTED_QA_EMAIL }}
-          SENATLA_HOSTED_QA_PASSWORD: ${{ secrets.SENATLA_HOSTED_QA_PASSWORD }}
+          SENATLA_HOSTED_QA_EMAIL: ${{ secrets.SENATLA_QA_EMAIL }}
+          SENATLA_HOSTED_QA_PASSWORD: ${{ secrets.SENATLA_QA_PASSWORD }}
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
       - name: Write sanitized deployment evidence
         if: always()
