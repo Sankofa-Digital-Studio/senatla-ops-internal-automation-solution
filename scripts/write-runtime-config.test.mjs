@@ -61,11 +61,6 @@ test('runtime config generator and Vercel rewrites stay aligned', async () => {
     assert.equal(parsed.build.commitSha, 'abc123');
     assert.equal(parsed.build.environment, 'preview');
     assert.equal(parsed.seo.canonicalOrigin, 'https://senatla-ops.vercel.app');
-    const sitemap = await readFile(resolve(supabaseAliasResult.cwd, 'src/.generated-public/sitemap.xml'), 'utf8');
-    const robots = await readFile(resolve(supabaseAliasResult.cwd, 'src/.generated-public/robots.txt'), 'utf8');
-    assert.match(sitemap, /<loc>https:\/\/senatla-ops\.vercel\.app\/landing<\/loc>/);
-    assert.match(robots, /Allow: \/\n/);
-    assert.doesNotMatch(robots, /Disallow:/);
   } finally {
     await rm(supabaseAliasResult.cwd, { recursive: true, force: true });
   }
@@ -136,12 +131,18 @@ test('runtime config generator and Vercel rewrites stay aligned', async () => {
 
   const config = JSON.parse(await readFile(resolve('vercel.json'), 'utf8'));
   const indexTemplate = await readFile(resolve('src/index.html'), 'utf8');
-  assert.match(indexTemplate, /rel="canonical" href="__SENATLA_CANONICAL_ORIGIN__\/landing"/);
+  assert.match(indexTemplate, /rel="canonical" href="https:\/\/senatla-ops\.vercel\.app\/landing"/);
   assert.match(indexTemplate, /property="og:type" content="website"/);
   assert.match(indexTemplate, /name="twitter:card" content="summary"/);
   const jsonLd = JSON.parse(indexTemplate.match(/<script type="application\/ld\+json">([^<]+)<\/script>/)?.[1] || 'null');
   assert.equal(jsonLd['@type'], 'SoftwareApplication');
   assert.equal(jsonLd.name, 'Senatla Ops');
+  const sitemap = await readFile(resolve('src/sitemap.xml'), 'utf8');
+  const robots = await readFile(resolve('src/robots.txt'), 'utf8');
+  assert.match(sitemap, /<loc>https:\/\/senatla-ops\.vercel\.app\/landing<\/loc>/);
+  assert.equal((sitemap.match(/<url>/g) || []).length, 1);
+  assert.match(robots, /Allow: \/\n/);
+  assert.doesNotMatch(robots, /Disallow:/);
   const rewrites = config.rewrites;
   const runtimeIndex = rewrites.findIndex((rule) => rule.source === '/assets/runtime-config.json');
   const apiIndex = rewrites.findIndex((rule) => rule.source === '/api/(.*)');

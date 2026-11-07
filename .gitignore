@@ -71,8 +71,6 @@ testem.log
 /.env.*
 !/.env.example
 /src/assets/runtime-config.json
-/src/.generated/
-/src/.generated-public/
 /output/credentials/
 /output/uat-private/
 /output/reference-archive/

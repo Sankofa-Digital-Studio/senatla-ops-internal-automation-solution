@@ -9,7 +9,7 @@
 | `/asset-register`, `/costing-model`, `/profile-settings` | No index | Authentication gate plus Vercel response header and client route metadata. |
 | Unknown SPA route | No index | Catch-all Vercel response header; app redirects to landing. |
 
-`SENATLA_CANONICAL_ORIGIN` is an HTTPS origin without a path. The build defaults to `https://senatla-ops.vercel.app`; the generated HTML, sitemap and runtime config use one value. Preview deployments retain the production canonical URL.
+The owner confirmed `https://senatla-ops.vercel.app` as the public canonical origin. The committed HTML and sitemap use that origin, so even a Vercel project that invokes `ng build` directly produces the correct public files. `SENATLA_CANONICAL_ORIGIN` is an HTTPS origin without a path and controls client route metadata; change the committed HTML and sitemap in the same release if the public domain changes. Preview deployments retain the production canonical URL.
 
 `robots.txt` permits crawling so search engines can read the `noindex` response headers. It advertises a sitemap containing only `/landing`. Blocking protected routes in `robots.txt` would prevent crawlers from seeing their `noindex` instruction.
 
