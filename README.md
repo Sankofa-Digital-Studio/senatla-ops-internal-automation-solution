@@ -1,7 +1,7 @@
 # Senatla Ops
 
-[![Application quality gates](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/actions/workflows/ci.yml)
-[![Native platform gates](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/actions/workflows/native-platforms.yml/badge.svg?branch=dev)](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/actions/workflows/native-platforms.yml)
+[![Application quality gates](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/actions/workflows/ci.yml)
+[![Native platform gates](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/actions/workflows/native-platforms.yml/badge.svg?branch=main)](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/actions/workflows/native-platforms.yml)
 [![Angular](https://img.shields.io/badge/Angular-22-DD0031?logo=angular&logoColor=white)](https://angular.dev/)
 [![Ionic](https://img.shields.io/badge/Ionic-8-3880FF?logo=ionic&logoColor=white)](https://ionicframework.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com/)
@@ -20,7 +20,7 @@ The public Senatla Trading website is maintained outside this repository and rem
 - Plus-address aliases, including `thosontula+tag@gmail.com`, are ordinary accounts and do not inherit the developer override.
 - New users receive a temporary password and must replace it before opening a workspace.
 
-Current production release notes: [v0.5.3](docs/release-notes-0.5.3.md). Development integration notes: [v0.5.4 draft](docs/release-notes-0.5.4.md).
+Current production release: [v0.5.4](docs/release-notes-0.5.4.md), promoted to `main` on 2026-11-07. Hosted production target: [senatla-ops.vercel.app](https://senatla-ops.vercel.app).
 
 ## Product outcome
 
@@ -147,9 +147,9 @@ Compilation alone does not prove that browser flows, database policies, native b
 ## Delivery workflow
 
 - GitHub Issues authorize work and define acceptance criteria.
-- Integration pull requests target `dev`; reviewed production promotions target `main`.
+- Integration pull requests target `dev`; reviewed releases promote through `preview` to `main`.
 - The [Senatla Ops project board](https://github.com/orgs/Sankofa-Digital-Studio/projects/2) records the actual delivery state.
-- A merged pull request is not release evidence by itself. Required application, database, responsive, native, deployment, rollback, and UAT checks must be recorded.
+- A merged pull request is not release evidence by itself. Required application, database, responsive, native, deployment, rollback, and UAT checks must be recorded. The current v0.5.4 promotion passed the required application, Supabase, responsive, Android, iOS, and native-required gates.
 - Durable documents must reference a commit and the current deployment record, not an old immutable preview URL.
 
 See [Contributing](CONTRIBUTING.md) and the [GitHub delivery backlog](docs/github-delivery-backlog.md).

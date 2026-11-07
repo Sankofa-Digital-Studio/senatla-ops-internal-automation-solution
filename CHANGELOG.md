@@ -2,9 +2,9 @@
 
 All notable Senatla Ops changes are recorded here. Versions follow semantic versioning.
 
-## Unreleased
+## [0.5.4] - 2026-11-07
 
-Director guidance, access and historical source review are integrated on `dev`. The format-only proposal builder is pending integration. Production promotion remains pending.
+Director guidance, source-backed costing, proposal templates, landing-page SEO, consented analytics, and protected hosted smoke preflight are integrated and promoted through `dev`, `preview`, and `main`.
 
 ### Added
 
@@ -19,6 +19,23 @@ Director guidance, access and historical source review are integrated on `dev`. 
 
 - Added Director workspace guidance in Markdown, responsive HTML, and Word formats.
 - Added a Director proposal template guide in Markdown, responsive HTML, and Word formats.
+
+### Web delivery
+
+- Added landing-only indexing, canonical metadata, `robots.txt`, and `sitemap.xml` coverage.
+- Added a consented public analytics allow-list with three application events and privacy notes.
+- Added a formula-driven GA4 import workbook with blank input cells and documented formulas.
+- Added a protected hosted-smoke preflight that fails closed when preview credentials are unavailable.
+
+### Delivery
+
+- Promoted the verified release through `dev` and `preview` to `main`.
+- Application, Supabase, responsive, Android, iOS, and native-required gates passed during promotion.
+- Production deployment target: [senatla-ops.vercel.app](https://senatla-ops.vercel.app).
+
+## Unreleased
+
+No unreleased changes are recorded.
 
 ## [0.5.3] - 2026-11-04
 
