@@ -1,48 +1,66 @@
-# Senatla Ops v0.5.4 draft integration notes
+# Senatla Ops v0.5.4 release notes
 
-Updated: 2026-11-07
-Status: Director changes merged to `dev`; `preview` and `main` promotion pending. The v0.5.4 SEO/analytics release checklist remains open.
+Date: 2026-11-08  
+Release path: `dev` → `preview` → `main`  
+Application commit: `53fb4aac1f1e424bfd795b7286ec0384c4947daf`  
+Release-record commit: identified by the `v0.5.4` tag  
+Release and support guide: [v0.5.4 release guide](v0.5.4-release-guide.md)
 
 ## Scope
 
-This release improves the Director workspace entry experience, expands Director operational access, and makes authentication and sign-out failures visible to users.
+This release delivers the public landing page with optional GA4 consent management, enhanced Director workspace guidance with a guided first-use walkthrough, expanded Developer Director operational management access, explicit sign-out and login failure recovery states, and proposal format templates with live recalculation and Excel/PDF export capabilities.
 
-## Director guidance and help
+## Public landing and SEO
 
-- First-time Director sign-in opens a mandatory, responsive walkthrough.
-- Tour steps navigate to the relevant workspace route and administration tab, then scroll the target into view.
-- The final step supports a per-user “Don’t show this guide again” preference.
-- The shared authenticated header now provides Help and replay-tour actions.
+- Adds dedicated public landing route at `/landing` as the single indexable route (`https://senatla-ops.vercel.app/landing`).
+- Enforces `noindex, nofollow, noarchive` across root, login, registration, and protected workspaces via headers and client route metadata.
+- Configures sitemap and `robots.txt` alignment with canonical origin enforcement.
+- Privacy-first GA4 integration: disabled by default when `SENATLA_GA4_MEASUREMENT_ID` is blank. With a valid measurement ID, requires explicit consent; emits only `landing_view`, `sign_in_click`, and `apk_download` without operational or personal payloads.
+
+## Director guidance and workspace
+
+- First-time Director sign-in initiates a mandatory, responsive walkthrough with route navigation and smooth scroll-to-target.
+- Step suppression preference ("Don't show this guide again") stored per user.
+- Authenticated header provides Help dialog and walkthrough replay at any time.
 - Director dashboard shortcuts expose People, Sites, Assets, and Asset OCR.
+- Ordinary Directors retain operational oversight; exact Developer Director accounts (`thosontula@gmail.com` and `thosontula+tag@gmail.com`) receive shared administration and assignment workflows.
 
-## Access and OCR
+## Authentication and sign-out resilience
 
-- The exact `thosontula@gmail.com` and `thosontula+tag@gmail.com` developer/director accounts may enter the shared administration workflows. Ordinary Directors retain oversight access without administrative writes or migration access.
-- Employee, site, assignment, asset, and OCR workflows remain organization-scoped and audited for authorized accounts.
-- Employee-site assignment uses a controlled server-side workflow with readiness checks and audit evidence.
+- Sign-out displays an active loader and guards against duplicate execution.
+- Slow or failing sign-out presents an actionable retry state with a visible support reference instead of an unresponsive screen.
+- HTTP login failures provide plain-language diagnostics and support reference codes.
+- Standardized checkbox sizing, spacing, typography, and touch targets across authentication views.
 
-## Authentication experience
+## Director proposal builder
 
-- Sign-out shows an active loader and prevents duplicate requests.
-- Slow or failed sign-out produces retry guidance instead of a frozen screen.
-- Login HTTP failures are shown immediately in plain language with a support reference.
-- Login checkbox controls now share consistent sizing, spacing, typography, and touch targets.
+- Introduces 7 proposal layout formats: West Gold phase schedule, Tau Mine phase schedule, Village quotation, Asbestos schedule of rates, Civil works BOQ, Detailed cost breakdown, and Blank proposal.
+- Mathematical calculation chain: Direct spend → P&G → Contingency → Project cost → Profit → Tender excluding VAT → VAT → Tender including VAT.
+- Live spreadsheet preview, formula-backed `.xlsx` export, and draft `.pdf` generation.
+- Strict data boundary: starts with zeroed percentages and blank quantities/rates; no archived figures or historical rates imported.
 
 ## Documentation
 
+- [Release and support guide](v0.5.4-release-guide.md)
 - [Director workspace guidance](director-workspace-guidance.md)
-- [Responsive HTML guide](director-workspace-guidance.html)
-- [Word guide](director-workspace-guidance.docx)
-- [Historical source audit](historical-costing-and-asset-review.md), superseded for proposal creation.
-- [Director proposal templates](director-proposal-templates.md), with [responsive HTML](director-proposal-templates.html) and [Word](director-proposal-templates.docx) versions.
+- [Director proposal templates](director-proposal-templates.md)
+- [Historical costing and asset source audit](historical-costing-and-asset-review.md)
+- [Route indexing matrix](seo-indexing-matrix.md)
+- [Analytics privacy notice](analytics-privacy-v0.5.4.md)
+- [Analytics workbook guide](analytics-workbook-v0.5.4.md)
 
-## Director proposal formats pending integration
+## Verification record
 
-- The owner clarified that historical workbooks provide layout patterns rather than figures. The new builder offers West Gold, Tau Mine, village, asbestos, civil BOQ, detailed breakdown and blank formats. Quantities, rates and percentages start empty or zero.
-- Directors can add and remove sections and items, enter units, preview the spreadsheet, and download a formula-based Excel workbook or draft PDF.
-- All formats start with the editable client label Harmony Gold Mines. The exact legal contract party remains subject to review.
-- The prior historical costing and asset report remains available as a source audit; its rate-ingestion workflow is superseded. No asset or personnel record is imported.
+Application commit `53fb4aac1f1e424bfd795b7286ec0384c4947daf` / `d171dcfb7c09e80604aa0127cbe182000ec2b44e`:
 
-## Verification note
+- Quality gates passed: type checking, linting, production build, and unit test suites.
+- Hosted runtime preflight passed on UAT preview deployment: `https://senatla-ops-uat.vercel.app/assets/runtime-config.json` via canonical Vercel automation bypass.
+- Protected preview hosted smoke verification workflow: `.github/workflows/hosted-smoke.yml` run against `senatla-ops-uat.vercel.app`.
+- Production deployment: <https://senatla-g2ca7vkls-ohhttooexcivs-projects.vercel.app>
+- Production alias: <https://senatla-ops.vercel.app>
+- Canonical landing page: <https://senatla-ops.vercel.app/landing>
 
-The Director access migration was applied to the linked Supabase project and focused policy and application checks passed during PR #105. Production UI deployment has not been asserted here. The proposal format update requires its own verification before integration; archived figures are not loaded into its templates.
+## Database and migration impact
+
+- The Director access migration was applied to the linked Supabase project during PR #105; existing role boundaries and approval audits remain backward-compatible.
+- The proposal builder operates entirely client-side without new database tables or schema mutations.
