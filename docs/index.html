@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Senatla Ops · Documentation and Operations Portal</title>
+  <meta name="description" content="Official documentation, architectural standards, operations runbooks, and release guides for Senatla Ops.">
+  <style>
+    * { box-sizing: border-box; }
+    html { font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1b2733; background: #f3f6f8; }
+    body { margin: 0; padding: 0; }
+    a { color: #155780; text-decoration: none; text-underline-offset: 3px; }
+    a:hover { text-decoration: underline; }
+    a:focus-visible { outline: 3px solid #b96918; outline-offset: 3px; }
+    header { background: #153653; color: #fff; padding: 2.5rem max(1.2rem, calc((100vw - 1140px) / 2)); border-bottom: 3px solid #b96918; }
+    header .brand { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.08em; color: #9bc0db; margin-bottom: 0.4rem; font-weight: 600; }
+    h1 { font-size: clamp(2rem, 4vw, 2.8rem); line-height: 1.15; margin: 0.2rem 0 0.5rem; }
+    header p { color: #e0eaf1; margin: 0.4rem 0 1rem; max-width: 800px; font-size: 1.05rem; }
+    .badge-bar { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+    .badge { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.65rem; border-radius: 4px; font-size: 0.82rem; font-weight: 600; }
+    .badge-release { background: #1b7340; color: #fff; }
+    .badge-host { background: #244b6e; color: #fff; }
+    .badge-auth { background: #824707; color: #fff; }
+    .quick-links { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem; }
+    .quick-btn { background: #ffffff; color: #153653; padding: 0.45rem 0.9rem; border-radius: 6px; font-size: 0.88rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; transition: background 0.15s; }
+    .quick-btn:hover { background: #e2ecf3; text-decoration: none; }
+    
+    main { max-width: 1140px; margin: auto; padding: 2rem 1rem 4rem; }
+    .notice { background: #eaf1f7; border-left: 4px solid #155780; padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; margin-bottom: 2rem; }
+    .notice strong { color: #153653; }
+    .notice p { margin: 0.3rem 0 0; font-size: 0.94rem; }
+    
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.5rem; }
+    .card { background: #fff; border: 1px solid #d6e1e9; border-radius: 8px; padding: 1.4rem 1.5rem; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    .card h2 { font-size: 1.25rem; color: #153653; margin: 0 0 0.5rem; padding-bottom: 0.5rem; border-bottom: 2px solid #ebf2f7; display: flex; align-items: center; justify-content: space-between; }
+    .card p.card-desc { font-size: 0.9rem; color: #516272; margin: 0 0 1rem; }
+    .doc-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.65rem; }
+    .doc-item { font-size: 0.93rem; }
+    .doc-item strong { display: block; color: #1b2733; }
+    .doc-item .links { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.15rem; font-size: 0.82rem; }
+    .pill { background: #eef4f8; color: #155780; padding: 0.15rem 0.45rem; border-radius: 3px; font-weight: 500; }
+    .pill:hover { background: #dceaf2; }
+    .pill-docx { background: #e8f0fe; color: #1967d2; }
+    .pill-xlsx { background: #e6f4ea; color: #137333; }
+    
+    footer { max-width: 1140px; margin: auto; padding: 2rem 1rem 3rem; color: #516272; font-size: 0.88rem; border-top: 1px solid #d6e1e9; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+    
+    @media (max-width: 760px) {
+      header { padding: 1.8rem 1rem; }
+      .grid { grid-template-columns: 1fr; }
+      footer { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Sankofa Digital Studio &amp; Senatla Trading</div>
+    <h1>Senatla Ops Documentation Portal</h1>
+    <p>Operational control platform connecting field attendance, safety, workforce, payroll, assets, maintenance, proposal costing, approvals, and audit evidence.</p>
+    <div class="badge-bar">
+      <span class="badge badge-release">&#10003; Production Release: v0.5.4</span>
+      <span class="badge badge-host">&#9874; Target: senatla-ops.vercel.app</span>
+      <span class="badge badge-auth">&#128274; Role-Controlled Internal System</span>
+    </div>
+    <div class="quick-links">
+      <a class="quick-btn" href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution" target="_blank" rel="noopener">
+        <span>GitHub Repository</span> &rarr;
+      </a>
+      <a class="quick-btn" href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases" target="_blank" rel="noopener">
+        <span>Releases &amp; Changelog</span> &rarr;
+      </a>
+      <a class="quick-btn" href="https://senatla-ops.vercel.app" target="_blank" rel="noopener">
+        <span>Hosted App (Vercel)</span> &rarr;
+      </a>
+      <a class="quick-btn" href="https://senatla-ops.vercel.app/landing" target="_blank" rel="noopener">
+        <span>Public Landing Page</span> &rarr;
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <div class="notice">
+      <strong>Confidential Internal Operations Architecture:</strong>
+      <p>Senatla Ops is an internal enterprise platform. Credentials, employee records, private evidence, and service keys must remain strictly protected. The documents below establish authoritative engineering guidelines, release criteria, and operational runbooks.</p>
+    </div>
+
+    <div class="grid">
+      <!-- Section 1: Release Guides -->
+      <div class="card">
+        <h2>Release &amp; Versioning</h2>
+        <p class="card-desc">Release candidate guides, verification evidence, and version histories.</p>
+        <ul class="doc-list">
+          <li class="doc-item">
+            <strong>v0.5.4 Release &amp; Support Guide</strong>
+            <div class="links">
+              <a class="pill" href="v0.5.4-release-guide.html">HTML Guide</a>
+              <a class="pill pill-docx" href="v0.5.4-release-guide.docx">Word (.docx)</a>
+              <a class="pill" href="v0.5.4-release-guide.md">Markdown</a>
+            </div>
+          </li>
+          <li class="doc-item">
+            <strong>v0.5.4 Release Notes</strong>
+            <div class="links">
+              <a class="pill" href="release-notes-0.5.4.md">Notes (v0.5.4)</a>
+              <a class="pill" href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.4" target="_blank" rel="noopener">GitHub Release</a>
+            </div>
+          </li>
+          <li class="doc-item">
+            <strong>Historical Release Notes</strong>
+            <div class="links">
+              <a class="pill" href="release-notes-0.5.3.md">v0.5.3</a>
+              <a class="pill" href="release-notes-0.5.2.md">v0.5.2</a>
+              <a class="pill" href="release-notes-0.5.1.md">v0.5.1</a>
+            </div>
+          </li>
+          <li class="doc-item">
+            <strong>Production Release Checklist</strong>
+            <div class="links">
+              <a class="pill" href="release-checklist.md">Release Checklist</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Section 2: Director & Operations Workspaces -->
+      <div class="card">
+        <h2>Director &amp; Operations</h2>
+        <p class="card-desc">Executive decision queues, proposal builders, costing, and site runbooks.</p>
+        <ul class="doc-list">
+          <li class="doc-item">
+            <strong>Director Workspace Guidance</strong>
+            <div class="links">
+              <a class="pill" href="director-workspace-guidance.html">HTML</a>
+              <a class="pill pill-docx" href="director-workspace-guidance.docx">Word (.docx)</a>
+              <a class="pill" href="director-workspace-guidance.md">Markdown</a>
+            </div>
+          </li>
+          <li class="doc-item">
+            <strong>Director Proposal Templates &amp; Builder</strong>
+            <div class="links">
+              <a class="pill" href="director-proposal-templates.html">HTML</a>
+              <a class="pill pill-docx" href="director-proposal-templates.docx">Word (.docx)</a>
+              <a class="pill" href="director-proposal-templates.md">Markdown</a>
+            </div>
+          </li>
+          <li class="doc-item">
+            <strong>Historical Costing &amp; Asset Review</strong>
+            <div class="links">
+              <a class="pill" href="historical-costing-and-asset-review.html">HTML</a>
+              <a class="pill pill-docx" href="historical-costing-and-asset-review.docx">Word (.docx)</a>
+              <a class="pill" href="historical-costing-and-asset-review.md">Markdown</a>
+            </div>
+          </li>
+          <li class="doc-item">
+            <strong>Operations Runbook &amp; Admin Register</strong>
+            <div class="links">
+              <a class="pill" href="runbook.md">Runbook</a>
+              <a class="pill" href="admin-timesheet-register.md">Timesheet Register</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Section 3: Engineering & Architecture -->
+      <div class="card">
+        <h2>Architecture &amp; Engineering</h2>
+        <p class="card-desc">Technical specifications, database contracts, and engineering handbooks.</p>
+        <ul class="doc-list">
+          <li class="doc-item">
+            <strong>Engineering Handbook</strong>
+            <div class="links">
+              <a class="pill" href="sankofa-senatla-ops-engineering-handbook.html">HTML</a>
+              <a class="pill" href="sankofa-senatla-ops-engineering-handbook.md">Markdown</a>
+            </div>
+          </li>
+          <li class="doc-item">
+            <strong>Engineering Asset Register Plan</strong>
+            <div class="links">
+              <a class="pill" href="engineering-asset-register-plan.html">HTML</a>
+              <a class="pill" href="engineering-asset-register-plan.md">Markdown</a>
+            </div>
+          </li>
+          <li class="doc-item">
+            <strong>System Architecture &amp; Auth Boundaries</strong>
+            <div class="links">
+              <a class="pill" href="architecture.md">Architecture</a>
+              <a class="pill" href="adr-0001-supabase-auth-boundary.md">ADR 0001 (Auth)</a>
+              <a class="pill" href="environments.md">Environments</a>
+            </div>
+          </li>
+          <li class="doc-item">
+            <strong>Native Platform Foundation</strong>
+            <div class="links">
+              <a class="pill" href="native-platform-foundation.md">Capacitor, Android &amp; iOS</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Section 4: Client Requirements & Phase 1 Feedback -->
+      <div class="card">
+        <h2>Client Planning &amp; Feedback</h2>
+        <p class="card-desc">Ecosystem planning, requirements workbooks, and Phase 1 client feedback backlog.</p>
+        <ul class="doc-list">
+          <li class="doc-item">
+            <strong>Client Planning Requirements Guidance</strong>
+            <div class="links">
+              <a class="pill" href="client-senatla-ops-planning-requirements-guidance.html">HTML</a>
+              <a class="pill" href="client-senatla-ops-planning-requirements-guidance.md">Markdown</a>
+            </div>
+          </li>
+          <li class="doc-item">
+            <strong>Client Requirements Feedback Workbook</strong>
+            <div class="links">
+              <a class="pill" href="senatla-ops-client-requirements-feedback-template.html">HTML</a>
+              <a class="pill" href="senatla-ops-client-requirements-feedback-template.md">Markdown</a>
+            </div>
+          </li>
+          <li class="doc-item">
+            <strong>Client Feedback Phase 1 Architecture</strong>
+            <div class="links">
+              <a class="pill" href="senatla-trading-client-feedback-implementation-plan.md">Implementation Plan</a>
+              <a class="pill" href="senatla-trading-client-feedback-tasks-and-issues.md">Task Breakdown</a>
+            </div>
+          </li>
+          <li class="doc-item">
+            <strong>Artifact Register &amp; Index</strong>
+            <div class="links">
+              <a class="pill" href="artifact-register.md">Artifact Register</a>
+              <a class="pill" href="client-artifact-index.md">Client Index</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Section 5: Verification, UAT & Backlog -->
+      <div class="card">
+        <h2>Verification &amp; Delivery</h2>
+        <p class="card-desc">End-to-end UAT, responsive browser gates, and delivery backlog tracking.</p>
+        <ul class="doc-list">
+          <li class="doc-item">
+            <strong>OCR Device UAT &amp; Provenance</strong>
+            <div class="links">
+              <a class="pill" href="ocr-device-uat.html">HTML</a>
+              <a class="pill" href="ocr-device-uat.md">Markdown</a>
+            </div>
+          </li>
+          <li class="doc-item">
+            <strong>Frontend Audit &amp; Responsive Layout</strong>
+            <div class="links">
+              <a class="pill" href="frontend-audit-2026-11-01.html">HTML</a>
+              <a class="pill" href="frontend-audit-2026-11-01.md">Markdown</a>
+            </div>
+          </li>
+          <li class="doc-item">
+            <strong>GitHub Delivery Backlog</strong>
+            <div class="links">
+              <a class="pill" href="github-delivery-backlog.html">HTML</a>
+              <a class="pill" href="github-delivery-backlog.md">Markdown</a>
+            </div>
+          </li>
+          <li class="doc-item">
+            <strong>Quality Gates &amp; Testing Strategy</strong>
+            <div class="links">
+              <a class="pill" href="testing.md">Testing Strategy</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Section 6: SEO, Analytics & Privacy -->
+      <div class="card">
+        <h2>SEO, Analytics &amp; Privacy</h2>
+        <p class="card-desc">Strict privacy boundaries, landing-only indexing, and consent architecture.</p>
+        <ul class="doc-list">
+          <li class="doc-item">
+            <strong>Public Route SEO Indexing Matrix</strong>
+            <div class="links">
+              <a class="pill" href="seo-indexing-matrix.md">Indexing Matrix</a>
+            </div>
+          </li>
+          <li class="doc-item">
+            <strong>GA4 Analytics Privacy &amp; Allow-list</strong>
+            <div class="links">
+              <a class="pill" href="analytics-privacy-v0.5.4.md">Privacy Architecture</a>
+            </div>
+          </li>
+          <li class="doc-item">
+            <strong>GA4 Analytics Workbook</strong>
+            <div class="links">
+              <a class="pill" href="analytics-workbook-v0.5.4.md">Workbook Guide</a>
+              <a class="pill pill-xlsx" href="analytics-workbook-v0.5.4.xlsx">Excel (.xlsx)</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div>&copy; Sankofa Digital Studio &amp; Senatla Trading. All rights reserved.</div>
+    <div>Senatla Ops · Production Release v0.5.4</div>
+  </footer>
+</body>
+</html>

@@ -2,6 +2,9 @@
 
 [![Application quality gates](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/actions/workflows/ci.yml)
 [![Native platform gates](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/actions/workflows/native-platforms.yml/badge.svg?branch=main)](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/actions/workflows/native-platforms.yml)
+[![Hosted smoke preflight](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/actions/workflows/hosted-smoke.yml/badge.svg?branch=main)](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/actions/workflows/hosted-smoke.yml)
+[![Documentation Portal](https://img.shields.io/badge/Docs-GitHub%20Pages-155780?logo=github&logoColor=white)](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/)
+[![Latest Release](https://img.shields.io/github/v/release/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution?color=007ec6&label=release)](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.4)
 [![Angular](https://img.shields.io/badge/Angular-22-DD0031?logo=angular&logoColor=white)](https://angular.dev/)
 [![Ionic](https://img.shields.io/badge/Ionic-8-3880FF?logo=ionic&logoColor=white)](https://ionicframework.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com/)
@@ -20,7 +23,7 @@ The public Senatla Trading website is maintained outside this repository and rem
 - Plus-address aliases, including `thosontula+tag@gmail.com`, are ordinary accounts and do not inherit the developer override.
 - New users receive a temporary password and must replace it before opening a workspace.
 
-Current production release: [v0.5.4](docs/release-notes-0.5.4.md). Release guide: [v0.5.4 release guide](docs/v0.5.4-release-guide.md). Prior release notes: [v0.5.3](docs/release-notes-0.5.3.md). Hosted production target: [senatla-ops.vercel.app](https://senatla-ops.vercel.app).
+Current production release: [v0.5.4](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.4) ([Release notes](docs/release-notes-0.5.4.md) · [Release guide](docs/v0.5.4-release-guide.md) · [Interactive HTML guide](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/v0.5.4-release-guide.html)). Prior releases: [v0.5.3](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.3), [v0.5.2](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.2), [v0.5.1](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.1). Hosted production target: [senatla-ops.vercel.app](https://senatla-ops.vercel.app). Public landing page: [senatla-ops.vercel.app/landing](https://senatla-ops.vercel.app/landing). Documentation portal: [GitHub Pages](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/).
 
 ## Product outcome
 
@@ -50,6 +53,8 @@ Senatla Ops gives each operational record an explainable history: who acted, whe
 - Private evidence capture with human-reviewed OCR provenance.
 - Executive readiness and cost views linked to persisted source records.
 - Phase-based costing with explicit category applicability and quotation reconciliation.
+- Dedicated proposal builder with editable templates, formula Excel, and draft PDF exports.
+- Public landing page with strict landing-only SEO and opt-in privacy-first GA4 analytics.
 - Immutable audit events and role-negative database contracts.
 - Responsive web delivery plus Android and iOS application foundations.
 
@@ -77,7 +82,7 @@ The application keeps user-interface concerns separate from domain validation an
 | Native application | Capacitor 8, Android, iOS |
 | Data and identity | Supabase Auth, PostgreSQL, Row Level Security, Storage |
 | Verification | Jasmine and Karma, Playwright, Cypress, pgTAP |
-| Delivery | GitHub Actions and Vercel |
+| Delivery | GitHub Actions, Vercel, and GitHub Pages |
 
 ## Prerequisites
 
@@ -152,7 +157,7 @@ Compilation alone does not prove that browser flows, database policies, native b
 - A merged pull request is not release evidence by itself. Required application, database, responsive, native, deployment, rollback, and UAT checks must be recorded. The current v0.5.4 promotion passed the required application, Supabase, responsive, Android, iOS, and native-required gates.
 - Durable documents must reference a commit and the current deployment record, not an old immutable preview URL.
 
-See [Contributing](CONTRIBUTING.md) and the [GitHub delivery backlog](docs/github-delivery-backlog.md).
+See [Contributing](CONTRIBUTING.md), [Changelog](CHANGELOG.md), and the [GitHub delivery backlog](docs/github-delivery-backlog.md).
 
 ## Security and privacy
 
@@ -161,17 +166,53 @@ See [Contributing](CONTRIBUTING.md) and the [GitHub delivery backlog](docs/githu
 - Test authorization with direct database and API requests, including negative role and site cases.
 - Use reviewed forward migrations for production database changes and record rollback steps before deployment.
 
-## Documentation
+## Documentation portal
 
-- [Client ecosystem review](docs/client-senatla-ops-planning-requirements-guidance.md)
-- [Client requirements workbook](docs/senatla-ops-client-requirements-feedback-template.md)
-- [Engineering handbook](docs/sankofa-senatla-ops-engineering-handbook.md)
-- [Environment boundaries](docs/environments.md)
-- [Admin and timesheet register scope](docs/admin-timesheet-register.md)
-- [Operations runbook](docs/runbook.md)
-- [Release checklist](docs/release-checklist.md)
-- [Artifact register](docs/artifact-register.md)
-- [OCR device UAT](docs/ocr-device-uat.md)
+Access the live [Senatla Ops Documentation Portal on GitHub Pages](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/).
+
+### Release management & guides
+- [v0.5.4 Release & Support Guide](docs/v0.5.4-release-guide.md) ([HTML](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/v0.5.4-release-guide.html))
+- [v0.5.4 Release Notes](docs/release-notes-0.5.4.md)
+- [v0.5.3 Release Notes](docs/release-notes-0.5.3.md)
+- [v0.5.2 Release Notes](docs/release-notes-0.5.2.md)
+- [v0.5.1 Release Notes](docs/release-notes-0.5.1.md)
+- [Changelog](CHANGELOG.md)
+- [Production Release Checklist](docs/release-checklist.md)
+
+### Director & operations workspaces
+- [Director Workspace Guidance](docs/director-workspace-guidance.md) ([HTML](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/director-workspace-guidance.html))
+- [Director Proposal Templates & Builder](docs/director-proposal-templates.md) ([HTML](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/director-proposal-templates.html))
+- [Historical Costing & Asset Review](docs/historical-costing-and-asset-review.md) ([HTML](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/historical-costing-and-asset-review.html))
+- [Operations Runbook](docs/runbook.md)
+- [Admin & Timesheet Register Scope](docs/admin-timesheet-register.md)
+
+### Platform architecture & engineering
+- [Engineering Handbook](docs/sankofa-senatla-ops-engineering-handbook.md) ([HTML](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/sankofa-senatla-ops-engineering-handbook.html))
+- [Engineering Asset Register Plan](docs/engineering-asset-register-plan.md) ([HTML](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/engineering-asset-register-plan.html))
+- [System Architecture](docs/architecture.md)
+- [ADR 0001: Supabase Auth & Boundary](docs/adr-0001-supabase-auth-boundary.md)
+- [Environment Boundaries](docs/environments.md)
+- [Native Platform Foundation](docs/native-platform-foundation.md)
+
+### Client planning & feedback backlog
+- [Client Ecosystem Planning & Requirements](docs/client-senatla-ops-planning-requirements-guidance.md) ([HTML](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/client-senatla-ops-planning-requirements-guidance.html))
+- [Client Requirements Feedback Workbook](docs/senatla-ops-client-requirements-feedback-template.md) ([HTML](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/senatla-ops-client-requirements-feedback-template.html))
+- [Client Feedback Phase 1 Implementation Plan](docs/senatla-trading-client-feedback-implementation-plan.md)
+- [Client Feedback Phase 1 Tasks & Issue Breakdown](docs/senatla-trading-client-feedback-tasks-and-issues.md)
+- [Artifact Register](docs/artifact-register.md)
+- [Client Artifact Index](docs/client-artifact-index.md)
+
+### Verification, UAT & compliance
+- [OCR Device UAT](docs/ocr-device-uat.md) ([HTML](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/ocr-device-uat.html))
+- [Frontend Audit & Responsive Layout](docs/frontend-audit-2026-11-01.md) ([HTML](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/frontend-audit-2026-11-01.html))
+- [GitHub Delivery Backlog](docs/github-delivery-backlog.md) ([HTML](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/github-delivery-backlog.html))
+- [Testing Strategy](docs/testing.md)
+
+### Public landing, SEO & privacy
+- [Public Route SEO Indexing Matrix](docs/seo-indexing-matrix.md)
+- [GA4 Analytics Privacy & Consent Architecture](docs/analytics-privacy-v0.5.4.md)
+- [GA4 Analytics Workbook Guide](docs/analytics-workbook-v0.5.4.md)
+
 ## Release policy
 
 GitHub Issues authorize work. Feature pull requests target `dev`; reviewed releases promote `dev` through `preview` to `main`. CI, database validation, desktop/mobile browser proof, and rollback notes are required before production release. See [CONTRIBUTING.md](CONTRIBUTING.md).

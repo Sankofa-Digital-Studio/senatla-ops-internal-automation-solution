@@ -6,6 +6,10 @@ All notable Senatla Ops changes are recorded here. Versions follow semantic vers
 
 ### Added
 
+- Published official GitHub releases `v0.5.2`, `v0.5.3`, and `v0.5.4` on GitHub Releases with complete release notes, setting `v0.5.4` as the Latest production release with attached release guides, templates, and analytics workbooks.
+- Configured GitHub Pages documentation portal (`docs/index.html`, `docs/.nojekyll`) providing an interactive, structured documentation index across release guides, architecture, handbooks, runbooks, and audit sources.
+- Expanded GitHub repository topics with `costing`, `field-operations`, `proposal-builder`, and `pwa`.
+- Updated `README.md` with GitHub Pages documentation portal badge, latest release badge, hosted smoke preflight badge, and categorized document links.
 - Added unit test coverage for asset CSV import staging (`previewAssetCsv`) and conflict detection before atomic commit (`commitAssetImport`) in `office-admin.component.spec.ts` (Issue #91). Total Jasmine unit test suite expanded to 203 passing specs.
 - Registered Client Feedback Phase 1 architecture and delivery backlog (`ISSUE-01` through `ISSUE-13`) covering 3-domain operations (Engineering 70:30 profit split, Demolition & Rehabilitation, Overall Macro Scope), Harmony PO parent-child hierarchy, dual-custody scrap waybill tracking, and covert Director GPS dealer proximity alerts.
 
