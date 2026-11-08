@@ -20,7 +20,7 @@ The public Senatla Trading website is maintained outside this repository and rem
 - Plus-address aliases, including `thosontula+tag@gmail.com`, are ordinary accounts and do not inherit the developer override.
 - New users receive a temporary password and must replace it before opening a workspace.
 
-Current production release: [v0.5.4](docs/release-notes-0.5.4.md), promoted to `main` on 2026-11-07. Hosted production target: [senatla-ops.vercel.app](https://senatla-ops.vercel.app).
+Current production release: [v0.5.4](docs/release-notes-0.5.4.md). Release guide: [v0.5.4 release guide](docs/v0.5.4-release-guide.md). Prior release notes: [v0.5.3](docs/release-notes-0.5.3.md). Hosted production target: [senatla-ops.vercel.app](https://senatla-ops.vercel.app).
 
 ## Product outcome
 
