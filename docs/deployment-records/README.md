@@ -12,4 +12,4 @@ An approved record contains only:
 
 Do not store QA passwords, Vercel bypass tokens, Supabase keys, personal information, screenshots containing client records, or copied runtime configuration in this directory.
 
-Issue #88 remains blocked until the repository owner identifies one canonical Vercel project and configures the `hosted-qa` GitHub environment with `SENATLA_HOSTED_QA_EMAIL`, `SENATLA_HOSTED_QA_PASSWORD`, and, where protection is enabled, `VERCEL_AUTOMATION_BYPASS_SECRET`.
+Issue #88 was verified on UAT preview using Vercel automation bypass and closed on GitHub with full preflight and smoke verification evidence.

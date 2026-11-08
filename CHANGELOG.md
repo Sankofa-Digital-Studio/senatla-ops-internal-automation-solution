@@ -2,6 +2,23 @@
 
 All notable Senatla Ops changes are recorded here. Versions follow semantic versioning.
 
+## [Unreleased]
+
+### Added
+
+- Added unit test coverage for asset CSV import staging (`previewAssetCsv`) and conflict detection before atomic commit (`commitAssetImport`) in `office-admin.component.spec.ts` (Issue #91). Total Jasmine unit test suite expanded to 203 passing specs.
+- Registered Client Feedback Phase 1 architecture and delivery backlog (`ISSUE-01` through `ISSUE-13`) covering 3-domain operations (Engineering 70:30 profit split, Demolition & Rehabilitation, Overall Macro Scope), Harmony PO parent-child hierarchy, dual-custody scrap waybill tracking, and covert Director GPS dealer proximity alerts.
+
+### Changed
+
+- Reconciled and synchronized branches `main`, `preview`, and `dev` at unified commit `4efa27b`.
+- Pruned all stale local and remote feature branches; verified 0 open pull requests and 100% clean release health (`npm run validate:release-health` PASS).
+- Formalized executive audit policy: root activity log inspection and traceability queries are restricted strictly to `rubinthoso@senatlatrading.com` and `thosontula@gmail.com` / `thosontula+*@gmail.com`.
+
+### Closed
+
+- Closed Milestones M0 through M3 foundational issues on GitHub: #9, #10, #11, #12, #13, #14, #15, #16, #17, #86, #88, #90, #91, #92, #93, #94, #96, and #104 with complete acceptance verification and audit comments posted by `@OhhttooeXCIV`.
+
 ## [0.5.4] - 2026-11-07
 
 Director guidance, source-backed costing, proposal templates, landing-page SEO, consented analytics, and protected hosted smoke preflight are integrated and promoted through `dev`, `preview`, and `main`.
@@ -32,10 +49,6 @@ Director guidance, source-backed costing, proposal templates, landing-page SEO, 
 - Promoted the verified release through `dev` and `preview` to `main`.
 - Application, Supabase, responsive, Android, iOS, and native-required gates passed during promotion.
 - Production deployment target: [senatla-ops.vercel.app](https://senatla-ops.vercel.app).
-
-## Unreleased
-
-No unreleased changes are recorded.
 
 ## [0.5.3] - 2026-11-04
 
