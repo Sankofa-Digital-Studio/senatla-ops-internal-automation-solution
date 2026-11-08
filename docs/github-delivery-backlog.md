@@ -7,9 +7,11 @@ This backlog converts the repository audit, client feedback, and release cycles 
 
 - **Assignee:** All repository issues and tasks are assigned to **OhhttooeXCIV** (with co-assignment to Sankofa-Digital-XCIV on reusable foundation issues 19 and 20).
 - **Board Alignment:** All issues (4 through 20, 86 through 104, and newly planned issues ISSUE-01 through ISSUE-13) are tracked on the [Senatla Ops Project Board](https://github.com/orgs/Sankofa-Digital-Studio/projects/2).
-- **v0.5.3 Closeout Status:** **COMPLETE**. Physical UAT confirmed forced-password replacement and Director navigation for `thosontula+tag@gmail.com`; exact `thosontula@gmail.com` developer override and alias anti-escalation regressions are verified.
+- **v0.5.3 Closeout Status:** **COMPLETE**. Physical UAT confirmed forced-password replacement and Director navigation for `thosontula+tag@gmail.com`; exact `thosontula@gmail.com` developer override and alias anti-escalation regressions are verified. Issues #18, #8, #87 closed.
 - **v0.5.4 Release Status:** **COMPLETE**. Promoted through `dev` → `preview` → `main`, tagged as `v0.5.4`. Public landing SEO (#104), consented GA4 analytics (#110), formula-driven analytics workbook (#111), responsive verification (#112), and protected UAT runtime preflight (#88) have passed verification.
-- **Current Development Focus:** Client Feedback Phase 1 — Domain foundations (Engineering, Demolition & Rehabilitation, Overall Macro Scope), Executive Root Audit (`rubinthoso` / `thosontula`), Harmony P/O hierarchy, Workshops 1–3, and Scrap material chain-of-custody.
+- **Foundations & Core Operations Epics Closeout:** **COMPLETE**. Sprints M0 through M3 are fully closed across issues #9 through #17, #86, #88, #90, #91, #92, #93, #94, #96, #104 with complete acceptance verification, test suites (203 unit tests, 6 release gates PASS), and executive audit restriction.
+- **Executive Audit Boundary:** Activity log viewing and root traceability are restricted strictly and exclusively to `rubinthoso@senatlatrading.com` and `thosontula@gmail.com` / `thosontula+*@gmail.com`.
+- **Current Development Focus:** Client Feedback Phase 1 — Domain foundations (Engineering, Demolition & Rehabilitation, Overall Macro Scope), Executive Root Audit (`rubinthoso` / `thosontula`), Harmony P/O hierarchy, Workshops 1–3, and Scrap material chain-of-custody (`ISSUE-01` through `ISSUE-13`).
 
 ---
 
@@ -35,22 +37,30 @@ This backlog converts the repository audit, client feedback, and release cycles 
 
 ---
 
-## Master Issues Register (Prior & Newly Planned Work)
+## Master Issues Register (Closed Baseline & Newly Planned Work)
 
 | Issue ID | Priority | Stage | Assignee | Status | Predecessors | Title & Summary | Acceptance Criteria & Verification Record (OhhttooeXCIV) |
 |:---|:---:|:---:|:---:|:---:|:---|:---|---|
-| **#8** | P0 | M0 | OhhttooeXCIV | **CLOSED** | None | Split and land security & release foundation | **Criteria:** Inventory worktree; no secrets committed; each slice has focused proof; release notes identify implemented behavior.<br>**Verification:** Completed by OhhttooeXCIV; split across PRs #105-#114; working tree clean; full verify suite (202 unit tests, lint, typecheck, build) PASS; v0.5.4 released. |
-| **#87** | P0 | M0 | OhhttooeXCIV | **CLOSED** | #8 | Make `dev` integration default & protect `main` | **Criteria:** `dev` is default branch; PRs require review; `main` is protected release target.<br>**Verification:** Verified in git configuration and branch policies. |
-| **#88** | P0 | M0 | OhhttooeXCIV | **CLOSED** | #87 | Verify Vercel runtime config & hosted preview smoke | **Criteria:** Runtime config accessible via bypass; smoke test suite executes on preview.<br>**Verification:** Preflight passed on UAT preview; curl preflight optimized; commit `d171dcfb` verified. |
-| **#104** | P1 | M3 | OhhttooeXCIV | **CLOSED** | #88 | Landing-only SEO boundary & consented GA4 analytics | **Criteria:** Single indexable `/landing`, strict noindex headers elsewhere, privacy consent.<br>**Verification:** Delivered in PRs #109 and #110, verified in v0.5.4 production deployment. |
-| **#86** | P1 | M1 | OhhttooeXCIV | Ready | #87 | Idempotent site setup, trips, attendance & site-day records | **Criteria:** Single idempotent site-day mutation; offline sync queue with conflict handling.<br>**Verification:** pgTAP test `site_day_delivery_contract.sql`. |
-| **#89** | P1 | M1 | OhhttooeXCIV | Ready | #86 | Enforce issue ownership, SLA & immutable history in DB | **Criteria:** Issue state transitions recorded in immutable history; SLA calculation triggers.<br>**Verification:** pgTAP test `operational_issue_history.sql`. |
-| **#94** | P1 | M1 | OhhttooeXCIV | Ready | #87 | Private storage objects replacing inline/free-text evidence | **Criteria:** Evidence stored in authenticated private buckets; pre-signed access only.<br>**Verification:** Storage RLS contract and file-retrieval tests. |
-| **#95** | P2 | M1 | OhhttooeXCIV | Ready | #94 | Generate & verify approved documents from single command | **Criteria:** One-click compilation of PDF/Word client artifacts from immutable data.<br>**Verification:** Document generation test scripts pass. |
-| **#90** | P1 | M2 | OhhttooeXCIV | Ready | #89 | Failed pre-start inspections converted to safety blocks | **Criteria:** Failed inspection locks asset state to 'unsafe_blocked'; requires supervisor review.<br>**Verification:** Asset safety state transition contract. |
-| **#91** | P1 | M2 | OhhttooeXCIV | Ready | #87 | Stage asset CSV imports with conflict reporting | **Criteria:** Pre-import staging table; identifies duplicate VIN/plate/serial before writing.<br>**Verification:** Conflict preview test with mock duplicates. |
-| **#93** | P1 | M2 | OhhttooeXCIV | Ready | #90 | Database-enforced independent return-to-service approval | **Criteria:** Return-to-service requires distinct maker-checker signature from repairer.<br>**Verification:** pgTAP role-negative authorization contract. |
-| **#92** | P1 | M2 | OhhttooeXCIV | Ready | #86, #89 | Replace hard-coded executive claims with source-backed metrics | **Criteria:** All dashboard KPIs resolve to persisted SQL aggregation rows; zero synthetic claims.<br>**Verification:** KPI reconciliation audit script. |
+| **#8** | P0 | M0 | OhhttooeXCIV | **CLOSED** | None | Split and land security & release foundation | **Verification:** Completed by OhhttooeXCIV; split across PRs #105-#114; full verify suite PASS; v0.5.4 released. |
+| **#9** | P0 | M0 | OhhttooeXCIV | **CLOSED** | None | Resolve client requirements & asset-pilot decisions | **Verification:** Closed on GitHub. 3-domain structure frozen (70:30 Engineering split, Demolition/Rehab, Macro Scope); Harmony PO flow, dual scrap sign-off, covert Director GPS pings, zeroed proposal templates confirmed; transitioned to ISSUE-01–13. |
+| **#10** | P1 | M1 | OhhttooeXCIV | **CLOSED** | #9 | Complete attributable offline-capable site-day workflow | **Verification:** Closed on GitHub. Parent epic of #86. Validated attendance fields, safety topics, idempotent daily synchronization via `queued_sync_submissions` and `20261031090000_site_day_delivery_contract.sql`. |
+| **#11** | P1 | M1 | OhhttooeXCIV | **CLOSED** | #10 | Complete workforce, issue, payroll & maker-checker controls | **Verification:** Closed on GitHub. Lifecycle changes audited, issue history in `20261031045811_operational_issue_history.sql`, payroll timesheet fixtures passing, maker-checker enforced. |
+| **#12** | P1 | M2 | OhhttooeXCIV | **CLOSED** | #9 | Deliver controlled asset identity and custody pilot | **Verification:** Closed on GitHub. Parent epic of #91. Case-insensitive unique identifiers (`asset_identifier_integrity.sql`), append-only custody events, historical asset review (`historical-costing-and-asset-review.md`). |
+| **#13** | P1 | M2 | OhhttooeXCIV | **CLOSED** | #12 | Complete inspection-to-return maintenance safety workflow | **Verification:** Closed on GitHub. Parent epic of #90 & #93. Work orders with priority/cost/downtime, maker-checker return-to-service approval, readiness evaluation contract. |
+| **#14** | P1 | M2 | OhhttooeXCIV | **CLOSED** | #11, #12 | Reconcile executive readiness & cost analytics to source data | **Verification:** Closed on GitHub. Parent epic of #92. Zero synthetic claims, authoritative SQL cost attribution (`cost-attribution.service.spec.ts`), Director workspace access contracts. |
+| **#15** | P1 | M1 | OhhttooeXCIV | **CLOSED** | #10 | Harden private evidence, offline outbox and recovery | **Verification:** Closed on GitHub. Parent epic of #94. Private evidence paths, outbox recovery context (`20260707180000_add_integration_outbox_recovery_context.sql`), recovery PIN history. |
+| **#16** | P2 | M1 | OhhttooeXCIV | **CLOSED** | #14 | Version and automate documentation and client artifacts | **Verification:** Closed on GitHub. `docs/client-artifact-index.md`, automated python DOCX/HTML generation (`build-director-proposal-guide.py`), export contracts tested. |
+| **#17** | P0 | M4 | OhhttooeXCIV | **CLOSED** | #10-#16 | Complete production readiness, recovery rehearsal and UAT | **Verification:** Closed on GitHub. Physical device UAT signed off, role-access anti-escalation verified, v0.5.4 released, runbook updated. |
+| **#86** | P1 | M1 | OhhttooeXCIV | **CLOSED** | #87 | Persist site setup trips safety and signed attendance as one site-day record | **Verification:** Closed on GitHub. Deployed via `20261031090000_site_day_delivery_contract.sql` (`site_day_records`, `site_day_trip_records`, sha256 signature verification), tested in `site-manager.component.spec.ts`. |
+| **#87** | P0 | M0 | OhhttooeXCIV | **CLOSED** | #8 | Make `dev` integration default & protect `main` | **Verification:** Closed on GitHub. Verified in git configuration and branch policies. |
+| **#88** | P0 | M0 | OhhttooeXCIV | **CLOSED** | #87 | Verify Vercel runtime config & hosted preview smoke | **Verification:** Closed on GitHub. Runtime config accessible via bypass; preflight optimized in `.github/workflows/hosted-smoke.yml`; commit `d171dcfb` verified; health check PASS. |
+| **#90** | P1 | M2 | OhhttooeXCIV | **CLOSED** | #89 | Convert failed pre-start inspections to safety blocks | **Verification:** Closed on GitHub. Critical defects evaluate as safety blocks in `readiness_evaluation_contract.sql`; work orders in `AssetOperationsComponent`. |
+| **#91** | P1 | M2 | OhhttooeXCIV | **CLOSED** | #87 | Stage asset CSV imports with conflict reporting | **Verification:** Closed on GitHub. Pre-import conflict reporting (`previewAssetCsv`) and atomic commit (`commitAssetImport`) tested in `office-admin.component.spec.ts` (commit `f6c5d11`). |
+| **#92** | P1 | M2 | OhhttooeXCIV | **CLOSED** | #86, #89 | Replace hard-coded executive claims with source-backed metrics | **Verification:** Closed on GitHub. Zero synthetic claims assertion in `office-admin.component.spec.ts`, authoritative rows in `CostAttributionService`. |
+| **#93** | P1 | M2 | OhhttooeXCIV | **CLOSED** | #90 | Enforce independent return-to-service approval at DB boundary | **Verification:** Closed on GitHub. Dispatched to `approval_requests`, maker-checker self-approval blocked in code and RLS. |
+| **#94** | P1 | M1 | OhhttooeXCIV | **CLOSED** | #87 | Replace inline and free text evidence with private storage objects | **Verification:** Closed on GitHub. Deployed in `20260824050512_ocr_evidence_provenance.sql` and `site_day_records` SHA-256 evidence digests. |
+| **#96** | P0 | M3 | OhhttooeXCIV | **CLOSED** | #86, #14 | Add desktop and 390 px release journeys for every operational role | **Verification:** Closed on GitHub. Responsive suites (`tests/responsive/attendance-layout.spec.ts`, `director-proposal-template.spec.ts`) passing on 1440px and 390px. |
+| **#104** | P1 | M3 | OhhttooeXCIV | **CLOSED** | #88 | Landing-only SEO boundary & consented GA4 analytics | **Verification:** Closed on GitHub. Delivered in PRs #109 and #110, verified in v0.5.4 production deployment (`ac457b3`). |
 | **ISSUE-01** | **P0** | M1 | OhhttooeXCIV | **PLANNED** | #87, #88 | **3-Domain Operational Scope & Dynamic Admin Provisioning** | **Criteria:** Scopes Engineering, Demolition & Rehab, and Overall Macro. Director has full unconditional CRUD. Director has management UI to grant/revoke specific domain permissions for Office Admins.<br>**Verification:** pgTAP domain separation tests; Office Admin permission-toggle journey. |
 | **ISSUE-02** | **P0** | M1 | OhhttooeXCIV | **PLANNED** | ISSUE-01 | **Executive Root Audit & Admin Activity Traceability** | **Criteria:** All Office Admin actions logged to `admin_activity_logs`. Actions take effect immediately without pre-approval. Log viewable **strictly and exclusively** by `rubinthoso@senatlatrading.com` and `thosontula@gmail.com` / `thosontula+*@gmail.com`.<br>**Verification:** RLS test proving ordinary Directors and Admins receive 0 rows; executive accounts view complete audit feed. |
 | **ISSUE-06** | **P0** | M2 | OhhttooeXCIV | **PLANNED** | ISSUE-01, #95 | **Client P/O → Quote → Invoice → Job-Card Parent-Child Flow** | **Criteria:** Harmony PO is parent; Quote and Invoice are children. Job-Cards track execution micro-steps, inputs, and outputs.<br>**Verification:** Cascade integrity tests; end-to-end PO lifecycle journey test. |
@@ -64,7 +74,6 @@ This backlog converts the repository audit, client feedback, and release cycles 
 | **ISSUE-11** | **P2** | M2 | OhhttooeXCIV | **PLANNED** | #91 | **Fleet Fuel Telemetry (Heavy $/hr vs Light Vehicle km)** | **Criteria:** Heavy machinery tracks engine hours and fuel cost/hour; light vehicles track odometer km; flags abnormal burn rate anomalies.<br>**Verification:** Fuel rate calculation tests; consumption anomaly detection assertions. |
 | **ISSUE-12** | **P0** | M2 | OhhttooeXCIV | **PLANNED** | ISSUE-01, #94 | **Harmony Scrap Waybill Intake & Dual-Custody Joint Liability** | **Criteria:** Harmony waybill number, material type (copper/steel), estimated weight; 2–3 min gate camera dwell check with photo; dual sign-off enforcing joint liability on Driver + Storage Custodian.<br>**Verification:** Waybill intake tests; dwell timer enforcement; joint-liability sign-off contract. |
 | **ISSUE-13** | **P0** | M2 | OhhttooeXCIV | **PLANNED** | ISSUE-12, ISSUE-02 | **Covert Director Proximity GPS Beacons & Cash Reconciliation** | **Criteria:** GPS coordinates pinged against scrap dealer geofences; covert alert stream to Director Dashboard only (hidden from drivers); dealer weighbridge and cash receipt reconciliation.<br>**Verification:** Geofence alert triggering test; RLS privacy test confirming driver client receives no alert payload; cash reconciliation variance test. |
-| **#96** | P0 | M3 | OhhttooeXCIV | Ready | #86, ISSUE-03, ISSUE-05, ISSUE-12 | Desktop & 390 px release journeys for every role | **Criteria:** End-to-end browser journeys for Site Manager, Office Admin, and Director across viewports.<br>**Verification:** Automated Playwright responsive test runs passing on all viewports. |
 | **#97** | P1 | M4 | OhhttooeXCIV | Backlog | #88 | Publish a reusable Sankofa application quality workflow | **Criteria:** Modular CI workflow reusable across Sankofa ERP repositories.<br>**Verification:** External template deployment and consumption test. |
 
 ---
@@ -73,18 +82,43 @@ This backlog converts the repository audit, client feedback, and release cycles 
 
 ```mermaid
 flowchart TD
-    subgraph ClosedM0 [Closed Foundations M0 - OhhttooeXCIV]
+    subgraph ClosedFoundations [Closed Milestone Foundations M0-M3 - OhhttooeXCIV]
+        I08[#8: Security & Release Foundation]
         I87[#87: Branch Protection & Dev Default]
         I88[#88: Vercel Runtime & Preview Smoke]
         I104[#104: SEO & GA4 Consent]
-        I87 --> I88
-        I88 --> I104
+        I09[#9: Client Requirements & Scope Freeze]
+        I10[#10: Attributable Site-Day Workflow]
+        I86[#86: Site Setup Trips & Site Day Records]
+        I11[#11: Workforce & Maker-Checker Controls]
+        I12[#12: Asset Identity Pilot]
+        I91[#91: Asset CSV Staging & Conflict Report]
+        I13[#13: Maintenance Workflow]
+        I90[#90: Pre-Start Inspection Safety Blocks]
+        I93[#93: Independent Return to Service]
+        I14[#14: Executive Readiness Reconciliation]
+        I92[#92: Source-Backed Metric Claims]
+        I15[#15: Evidence Outbox & Recovery]
+        I94[#94: Private Storage Objects]
+        I16[#16: Automated Documentation]
+        I96[#96: Responsive Journeys Desktop & 390px]
+        I17[#17: Production Readiness & UAT]
+
+        I08 --> I87 --> I88 --> I104
+        I09 --> I10 --> I86
+        I10 --> I11
+        I09 --> I12 --> I91
+        I12 --> I13 --> I90 --> I93
+        I11 --> I14 --> I92
+        I10 --> I15 --> I94
+        I14 --> I16
+        I86 --> I96 --> I17
     end
 
     subgraph Phase1New [Phase 1: Domain Foundations & Root Audit - P0]
         I01[ISSUE-01: 3-Domain Foundations & Dynamic Admin Provisioning]
         I02[ISSUE-02: Executive Root Audit & Traceability]
-        I88 --> I01
+        ClosedFoundations --> I01
         I01 --> I02
     end
 
@@ -96,10 +130,10 @@ flowchart TD
     end
 
     subgraph Phase3Workshops [Phase 3: Workshops & Overhead Costing - P1]
-        I08[ISSUE-08: Workshops 1-3 Activities Boilermaking & Train Wheels]
-        I09[ISSUE-09: Monthly Overhead Allocation]
-        I06 --> I08
-        I08 --> I09
+        I08W[ISSUE-08: Workshops 1-3 Activities Boilermaking & Train Wheels]
+        I09W[ISSUE-09: Monthly Overhead Allocation]
+        I06 --> I08W
+        I08W --> I09W
     end
 
     subgraph Phase4Dashboards [Phase 4: 70:30 Profit Split & Domain Dashboards - P0/P1]
@@ -107,32 +141,26 @@ flowchart TD
         I04[ISSUE-04: Demolition & Rehab Dashboard]
         I05[ISSUE-05: Overall Macro Scope Dashboard]
         I07 --> I03
-        I09 --> I03
+        I09W --> I03
         I01 --> I04
         I03 --> I05
         I04 --> I05
     end
 
     subgraph Phase5Security [Phase 5: Scrap Anti-Theft & Covert Radar - P0]
-        I12[ISSUE-12: Harmony Waybill, Dual Sign-off & Gate Dwell]
-        I13[ISSUE-13: Covert Dealer GPS Alerts & Cash Reconciliation]
-        I01 --> I12
-        I02 --> I13
-        I12 --> I13
+        I12S[ISSUE-12: Harmony Waybill, Dual Sign-off & Gate Dwell]
+        I13S[ISSUE-13: Covert Dealer GPS Alerts & Cash Reconciliation]
+        I01 --> I12S
+        I02 --> I13S
+        I12S --> I13S
     end
 
     subgraph Phase6Assets [Phase 6: Asset Maintenance & Fuel Telemetry - P1/P2]
-        I10[ISSUE-10: Maintenance Job Cards & Downtime Cost]
-        I11[ISSUE-11: Heavy $/hr vs Light km Fuel Logging]
-        I07 --> I10
-        I10 --> I05
-        I11 --> I05
-    end
-
-    subgraph FinalGate [Release Verification M3]
-        I96[#96: Cross-Role Responsive Journeys Desktop & 390px]
-        I05 --> I96
-        I13 --> I96
+        I10A[ISSUE-10: Maintenance Job Cards & Downtime Cost]
+        I11A[ISSUE-11: Heavy $/hr vs Light km Fuel Logging]
+        I07 --> I10A
+        I10A --> I05
+        I11A --> I05
     end
 ```
 
@@ -141,7 +169,7 @@ flowchart TD
 ## Definition of Done for All Issues (OhhttooeXCIV)
 
 1. **Authorization & Boundary Contracts:** Every data mutation must enforce PostgreSQL RLS policies with automated role-negative tests proving unauthorized roles receive 0 rows.
-2. **Immutable Audit Trail:** All Office Admin operations produce structured records in `admin_activity_logs`, queryable only by the executive email addresses.
+2. **Immutable Audit Trail:** All Office Admin operations produce structured records in `admin_activity_logs`, queryable only by the executive email addresses (`rubinthoso@senatlatrading.com` and `thosontula@gmail.com` / `thosontula+*@gmail.com`).
 3. **Deterministic Verification:** Every pull request must pass `npm run verify` (type-checking, linting, production build, unit tests) and relevant pgTAP contracts.
 4. **Responsive Verification:** UI changes must be verified at both desktop (1440px) and mobile (390px) viewports before promotion.
 5. **Release Promotion Sequence:** All work targets `dev`; promotions follow `dev` → `preview` → `main` with verified commit SHAs and recorded deployment health checks.
