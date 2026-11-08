@@ -41,11 +41,10 @@ jobs:
         run: |
           test -n "$BYPASS_SECRET" || { echo "Canonical project automation bypass secret is required for protected preview smoke." >&2; exit 1; }
           body=$(mktemp)
-          status=$(curl --silent --show-error --location --max-time 20 \
+          status=$(curl --silent --show-error --location --cookie "" --max-time 20 \
             --header "x-vercel-protection-bypass: $BYPASS_SECRET" \
-            --header "x-vercel-set-bypass-cookie: true" \
             --output "$body" --write-out '%{http_code}' \
-            "$DEPLOYMENT_URL/assets/runtime-config.json")
+            "${DEPLOYMENT_URL%/}/assets/runtime-config.json")
           if [ "$status" != 200 ] || ! jq -e '.api.mode == "supabase" and (.api.supabaseUrl | length > 0) and (.api.supabaseAnonKey | length > 0)' "$body" >/dev/null 2>&1; then
             echo "Protected runtime preflight failed (HTTP $status). Check the bypass secret for the exact Vercel project and deployment; no application content or secret was logged." >&2
             exit 1
