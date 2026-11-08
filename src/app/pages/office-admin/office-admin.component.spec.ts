@@ -178,6 +178,31 @@ describe('OfficeAdminComponent', () => {
       expect(serialized).not.toContain(forbidden);
     }
   });
+
+  it('stages asset CSV imports with conflict reporting before writes and commits cleanly (Issue #91)', async () => {
+    await TestBed.inject(AuthService).login('thosontula+office@gmail.com', 'test-password');
+    const existingAsset = {
+      id: 'existing-1', registrationNumber: 'EXIST-01-GP', make: 'Toyota', model: 'Hilux',
+      serialNumber: 'SN-001', vin: 'VIN-001', type: 'Light Vehicle' as const, licenseExpiry: '2027-01-01',
+      status: 'Active' as const, assignedSiteId: 'site-1', organizationId: SENATLA_TRADING_ORGANIZATION_ID,
+    };
+    component.service.assets.set([existingAsset]);
+
+    const csvWithConflict = 'Registration,Serial,VIN,Make,Model,Expiry\r\nEXIST-01-GP,SN-NEW,VIN-NEW,Toyota,Hilux,2027-12-31\r\n';
+    const previewConflict = component.service.previewAssetCsv(csvWithConflict);
+    expect(previewConflict.validAssets.length).toBe(0);
+    expect(previewConflict.conflicts.length).toBe(1);
+    expect(previewConflict.conflicts[0].reason).toContain('already exists');
+    await expectAsync(component.service.commitAssetImport(previewConflict)).toBeRejectedWithError(/Resolve all import conflicts/);
+
+    const cleanCsv = 'Registration,Serial,VIN,Make,Model,Expiry\r\nCLEAN-02-GP,SN-002,VIN-002,Isuzu,D-Max,2027-12-31\r\n';
+    const cleanPreview = component.service.previewAssetCsv(cleanCsv);
+    expect(cleanPreview.validAssets.length).toBe(1);
+    expect(cleanPreview.conflicts.length).toBe(0);
+    await component.service.commitAssetImport(cleanPreview);
+    expect(component.service.assets().length).toBe(2);
+    expect(component.service.activity()[0].action).toBe('asset_import_committed');
+  });
 });
 
 function outbox(status: 'pending' | 'processing' | 'completed' | 'failed', hour: number) {
