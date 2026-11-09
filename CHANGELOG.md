@@ -4,24 +4,40 @@ All notable Senatla Ops changes are recorded here. Versions follow semantic vers
 
 ## [Unreleased]
 
+## [0.5.5] - 2026-11-09
+
+Multi-domain operational dashboards, Site Manager guided workflow overhaul, field telemetry & security dwell timer, Office Admin modularization, reusable ERP UI library, and asset payload optimization.
+
 ### Added
 
-- Published official GitHub releases `v0.5.2`, `v0.5.3`, and `v0.5.4` on GitHub Releases with complete release notes, setting `v0.5.4` as the Latest production release with attached release guides, templates, and analytics workbooks.
-- Configured GitHub Pages documentation portal (`docs/index.html`, `docs/.nojekyll`) providing an interactive, structured documentation index across release guides, architecture, handbooks, runbooks, and audit sources.
-- Expanded GitHub repository topics with `costing`, `field-operations`, `proposal-builder`, and `pwa`.
-- Updated `README.md` with GitHub Pages documentation portal badge, latest release badge, hosted smoke preflight badge, and categorized document links.
-- Added unit test coverage for asset CSV import staging (`previewAssetCsv`) and conflict detection before atomic commit (`commitAssetImport`) in `office-admin.component.spec.ts` (Issue #91). Total Jasmine unit test suite expanded to 203 passing specs.
-- Registered Client Feedback Phase 1 architecture and delivery backlog (`ISSUE-01` through `ISSUE-13`) covering 3-domain operations (Engineering 70:30 profit split, Demolition & Rehabilitation, Overall Macro Scope), Harmony PO parent-child hierarchy, dual-custody scrap waybill tracking, and covert Director GPS dealer proximity alerts.
+- **Multi-Domain Operational Dashboards (`ISSUE-03`, `ISSUE-04`, `ISSUE-05`):**
+  - Interactive domain navigation switcher (`app-domain-navigation-switcher`) supporting Overall Macro Scope, Engineering, Demolition & Rehabilitation, and Underground Works.
+  - Engineering 70:30 Profit Split Dashboard: Gross recognized revenue minus audited expenses (materials, direct labour, absorbed overheads) with 70% Senatla operational share and 30% shareholder distribution pool.
+  - Anti-Inflation Expense Lock (`TASK-03.2`): Enforces that dividends cannot be declared if unbilled vendor orders or open material draws remain unassigned.
+  - Workshops 1–3 activity status (Boilermaking, Train Wheels, Assembly) with monthly overhead absorption.
+  - Harmony Gold client P/O parent-child pipeline tracking (`P/O → Quote → Invoice → Job Card`).
+  - Demolition & Rehabilitation Dashboard: Tracking West Gold, Tau Mine, and Mine Villages contracts with phase progress, BOQ margins, salvage credits (781 t steel, 29.8 t copper, 6,030 m³ rubble), and environmental clearance scores.
+  - Overall Macro Scope Dashboard: Consolidated executive P&L rollup (R 12.62M revenue, R 4.38M net profit, 34.7% margin), free cash flow working capital, fleet telemetry, and cross-domain friction radar.
+  - Underground Works Dashboard: Executive standby notice and standby shaft blueprints (Shafts 1, 3, 5).
+  - Dedicated `/dashboards` route and embedding in Director Workspace and Office Admin.
+- **Site Manager Shift Flow Overhaul:**
+  - 5-step operational workflow sequence: Site Setup & Live Readiness, Toolbox Safety Protocol, Attendance Register & Roll-Call, Field Operations & Telemetry, and Shift Review with canvas digital sign-off.
+  - Machinery fuel telemetry (hourly burn rate for heavy equipment vs odometer km for light vehicles, `ISSUE-11`).
+  - Equipment breakdown and downtime logging triggering maintenance job cards (`ISSUE-10`).
+  - 2.5-minute security dwell timer for scrap and salvage gate clearance (`ISSUE-12`).
+- **Office Admin Sub-Feature Modularization:**
+  - Monolithic template refactored into 8 discrete sub-features (`admin-overview`, `admin-users`, `admin-workforce`, `admin-timesheets`, `admin-sites`, `admin-issues`, `admin-vendors`, `admin-governance`) lazy-loaded via Angular `@defer (on idle)`.
+  - Initial office-admin bundle chunk size reduced by 47.6% (162 kB to 84.9 kB).
+- **Reusable ERP UI Library:**
+  - Standalone UI primitives under `src/app/components/erp/`: `ErpDataTable`, `ErpStatCard`, `ErpStatusBadge`, `ErpFilterToolbar`, `ErpWorkflowStepper`, `ErpModal`, and `ErpExportTrigger`.
+  - Dual export architecture: In-browser `ErpExportService` and serverless `api/export/batch.ts`.
+- **Payload & Asset Optimization:**
+  - Static images compressed, shedding >4.3 MB of asset payload.
 
 ### Changed
 
-- Reconciled and synchronized branches `main`, `preview`, and `dev` at unified commit `4efa27b`.
-- Pruned all stale local and remote feature branches; verified 0 open pull requests and 100% clean release health (`npm run validate:release-health` PASS).
-- Formalized executive audit policy: root activity log inspection and traceability queries are restricted strictly to `rubinthoso@senatlatrading.com` and `thosontula@gmail.com` / `thosontula+*@gmail.com`.
-
-### Closed
-
-- Closed Milestones M0 through M3 foundational issues on GitHub: #9, #10, #11, #12, #13, #14, #15, #16, #17, #86, #88, #90, #91, #92, #93, #94, #96, and #104 with complete acceptance verification and audit comments posted by `@OhhttooeXCIV`.
+- Updated `ErpStatusBadgeComponent` with backward-compatible status inputs and automatic variant mapping across operational statuses.
+- Bumped project version to `0.5.5` in `package.json`, `package-lock.json`, and `metadata.json`.
 
 ## [0.5.4] - 2026-11-07
 
