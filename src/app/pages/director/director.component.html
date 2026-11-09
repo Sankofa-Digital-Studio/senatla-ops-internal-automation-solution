@@ -1,38 +1,120 @@
 <div class="min-h-full bg-gray-950 font-sans text-gray-200 pb-16">
-  <header data-tour="director-overview" class="border-b border-gray-800 bg-gray-900/90 backdrop-blur px-6 py-6 sticky top-0 z-30 shadow-md">
-    <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+  <header data-tour="director-overview" class="border-b border-gray-800 bg-gray-900/90 backdrop-blur px-4 sm:px-6 py-4 sticky top-0 z-30 shadow-md">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <div class="flex items-center gap-3">
           <span class="rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-3 py-0.5 text-[10px] font-bold tracking-widest uppercase">Director workspace</span>
         </div>
-        <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white mt-1">Director operations review</h1>
-        <p class="mt-1 text-xs font-bold uppercase tracking-widest text-yellow-500">Source-backed operations · data as of {{ dataAsOf() | date:'medium' }}</p>
+        <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-white mt-1">Director operations review</h1>
+        <p class="mt-0.5 text-[11px] sm:text-xs font-bold uppercase tracking-widest text-yellow-500">Source-backed operations · data as of {{ dataAsOf() | date:'medium' }}</p>
       </div>
 
-      <div class="flex items-center gap-3 flex-wrap">
+      <!-- Desktop/Tablet Pill Navigation -->
+      <div class="hidden sm:flex items-center gap-2 flex-wrap">
         <ng-container *ngIf="auth.isDeveloperDirector()">
-        <a routerLink="/office-admin" [queryParams]="{ tourTab: 'people' }" class="rounded-xl border border-cyan-500/50 bg-cyan-950/40 px-3.5 py-1.5 text-xs font-bold text-cyan-200 hover:bg-cyan-900/60 transition flex items-center gap-1.5 shadow-sm">People &amp; assignments</a>
-        <a routerLink="/office-admin" [queryParams]="{ tourTab: 'sites' }" class="rounded-xl border border-sky-500/50 bg-sky-950/40 px-3.5 py-1.5 text-xs font-bold text-sky-200 hover:bg-sky-900/60 transition flex items-center gap-1.5 shadow-sm">Sites</a>
-        <a routerLink="/office-admin" [queryParams]="{ tourTab: 'assets' }" class="rounded-xl border border-emerald-500/50 bg-emerald-950/40 px-3.5 py-1.5 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 transition flex items-center gap-1.5 shadow-sm">Assets</a>
-        <a routerLink="/asset-register" class="rounded-xl border border-purple-500/50 bg-purple-950/40 px-3.5 py-1.5 text-xs font-bold text-purple-200 hover:bg-purple-900/60 transition flex items-center gap-1.5 shadow-sm">Asset OCR</a>
+          <a routerLink="/office-admin" [queryParams]="{ tourTab: 'people' }" class="rounded-xl border border-cyan-500/50 bg-cyan-950/40 px-3 py-1.5 text-xs font-bold text-cyan-200 hover:bg-cyan-900/60 transition flex items-center gap-1.5 shadow-sm">People &amp; assignments</a>
+          <a routerLink="/office-admin" [queryParams]="{ tourTab: 'sites' }" class="rounded-xl border border-sky-500/50 bg-sky-950/40 px-3 py-1.5 text-xs font-bold text-sky-200 hover:bg-sky-900/60 transition flex items-center gap-1.5 shadow-sm">Sites</a>
+          <a routerLink="/office-admin" [queryParams]="{ tourTab: 'assets' }" class="rounded-xl border border-emerald-500/50 bg-emerald-950/40 px-3 py-1.5 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 transition flex items-center gap-1.5 shadow-sm">Assets</a>
+          <a routerLink="/asset-register" class="rounded-xl border border-purple-500/50 bg-purple-950/40 px-3 py-1.5 text-xs font-bold text-purple-200 hover:bg-purple-900/60 transition flex items-center gap-1.5 shadow-sm">Asset OCR</a>
         </ng-container>
-        <a routerLink="/costing-model" class="rounded-xl border border-yellow-500/50 bg-yellow-950/40 px-3.5 py-1.5 text-xs font-bold text-yellow-300 hover:bg-yellow-900/60 transition flex items-center gap-1.5 shadow-sm">
-          <svg class="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-          Proposal templates
+        <a routerLink="/costing-model" class="rounded-xl border border-yellow-500/50 bg-yellow-950/40 px-3 py-1.5 text-xs font-bold text-yellow-300 hover:bg-yellow-900/60 transition flex items-center gap-1.5 shadow-sm">
+          <svg class="w-3.5 h-3.5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+          Proposals
         </a>
+      </div>
+
+      <!-- Mobile Compact Actions Trigger -->
+      <div class="sm:hidden flex items-center justify-between pt-1 border-t border-gray-800">
+        <button
+          type="button"
+          (click)="toggleMobileActions()"
+          class="rounded-lg border border-yellow-500/40 bg-yellow-950/40 px-3 py-1 text-xs font-bold text-yellow-300 hover:bg-yellow-900/60 transition flex items-center gap-1.5"
+          [attr.aria-expanded]="showMobileActions()"
+        >
+          <span>Quick links</span>
+          <span class="text-[10px]">{{ showMobileActions() ? '▲' : '▼' }}</span>
+        </button>
+        <a routerLink="/costing-model" class="text-xs font-bold text-yellow-300 underline">Proposals &rarr;</a>
+      </div>
+
+      <!-- Mobile Collapsible Action Drawer -->
+      <div *ngIf="showMobileActions()" class="sm:hidden grid grid-cols-2 gap-2 pt-2 border-t border-gray-800">
+        <ng-container *ngIf="auth.isDeveloperDirector()">
+          <a routerLink="/office-admin" [queryParams]="{ tourTab: 'people' }" (click)="showMobileActions.set(false)" class="rounded-lg border border-cyan-500/50 bg-cyan-950/40 p-2 text-center text-xs font-bold text-cyan-200">People</a>
+          <a routerLink="/office-admin" [queryParams]="{ tourTab: 'sites' }" (click)="showMobileActions.set(false)" class="rounded-lg border border-sky-500/50 bg-sky-950/40 p-2 text-center text-xs font-bold text-sky-200">Sites</a>
+          <a routerLink="/office-admin" [queryParams]="{ tourTab: 'assets' }" (click)="showMobileActions.set(false)" class="rounded-lg border border-emerald-500/50 bg-emerald-950/40 p-2 text-center text-xs font-bold text-emerald-200">Assets</a>
+          <a routerLink="/asset-register" (click)="showMobileActions.set(false)" class="rounded-lg border border-purple-500/50 bg-purple-950/40 p-2 text-center text-xs font-bold text-purple-200">Asset OCR</a>
+        </ng-container>
       </div>
     </div>
   </header>
 
-  <main class="space-y-6 p-4 md:p-8 max-w-7xl mx-auto">
+  <main class="space-y-6 p-4 sm:p-6 md:p-8 max-w-7xl mx-auto">
     <!-- Feedback banner -->
     <div *ngIf="feedback()" role="status" aria-live="polite" aria-atomic="true" class="rounded-xl border border-yellow-500/40 bg-yellow-950/40 p-4 text-xs font-bold text-yellow-200 flex items-center justify-between">
       <span>{{ feedback() }}</span>
       <button type="button" (click)="feedback.set('')" aria-label="Dismiss notification" class="min-h-11 min-w-11 text-yellow-400 hover:text-white">&times;</button>
     </div>
 
+    <!-- Executive De-Congestion Tab Switcher -->
+    <nav aria-label="Director View Modes" class="flex items-center gap-1.5 overflow-x-auto pb-2 no-scrollbar border-b border-gray-800">
+      <button
+        type="button"
+        (click)="setTab('approvals')"
+        [class]="activeTab() === 'approvals' ? 'bg-emerald-500 text-black font-black shadow-lg shadow-emerald-950/30' : 'bg-gray-900 text-gray-300 hover:bg-gray-800 hover:text-white border border-gray-800'"
+        class="rounded-xl px-3.5 py-2 text-xs font-bold transition flex items-center gap-2 shrink-0 min-h-11"
+        [attr.aria-selected]="activeTab() === 'approvals'"
+      >
+        <span class="w-2 h-2 rounded-full" [class]="activeTab() === 'approvals' ? 'bg-black' : 'bg-emerald-400'"></span>
+        <span>Review Queue</span>
+        <span *ngIf="pendingExecutiveReports().length" [class]="activeTab() === 'approvals' ? 'bg-black/20 text-black' : 'bg-emerald-950 text-emerald-300 border border-emerald-500/30'" class="rounded-full px-2 py-0.5 text-[10px] font-mono font-bold">
+          {{ pendingExecutiveReports().length }}
+        </span>
+      </button>
+
+      <button
+        type="button"
+        (click)="setTab('domains')"
+        [class]="activeTab() === 'domains' ? 'bg-yellow-500 text-black font-black shadow-lg shadow-yellow-950/30' : 'bg-gray-900 text-gray-300 hover:bg-gray-800 hover:text-white border border-gray-800'"
+        class="rounded-xl px-3.5 py-2 text-xs font-bold transition flex items-center gap-1.5 shrink-0 min-h-11"
+        [attr.aria-selected]="activeTab() === 'domains'"
+      >
+        <span>Multi-Domain Scopes</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="setTab('costs')"
+        [class]="activeTab() === 'costs' ? 'bg-yellow-500 text-black font-black shadow-lg shadow-yellow-950/30' : 'bg-gray-900 text-gray-300 hover:bg-gray-800 hover:text-white border border-gray-800'"
+        class="rounded-xl px-3.5 py-2 text-xs font-bold transition flex items-center gap-1.5 shrink-0 min-h-11"
+        [attr.aria-selected]="activeTab() === 'costs'"
+      >
+        <span>Costs &amp; Invoices</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="setTab('workforce')"
+        [class]="activeTab() === 'workforce' ? 'bg-yellow-500 text-black font-black shadow-lg shadow-yellow-950/30' : 'bg-gray-900 text-gray-300 hover:bg-gray-800 hover:text-white border border-gray-800'"
+        class="rounded-xl px-3.5 py-2 text-xs font-bold transition flex items-center gap-1.5 shrink-0 min-h-11"
+        [attr.aria-selected]="activeTab() === 'workforce'"
+      >
+        <span>Workforce &amp; Risks</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="setTab('all')"
+        [class]="activeTab() === 'all' ? 'bg-gray-700 text-white font-bold' : 'bg-gray-900 text-gray-400 hover:bg-gray-800 hover:text-white border border-gray-800'"
+        class="hidden lg:inline-flex rounded-xl px-3.5 py-2 text-xs font-bold transition items-center gap-1.5 shrink-0 min-h-11"
+        [attr.aria-selected]="activeTab() === 'all'"
+      >
+        <span>All Sections</span>
+      </button>
+    </nav>
+
     <!-- Multi-Domain Operational Dashboards -->
-    <section data-tour="director-multi-domain-dashboards" class="space-y-4">
+    <section [class.hidden]="activeTab() !== 'all' && activeTab() !== 'domains'" data-tour="director-multi-domain-dashboards" class="space-y-4">
       <div class="flex items-center justify-between border-b border-gray-800 pb-3">
         <div>
           <span class="rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest">
@@ -50,7 +132,7 @@
     </section>
 
     <!-- ACTIONABLE DECISION CENTER & INBOX: Awaiting Director Review Packs -->
-    <section data-tour="director-review-queue" class="rounded-2xl border border-emerald-500/30 bg-gray-900 p-6 shadow-xl space-y-4">
+    <section [class.hidden]="activeTab() !== 'all' && activeTab() !== 'approvals'" data-tour="director-review-queue" class="rounded-2xl border border-emerald-500/30 bg-gray-900 p-4 sm:p-6 shadow-xl space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-800 pb-4">
         <div>
           <div class="flex items-center gap-2">
@@ -68,35 +150,35 @@
 
       <!-- Pending Reports List -->
       <div *ngIf="pendingExecutiveReports().length; else noReports" class="space-y-4">
-        <div *ngFor="let report of pendingExecutiveReports()" class="rounded-xl border border-emerald-500/40 bg-gray-950 p-5 shadow-lg">
+        <div *ngFor="let report of pendingExecutiveReports()" class="rounded-xl border border-emerald-500/40 bg-gray-950 p-4 sm:p-5 shadow-lg">
           <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div class="space-y-2">
-              <div class="flex items-center gap-3">
+              <div class="flex items-center gap-2 flex-wrap">
                 <span class="rounded-lg bg-yellow-500/20 text-yellow-300 font-mono text-xs font-bold px-2.5 py-1 border border-yellow-500/30">{{ report.reportNumber }}</span>
-                <span class="text-xs text-gray-400">Generated {{ report.generatedAt | date:'medium' }} by {{ report.generatedByName }}</span>
-                <span class="rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold px-2 py-0.5 uppercase">Awaiting Director Sign-off</span>
+                <span class="text-xs text-gray-400">{{ report.generatedAt | date:'medium' }} by {{ report.generatedByName }}</span>
+                <span class="rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold px-2 py-0.5 uppercase">Awaiting Sign-off</span>
               </div>
 
               <h3 class="text-sm md:text-base font-bold text-white">
-                Operational & Compliance Pack: {{ report.records.site.name }} (Job: {{ report.records.site.jobNumber }})
+                Operational &amp; Compliance Pack: {{ report.records.site.name }} (Job: {{ report.records.site.jobNumber }})
               </h3>
 
               <!-- 5 Verified Records Summary Tags -->
-              <div class="flex flex-wrap items-center gap-2 pt-1 text-xs">
-                <span class="rounded-md bg-gray-900 border border-gray-700 px-2.5 py-1 text-gray-300">
+              <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-1 text-xs">
+                <span class="rounded-md bg-gray-900 border border-gray-700 px-2 py-1 text-gray-300">
                   <strong class="text-white">Site:</strong> {{ report.records.site.name }}
                 </span>
-                <span class="rounded-md bg-gray-900 border border-gray-700 px-2.5 py-1 text-gray-300">
+                <span class="rounded-md bg-gray-900 border border-gray-700 px-2 py-1 text-gray-300">
                   <strong class="text-white">Operator:</strong> {{ report.records.employee.surname }}, {{ report.records.employee.firstName }}
                 </span>
-                <span class="rounded-md bg-gray-900 border border-gray-700 px-2.5 py-1 text-gray-300">
+                <span class="rounded-md bg-gray-900 border border-gray-700 px-2 py-1 text-gray-300">
                   <strong class="text-white">Asset:</strong> {{ report.records.asset.make }} {{ report.records.asset.model }} ({{ report.records.asset.registrationNumber }})
                 </span>
-                <span class="rounded-md bg-gray-900 border border-gray-700 px-2.5 py-1 text-gray-300">
-                  <strong class="text-white">Shift:</strong> {{ report.records.timesheet.hoursWorked }} hrs present
+                <span class="rounded-md bg-gray-900 border border-gray-700 px-2 py-1 text-gray-300">
+                  <strong class="text-white">Shift:</strong> {{ report.records.timesheet.hoursWorked }} hrs
                 </span>
-                <span class="rounded-md bg-gray-900 border border-gray-700 px-2.5 py-1 text-emerald-300 font-mono">
-                  <strong class="text-white">Fuel Invoice:</strong> R {{ report.records.invoice.total | number:'1.2-2' }} ({{ report.records.invoice.internalOrderNumber }})
+                <span class="rounded-md bg-gray-900 border border-gray-700 px-2 py-1 text-emerald-300 font-mono">
+                  <strong class="text-white">Fuel:</strong> R {{ report.records.invoice.total | number:'1.2-2' }}
                 </span>
               </div>
 
@@ -108,14 +190,14 @@
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex flex-col sm:flex-row lg:flex-col gap-2 shrink-0">
-              <button type="button" (click)="openReportModal(report)" class="rounded-lg border border-gray-700 bg-gray-900 px-4 py-2 text-xs font-bold text-gray-200 hover:bg-gray-800 transition">
+            <div class="flex flex-col sm:flex-row lg:flex-col gap-2 shrink-0 pt-2 sm:pt-0">
+              <button type="button" (click)="openReportModal(report)" class="rounded-lg border border-gray-700 bg-gray-900 px-4 py-2.5 text-xs font-bold text-gray-200 hover:bg-gray-800 transition min-h-11">
                 Inspect 5 Records
               </button>
-              <button type="button" (click)="approveReport(report.id)" class="rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs px-4 py-2 transition shadow">
-                Executive Sign-off & Approve
+              <button type="button" (click)="approveReport(report.id)" class="rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs px-4 py-2.5 transition shadow min-h-11">
+                Executive Sign-off &amp; Approve
               </button>
-              <button type="button" (click)="rejectReport(report.id)" class="rounded-lg border border-red-800/60 text-red-300 hover:bg-red-950/50 text-xs font-bold px-4 py-1.5 transition">
+              <button type="button" (click)="rejectReport(report.id)" class="rounded-lg border border-red-800/60 text-red-300 hover:bg-red-950/50 text-xs font-bold px-4 py-2 transition min-h-11">
                 Request Revisions
               </button>
             </div>
@@ -145,7 +227,8 @@
       </div>
     </section>
 
-    <section class="space-y-3" aria-labelledby="period-heading">
+    <!-- Period and Actuals Section -->
+    <section [class.hidden]="activeTab() !== 'all' && activeTab() !== 'costs'" class="space-y-3" aria-labelledby="period-heading">
       <div class="flex flex-col gap-3 rounded-xl border border-gray-800 bg-gray-900 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 id="period-heading" class="text-sm font-bold uppercase tracking-widest text-white">Period and actuals</h2>
@@ -181,54 +264,54 @@
     </section>
 
     <!-- Operating Costs Breakdown -->
-    <section class="space-y-3" aria-labelledby="recognized-costs-heading">
+    <section [class.hidden]="activeTab() !== 'all' && activeTab() !== 'costs'" class="space-y-3" aria-labelledby="recognized-costs-heading">
       <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <h2 id="recognized-costs-heading" class="text-sm font-bold uppercase tracking-widest text-white">Recognized operating costs</h2>
         <p class="text-xs text-gray-400">Only values recognized by the costing service are included.</p>
       </div>
       <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm hover:border-gray-700 transition">
-        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">PPE</p>
-        <p class="mt-2 font-mono text-2xl font-bold text-white">R {{ ppeExpense() | number:'1.2-2' }}</p>
-      </article>
+        <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm hover:border-gray-700 transition">
+          <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">PPE</p>
+          <p class="mt-2 font-mono text-2xl font-bold text-white">R {{ ppeExpense() | number:'1.2-2' }}</p>
+        </article>
 
-      <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm hover:border-gray-700 transition">
-        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Fuel</p>
-        <p class="mt-2 font-mono text-2xl font-bold text-white">R {{ fuelExpense() | number:'1.2-2' }}</p>
-      </article>
+        <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm hover:border-gray-700 transition">
+          <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Fuel</p>
+          <p class="mt-2 font-mono text-2xl font-bold text-white">R {{ fuelExpense() | number:'1.2-2' }}</p>
+        </article>
 
-      <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm hover:border-gray-700 transition">
-        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Work orders</p>
-        <p class="mt-2 font-mono text-2xl font-bold text-white">R {{ workOrderExpense() | number:'1.2-2' }}</p>
-      </article>
+        <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm hover:border-gray-700 transition">
+          <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Work orders</p>
+          <p class="mt-2 font-mono text-2xl font-bold text-white">R {{ workOrderExpense() | number:'1.2-2' }}</p>
+        </article>
 
-      <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm hover:border-gray-700 transition">
-        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Recognized vendor invoices</p>
-        <p data-testid="director-vendor-cost" class="mt-2 font-mono text-2xl font-bold text-white">R {{ vendorInvoiceExpense() | number:'1.2-2' }}</p>
-      </article>
+        <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm hover:border-gray-700 transition">
+          <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Recognized vendor invoices</p>
+          <p data-testid="director-vendor-cost" class="mt-2 font-mono text-2xl font-bold text-white">R {{ vendorInvoiceExpense() | number:'1.2-2' }}</p>
+        </article>
 
-      <article class="rounded-xl border border-emerald-900/60 bg-gray-900 p-4 shadow-sm">
-        <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Total recognized expense</p>
-        <p data-testid="director-operating-expense" class="mt-2 font-mono text-2xl font-bold text-white">R {{ operatingExpense() | number:'1.2-2' }}</p>
-      </article>
+        <article class="rounded-xl border border-emerald-900/60 bg-gray-900 p-4 shadow-sm">
+          <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Total recognized expense</p>
+          <p data-testid="director-operating-expense" class="mt-2 font-mono text-2xl font-bold text-white">R {{ operatingExpense() | number:'1.2-2' }}</p>
+        </article>
 
-      <article class="rounded-xl border border-amber-900/60 bg-gray-900 p-4 shadow-sm">
-        <p class="text-[10px] font-bold uppercase tracking-wider text-amber-300">Unattributed source value</p>
-        <p data-testid="director-unattributed-cost" class="mt-2 font-mono text-2xl font-bold text-white">R {{ unattributedExpense() | number:'1.2-2' }}</p>
-      </article>
+        <article class="rounded-xl border border-amber-900/60 bg-gray-900 p-4 shadow-sm">
+          <p class="text-[10px] font-bold uppercase tracking-wider text-amber-300">Unattributed source value</p>
+          <p data-testid="director-unattributed-cost" class="mt-2 font-mono text-2xl font-bold text-white">R {{ unattributedExpense() | number:'1.2-2' }}</p>
+        </article>
 
-      <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm">
-        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Provisional labour evidence</p>
-        <p class="mt-2 text-2xl font-bold text-white">{{ provisionalLabourSources() }}</p>
-        <p class="mt-1 text-xs text-gray-500">Not recognized until rate evidence is authoritative.</p>
-      </article>
+        <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm">
+          <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Provisional labour evidence</p>
+          <p class="mt-2 text-2xl font-bold text-white">{{ provisionalLabourSources() }}</p>
+          <p class="mt-1 text-xs text-gray-500">Not recognized until rate evidence is authoritative.</p>
+        </article>
       </div>
     </section>
 
     <p *ngIf="costAttribution.error()" class="rounded-xl border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-200">Cost reconciliation unavailable: {{ costAttribution.error() }}</p>
 
     <!-- Site Workforce & Risks -->
-    <section class="grid gap-4 lg:grid-cols-2">
+    <section [class.hidden]="activeTab() !== 'all' && activeTab() !== 'workforce'" class="grid gap-4 lg:grid-cols-2">
       <article class="rounded-xl border border-gray-800 bg-gray-900 p-5 shadow-sm">
         <h2 class="text-sm font-bold uppercase tracking-widest text-white">Site attendance and workforce</h2>
         <div data-testid="director-site-costs" class="mt-4 grid gap-3 sm:grid-cols-2">
@@ -254,13 +337,31 @@
       </article>
     </section>
 
-    <!-- Invoice Traceability Table -->
-    <section class="rounded-xl border border-gray-800 bg-gray-900 p-5 shadow-sm">
+    <!-- Invoice Traceability Table & Mobile Cards -->
+    <section [class.hidden]="activeTab() !== 'all' && activeTab() !== 'costs'" class="rounded-xl border border-gray-800 bg-gray-900 p-4 sm:p-5 shadow-sm">
       <div class="flex items-baseline justify-between gap-3 border-b border-gray-800 pb-3">
         <h2 class="text-sm font-bold uppercase tracking-widest text-white">Invoice traceability</h2>
         <p class="font-mono text-sm text-yellow-300">R {{ periodInvoiceAmount() | number:'1.2-2' }} in selected period</p>
       </div>
-      <div class="mt-4 overflow-x-auto">
+
+      <!-- Mobile Invoice Cards (eliminates horizontal scroll) -->
+      <div class="sm:hidden mt-4 space-y-3">
+        <div *ngFor="let invoice of pendingInvoices().slice(0, 8)" class="rounded-xl border border-gray-800 bg-gray-950 p-4 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-white text-sm">{{ vendorName(invoice.vendorId) }}</span>
+            <span class="font-mono font-bold text-emerald-300 text-sm">R {{ invoice.total | number:'1.2-2' }}</span>
+          </div>
+          <div class="flex items-center justify-between text-xs text-gray-400">
+            <span class="font-mono text-gray-300">{{ invoice.orderNumber }}</span>
+            <span>{{ invoice.invoiceDate | date:'mediumDate' }}</span>
+          </div>
+          <p class="text-[11px] text-gray-400">Requester: <span class="text-gray-200">{{ invoice.responsiblePerson }}</span></p>
+        </div>
+        <p *ngIf="!pendingInvoices().length" class="rounded-lg bg-gray-950 p-4 text-center text-xs text-gray-500">No pending invoice records.</p>
+      </div>
+
+      <!-- Desktop/Tablet Tabular View -->
+      <div class="hidden sm:block mt-4 overflow-x-auto">
         <table class="w-full min-w-[620px] text-left text-xs">
           <thead class="bg-gray-950 uppercase text-gray-500 font-bold">
             <tr>
@@ -350,57 +451,75 @@
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 text-xs text-gray-400">
             <div>Type: <strong class="text-gray-200">{{ activeReportModal()?.records?.asset?.type }}</strong></div>
             <div>VIN: <strong class="text-gray-200 font-mono">{{ activeReportModal()?.records?.asset?.vin }}</strong></div>
-            <div>License Expiry: <strong class="text-gray-200">{{ activeReportModal()?.records?.asset?.licenseExpiry }}</strong></div>
+            <div>License Expiry: <strong class="text-amber-400">{{ activeReportModal()?.records?.asset?.licenseExpiry }}</strong></div>
           </div>
         </div>
 
-        <!-- Record 4: Shift Timesheet Attendance -->
+        <!-- Record 4: Timesheet Evidence -->
         <div class="rounded-xl border border-gray-800 bg-gray-950 p-4">
           <div class="flex justify-between items-center text-xs font-bold text-gray-400 uppercase">
-            <span>Record 4: Timesheet</span>
-            <span class="text-purple-400 font-mono">{{ activeReportModal()?.records?.timesheet?.date }}</span>
+            <span>Record 4: Daily Shift &amp; Timesheet</span>
+            <span class="text-green-400">{{ activeReportModal()?.records?.timesheet?.status }}</span>
           </div>
-          <p class="text-base font-bold text-white mt-1">Shift Attendance: {{ activeReportModal()?.records?.timesheet?.hoursWorked }} Hours Logged</p>
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 text-xs text-gray-400">
-            <div>Status: <strong class="text-emerald-400 uppercase">{{ activeReportModal()?.records?.timesheet?.status }}</strong></div>
-            <div>Overtime: <strong class="text-gray-200">{{ activeReportModal()?.records?.timesheet?.overtimeHours }} Hours</strong></div>
-            <div>Supervisor sign-off: <strong class="text-emerald-400">{{ activeReportModal()?.records?.timesheet?.supervisorSigned ? 'Confirmed' : 'Pending' }}</strong></div>
+          <p class="text-base font-bold text-white mt-1">{{ activeReportModal()?.records?.timesheet?.hoursWorked }} Hours Present</p>
+          <div class="grid grid-cols-2 gap-2 mt-2 text-xs text-gray-400">
+            <div>Shift Date: <strong class="text-gray-200">{{ activeReportModal()?.records?.timesheet?.date }}</strong></div>
+            <div>Overtime: <strong class="text-gray-200">{{ activeReportModal()?.records?.timesheet?.overtimeHours }} hrs</strong></div>
           </div>
         </div>
 
         <!-- Record 5: Vendor Invoice Traceability -->
         <div class="rounded-xl border border-gray-800 bg-gray-950 p-4">
           <div class="flex justify-between items-center text-xs font-bold text-gray-400 uppercase">
-            <span>Record 5: Vendor invoice</span>
-            <span class="text-emerald-400 font-mono">{{ activeReportModal()?.records?.invoice?.internalOrderNumber }}</span>
+            <span>Record 5: Supplier / Subcontractor Invoice</span>
+            <span class="text-emerald-400 font-mono">R {{ activeReportModal()?.records?.invoice?.total | number:'1.2-2' }}</span>
           </div>
-          <p class="text-base font-bold text-white mt-1">R {{ activeReportModal()?.records?.invoice?.total | number:'1.2-2' }} — {{ activeReportModal()?.records?.invoice?.itemsPurchased }}</p>
+          <p class="text-base font-bold text-white mt-1">{{ activeReportModal()?.records?.invoice?.itemsPurchased }}</p>
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 text-xs text-gray-400">
-            <div>Order No: <strong class="text-gray-200 font-mono">{{ activeReportModal()?.records?.invoice?.orderNumber }}</strong></div>
+            <div>PO Number: <strong class="text-gray-200 font-mono">{{ activeReportModal()?.records?.invoice?.orderNumber }}</strong></div>
             <div>Invoice No: <strong class="text-gray-200 font-mono">{{ activeReportModal()?.records?.invoice?.invoiceNumber }}</strong></div>
             <div>Requester: <strong class="text-gray-200">{{ activeReportModal()?.records?.invoice?.responsiblePerson }}</strong></div>
           </div>
         </div>
       </div>
 
-      <!-- Source-backed review basis -->
-      <div class="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-4 space-y-2">
-        <h5 class="text-xs font-bold uppercase tracking-wider text-emerald-300">Review basis</h5>
-        <p class="text-sm text-gray-200 font-semibold">Review the stored site, employee, asset, timesheet and invoice records before deciding.</p>
-        <p class="text-xs text-gray-400">The workspace does not infer performance outcomes that are not supported by those records.</p>
-      </div>
+      <!-- Reviewer Notes & Action Buttons -->
+      <div class="pt-4 border-t border-gray-800 space-y-3">
+        <label for="director-pack-notes" class="block text-xs font-bold uppercase tracking-wider text-gray-400">
+          Executive Decision Comments &amp; Directives (Optional)
+        </label>
+        <textarea
+          id="director-pack-notes"
+          [(ngModel)]="directorNotes"
+          name="directorNotes"
+          rows="2"
+          class="w-full rounded-xl border border-gray-700 bg-gray-950 p-3 text-xs text-white focus:border-yellow-400 focus:outline-none"
+          placeholder="Add operational notes or reasons for revision..."
+        ></textarea>
 
-      <!-- Sign-off Controls -->
-      <div class="pt-4 border-t border-gray-800 flex flex-col sm:flex-row justify-end gap-3">
-        <button type="button" (click)="closeReportModal()" class="rounded-lg border border-gray-700 px-4 py-2 text-xs font-bold text-gray-300 hover:bg-gray-800">
-          Close Preview
-        </button>
-        <button type="button" (click)="rejectReport(activeReportModal().id)" class="rounded-lg border border-red-800 text-red-300 hover:bg-red-950 px-4 py-2 text-xs font-bold">
-          Reject & Request Fixes
-        </button>
-        <button type="button" (click)="approveReport(activeReportModal().id)" class="rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black px-6 py-2 text-xs font-bold shadow-lg">
-          Approve & Authorize Operations
-        </button>
+        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
+          <button
+            type="button"
+            (click)="closeReportModal()"
+            class="rounded-xl border border-gray-700 bg-gray-900 px-4 py-2.5 text-xs font-bold text-gray-300 hover:bg-gray-800 transition min-h-11"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            (click)="rejectReport(activeReportModal()?.id)"
+            class="rounded-xl border border-red-800/80 bg-red-950/40 text-red-300 hover:bg-red-900/60 px-4 py-2.5 text-xs font-bold transition min-h-11"
+          >
+            Reject &amp; Request Revisions
+          </button>
+          <button
+            type="button"
+            (click)="approveReport(activeReportModal()?.id)"
+            class="rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black px-6 py-2.5 text-xs font-black transition shadow-lg shadow-emerald-950/30 min-h-11"
+          >
+            Executive Sign-off &amp; Approve
+          </button>
+        </div>
       </div>
     </div>
   </div>
