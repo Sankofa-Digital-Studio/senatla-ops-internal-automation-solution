@@ -36,6 +36,8 @@
     "test:responsive": "playwright test",
     "test:hosted": "playwright test --config=playwright.hosted.config.ts",
     "test:e2e:cypress": "cypress run",
+    "test:e2e:cypress:open": "cypress open",
+    "cypress:open": "cypress open",
     "native:sync:android": "cap sync android",
     "native:sync:ios": "cap sync ios && node scripts/normalize-capacitor-spm-paths.mjs",
     "test:download-apk-contract": "node --test scripts/download-apk-contract.test.mjs",
