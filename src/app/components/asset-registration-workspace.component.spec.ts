@@ -225,4 +225,29 @@ describe('AssetRegistrationWorkspaceComponent - Bundle 11 Evidence & Media', () 
     fixture.destroy();
     expect(document.body.style.overflow).toBe('');
   });
+  it('supports switching verification modes between combo, ocr, and manual', () => {
+    expect(component.activeMode()).toBe('combo');
+
+    spyOn(component.modeChange, 'emit');
+
+    component.setMode('manual');
+    expect(component.activeMode()).toBe('manual');
+    expect(component.modeChange.emit).toHaveBeenCalledWith('manual');
+
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.manual-mode-notice')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.ocr-column')).toBeNull();
+
+    component.setMode('ocr');
+    expect(component.activeMode()).toBe('ocr');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.ocr-column')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.manual-mode-notice')).toBeNull();
+
+    component.setMode('combo');
+    expect(component.activeMode()).toBe('combo');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.ocr-column')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.form-column')).toBeTruthy();
+  });
 });

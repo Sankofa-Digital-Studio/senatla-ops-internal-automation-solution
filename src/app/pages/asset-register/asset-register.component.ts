@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AssetEvidenceFileSelection, AssetRegistrationWorkspaceComponent } from '../../components/asset-registration-workspace.component';
+import { AssetEvidenceFileSelection, AssetRegistrationWorkspaceComponent, AssetVerificationMode } from '../../components/asset-registration-workspace.component';
 import { AssetOperationsComponent } from '../../components/asset-operations.component';
 import {
   AssetEvidenceInput,
@@ -39,6 +39,8 @@ export class AssetRegisterComponent {
   readonly lifecycleFilter = signal('all');
   readonly readinessFilter = signal('all');
   readonly siteFilter = signal('all');
+  readonly verificationFilter = signal<'all' | 'unverified' | 'verified'>('all');
+  readonly selectedMode = signal<AssetVerificationMode>('combo');
   readonly page = signal(1);
   readonly pageSize = 8;
   readonly importPreview = signal<AssetImportPreview | null>(null);
@@ -55,10 +57,12 @@ export class AssetRegisterComponent {
     const lifecycle = this.lifecycleFilter();
     const readiness = this.readinessFilter();
     const site = this.siteFilter();
+    const verFilter = this.verificationFilter();
     return this.workspaceAssets().filter((asset) =>
       (lifecycle === 'all' || (asset.lifecycleState || 'active') === lifecycle)
       && (readiness === 'all' || this.assetReadiness(asset) === readiness)
       && (site === 'all' || asset.assignedSiteId === site)
+      && (verFilter === 'all' || (verFilter === 'unverified' ? this.isUnverified(asset) : !this.isUnverified(asset)))
       && (!term || [
         asset.registrationNumber,
         asset.serialNumber,
@@ -67,6 +71,8 @@ export class AssetRegisterComponent {
         asset.model,
         asset.assetClass,
         asset.custodianName,
+        asset.yearModel ? String(asset.yearModel) : '',
+        asset.dateAcquired || '',
         this.service.getSiteName(asset.assignedSiteId || ''),
       ].some((value) => value?.toLowerCase().includes(term))));
   });
@@ -80,6 +86,7 @@ export class AssetRegisterComponent {
   readonly readyCount = computed(() => this.workspaceAssets().filter((asset) => this.assetReadiness(asset) === 'ready').length);
   readonly attentionCount = computed(() => this.workspaceAssets().filter((asset) => this.assetReadiness(asset) === 'attention').length);
   readonly blockedCount = computed(() => this.workspaceAssets().filter((asset) => this.assetReadiness(asset) === 'blocked').length);
+  readonly unverifiedCount = computed(() => this.workspaceAssets().filter((asset) => this.isUnverified(asset)).length);
   readonly selectedWorkOrders = computed(() => this.service.assetWorkOrders().filter((order) => order.assetId === this.selectedAssetEffectiveId() && !['completed', 'cancelled'].includes(order.status)));
   readonly selectedCompliance = computed(() => this.service.assetComplianceRecords().filter((record) => record.assetId === this.selectedAssetEffectiveId()));
   readonly selectedLatestMeter = computed(() => this.latestMeterForTemplate(this.selectedAssetEffectiveId()));
@@ -93,6 +100,23 @@ export class AssetRegisterComponent {
     return validateAssetRegistration(this.assetForm, this.detailsVerified());
   }
 
+  isUnverified(asset: VehicleAsset): boolean {
+    if (asset.verificationStatus === 'unverified') return true;
+    if (asset.verificationStatus === 'verified' || asset.verifiedAt) return false;
+    // Client sourced assets or initial imports without VIN or custodian require verification
+    return !asset.vin || !asset.custodianName || !asset.assignedSiteId;
+  }
+
+  verificationBadge(asset: VehicleAsset): { label: string; tone: 'unverified' | 'verified' | 'partially' } {
+    if (asset.verificationStatus === 'verified' || asset.verifiedAt) {
+      return { label: 'Verified', tone: 'verified' };
+    }
+    if (asset.verificationStatus === 'partially_verified') {
+      return { label: 'Partially verified', tone: 'partially' };
+    }
+    return { label: 'Needs full details', tone: 'unverified' };
+  }
+
   switchWorkspace(workspace: AssetWorkspace) {
     this.activeWorkspace.set(workspace);
     this.selectedAssetId.set('');
@@ -100,6 +124,7 @@ export class AssetRegisterComponent {
     this.lifecycleFilter.set('all');
     this.readinessFilter.set('all');
     this.siteFilter.set('all');
+    this.verificationFilter.set('all');
     this.page.set(1);
     this.manageOpen.set(false);
   }
@@ -110,6 +135,7 @@ export class AssetRegisterComponent {
     this.saveError.set('');
     this.registrationMessage.set('');
     this.detailsVerified.set(false);
+    this.selectedMode.set('combo');
     this.overlayMode.set('register');
   }
 
@@ -118,7 +144,18 @@ export class AssetRegisterComponent {
     this.activeDraft.set(null);
     this.selectedAssetId.set(asset.id);
     this.saveError.set('');
-    this.detailsVerified.set(false);
+    this.detailsVerified.set(Boolean(asset.verificationStatus === 'verified'));
+    this.selectedMode.set('combo');
+    this.overlayMode.set('register');
+  }
+
+  openVerification(asset: VehicleAsset, mode: AssetVerificationMode = 'combo') {
+    this.assetForm = { ...asset };
+    this.activeDraft.set(null);
+    this.selectedAssetId.set(asset.id);
+    this.saveError.set('');
+    this.detailsVerified.set(Boolean(asset.verificationStatus === 'verified'));
+    this.selectedMode.set(mode);
     this.overlayMode.set('register');
   }
 
@@ -135,6 +172,9 @@ export class AssetRegisterComponent {
     }
     this.registrationBusy.set(true);
     try {
+      this.assetForm.verificationStatus = 'verified';
+      this.assetForm.verifiedAt = new Date().toISOString();
+      this.assetForm.verificationMode = this.selectedMode();
       const draft = this.activeDraft();
       const savedDraft = draft ? await this.registration.saveDraft({ ...draft, asset: { ...this.assetForm } }) : null;
       const savedAsset = await this.service.saveAsset(this.assetForm);
@@ -177,6 +217,7 @@ export class AssetRegisterComponent {
     this.activeWorkspace.set(this.assetWorkspace(draft.asset));
     this.saveError.set('');
     this.detailsVerified.set(false);
+    this.selectedMode.set('combo');
     this.registrationMessage.set(`Resuming ${draft.ownerName}'s ${this.registrationStateLabel(draft.state).toLowerCase()} registration.`);
     this.overlayMode.set('register');
   }
@@ -207,7 +248,6 @@ export class AssetRegisterComponent {
       this.registrationBusy.set(false);
     }
   }
-
 
   async enhanceEvidence(evidence: AssetRegistrationEvidence) {
     this.saveError.set('');
@@ -302,11 +342,22 @@ export class AssetRegisterComponent {
     this.page.set(1);
   }
 
+  updateVerificationFilter(value: string) {
+    this.verificationFilter.set(value as 'all' | 'unverified' | 'verified');
+    this.page.set(1);
+  }
+
+  toggleVerificationFilter() {
+    this.verificationFilter.update((curr) => curr === 'unverified' ? 'all' : 'unverified');
+    this.page.set(1);
+  }
+
   clearFilters() {
     this.searchTerm.set('');
     this.lifecycleFilter.set('all');
     this.readinessFilter.set('all');
     this.siteFilter.set('all');
+    this.verificationFilter.set('all');
     this.page.set(1);
   }
 
@@ -339,7 +390,6 @@ export class AssetRegisterComponent {
     }
   }
 
-
   assetRegistrationReady() {
     return this.assetRegistrationValidation().isValid;
   }
@@ -347,6 +397,7 @@ export class AssetRegisterComponent {
   registrationBlocker() {
     return this.assetRegistrationValidation().blocker;
   }
+
   assetWorkspace(asset: VehicleAsset): AssetWorkspace {
     const generalEquipment = /(generator|compressor|pump|welder|tool|trailer|compactor|mower|forklift)/i.test(asset.assetClass || `${asset.make} ${asset.model}`);
     return asset.type === 'Light Vehicle' || generalEquipment ? 'fleet' : 'engineering';
@@ -413,6 +464,7 @@ export class AssetRegisterComponent {
       status: 'Active',
       lifecycleState: 'active',
       assignedSiteId: undefined,
+      verificationStatus: 'unverified',
       notes: '',
     };
   }

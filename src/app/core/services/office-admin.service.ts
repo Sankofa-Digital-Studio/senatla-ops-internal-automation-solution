@@ -40,6 +40,7 @@ import {
   ExecutiveOperationalReport,
 } from '../models/app.models';
 import { OfficeAdminWorkspace, UserInviteInput } from '../models/office-admin.models';
+import { CLIENT_INITIAL_ASSETS } from '../data/client-initial-assets';
 import { AssignmentDecision, AssignmentReview, planAssetSiteTransfer, planEmployeeSiteAssignment } from '../assignment/assignment-planning';
 import { AuthService } from './auth.service';
 import { injectSupabaseClient } from '../gateways/supabase.client';
@@ -1658,7 +1659,15 @@ export class OfficeAdminService {
   private loadFromLocal(): OfficeAdminWorkspace {
     const raw = sessionStorage.getItem(LOCAL_STORAGE_KEY);
     if (!raw) return this.createDefaultWorkspace();
-    return JSON.parse(raw) as OfficeAdminWorkspace;
+    const parsed = JSON.parse(raw) as OfficeAdminWorkspace;
+    if (parsed && Array.isArray(parsed.assets)) {
+      const existingIds = new Set(parsed.assets.map((a) => a.id));
+      const missingClientAssets = CLIENT_INITIAL_ASSETS.filter((a) => !existingIds.has(a.id));
+      if (missingClientAssets.length > 0) {
+        parsed.assets = [...parsed.assets, ...missingClientAssets];
+      }
+    }
+    return parsed;
   }
 
   private applyWorkspace(workspace: OfficeAdminWorkspace) {
@@ -1800,6 +1809,7 @@ export class OfficeAdminService {
           custodianName: 'Workshop Stores',
           notes: 'Portable compressor awaiting repair.',
         },
+        ...CLIENT_INITIAL_ASSETS,
       ],
       assetCustodyEvents: [],
       assetComplianceRecords: [
@@ -1968,6 +1978,12 @@ export class OfficeAdminService {
       assetClass: asset.assetClass?.trim() || asset.type,
       lifecycleState: asset.lifecycleState ?? (asset.status === 'Maintenance' ? 'maintenance' : 'active'),
       retiredAt: asset.retiredAt ?? null,
+      yearModel: asset.yearModel ?? undefined,
+      dateAcquired: asset.dateAcquired ?? undefined,
+      verificationStatus: asset.verificationStatus ?? (asset.verifiedAt ? 'verified' : 'unverified'),
+      verifiedAt: asset.verifiedAt ?? null,
+      verifiedBy: asset.verifiedBy ?? null,
+      verificationMode: asset.verificationMode ?? undefined,
     };
   }
 
@@ -2094,6 +2110,12 @@ export class OfficeAdminService {
       assetClass: row.asset_class || row.type,
       lifecycleState: row.lifecycle_state || 'active',
       retiredAt: row.retired_at,
+      yearModel: (row as any).year_model ?? undefined,
+      dateAcquired: (row as any).date_acquired ?? undefined,
+      verificationStatus: (row as any).verification_status || ((row as any).verified_at ? 'verified' : 'unverified'),
+      verifiedAt: (row as any).verified_at ?? null,
+      verifiedBy: (row as any).verified_by ?? null,
+      verificationMode: (row as any).verification_mode ?? undefined,
     };
   }
 

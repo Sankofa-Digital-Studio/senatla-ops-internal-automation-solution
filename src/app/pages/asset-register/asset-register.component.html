@@ -1,8 +1,11 @@
 <div class="asset-control">
   <header class="command-header">
     <div>
-      <h1>Asset Control</h1>
-      <p>Senatla Trading · one verified record from field assignment to retirement</p>
+      <div class="header-title-row">
+        <h1>Asset Control</h1>
+        <span class="client-asset-pill"><i class="dot ready-dot"></i> Real Client Fleet Loaded</span>
+      </div>
+      <p>Senatla Trading · verified equipment lifecycle &amp; compliance management</p>
     </div>
     <div class="header-actions">
       <button type="button" class="button button-secondary" (click)="overlayMode.set('import')">
@@ -17,19 +20,19 @@
   <nav class="workspace-tabs" aria-label="Asset workspaces">
     <button type="button" [class.active]="activeWorkspace() === 'engineering'" (click)="switchWorkspace('engineering')">
       <span class="workspace-icon" aria-hidden="true">▰</span>
-      <span><strong>Engineering Equipment</strong><small>Heavy machinery, yellow metal and attachments</small></span>
+      <span><strong>Engineering Equipment</strong><small>Heavy machinery, yellow metal and lowbeds</small></span>
     </button>
     <button type="button" [class.active]="activeWorkspace() === 'fleet'" (click)="switchWorkspace('fleet')">
       <span class="workspace-icon" aria-hidden="true">▱</span>
-      <span><strong>Fleet &amp; General Equipment</strong><small>Vehicles and small-to-medium equipment</small></span>
+      <span><strong>Fleet &amp; General Equipment</strong><small>Vehicles, bakkies, tankers and trailers</small></span>
     </button>
   </nav>
 
   <main data-tour="asset-ocr" class="control-body">
     <section class="context-strip">
       <div>
-        <h2>{{ activeWorkspace() === 'engineering' ? 'Is every machine safe and ready for the next shift?' : 'Can every vehicle and portable asset be located, assigned and used legally?' }}</h2>
-        <p>{{ activeWorkspace() === 'engineering' ? 'Readiness joins meter hours, defects, work orders and return-to-service approval.' : 'Control custody, road compliance, service status and equipment availability in one register.' }}</p>
+        <h2>{{ activeWorkspace() === 'engineering' ? 'Is every machine safe, compliant and ready for the next shift?' : 'Can every vehicle and portable asset be located, assigned and operated legally?' }}</h2>
+        <p>{{ activeWorkspace() === 'engineering' ? 'Readiness joins meter hours, defects, work orders, serial verification and return-to-service approval.' : 'Control custody, road compliance, disc renewals, service status and equipment availability in one register.' }}</p>
       </div>
       <span class="ownership-mark">Owned by Senatla Trading</span>
     </section>
@@ -45,16 +48,19 @@
     </section>
 
     <section class="metric-row" aria-label="Workspace summary">
-      <button type="button" class="metric" [class.selected]="readinessFilter() === 'all'" (click)="updateReadinessFilter('all')">
+      <button type="button" class="metric" [class.selected]="readinessFilter() === 'all' && verificationFilter() === 'all'" (click)="clearFilters()">
         <span class="metric-symbol neutral" aria-hidden="true">◇</span><span><small>Total assets</small><strong>{{ workspaceAssets().length }}</strong></span>
       </button>
-      <button type="button" class="metric" [class.selected]="readinessFilter() === 'ready'" (click)="updateReadinessFilter('ready')">
+      <button type="button" class="metric verification-metric" [class.selected]="verificationFilter() === 'unverified'" (click)="toggleVerificationFilter()">
+        <span class="metric-symbol warning" aria-hidden="true">⚡</span><span><small>Needs details / verify</small><strong>{{ unverifiedCount() }}</strong></span>
+      </button>
+      <button type="button" class="metric" [class.selected]="readinessFilter() === 'ready' && verificationFilter() === 'all'" (click)="updateReadinessFilter('ready')">
         <span class="metric-symbol ready" aria-hidden="true">✓</span><span><small>Ready</small><strong>{{ readyCount() }}</strong></span>
       </button>
-      <button type="button" class="metric" [class.selected]="readinessFilter() === 'attention'" (click)="updateReadinessFilter('attention')">
+      <button type="button" class="metric" [class.selected]="readinessFilter() === 'attention' && verificationFilter() === 'all'" (click)="updateReadinessFilter('attention')">
         <span class="metric-symbol attention" aria-hidden="true">!</span><span><small>Needs attention</small><strong>{{ attentionCount() }}</strong></span>
       </button>
-      <button type="button" class="metric" [class.selected]="readinessFilter() === 'blocked'" (click)="updateReadinessFilter('blocked')">
+      <button type="button" class="metric" [class.selected]="readinessFilter() === 'blocked' && verificationFilter() === 'all'" (click)="updateReadinessFilter('blocked')">
         <span class="metric-symbol blocked" aria-hidden="true">−</span><span><small>Out of service</small><strong>{{ blockedCount() }}</strong></span>
       </button>
     </section>
@@ -63,7 +69,14 @@
       <aside class="filter-rail">
         <div class="rail-heading"><h2>Filters</h2><button type="button" (click)="clearFilters()">Clear all</button></div>
         <label>Search
-          <span class="search-control"><input [ngModel]="searchTerm()" (ngModelChange)="updateSearch($event)" placeholder="Identifier, asset, custodian"><span aria-hidden="true">⌕</span></span>
+          <span class="search-control"><input [ngModel]="searchTerm()" (ngModelChange)="updateSearch($event)" placeholder="Identifier, asset, custodian, year"><span aria-hidden="true">⌕</span></span>
+        </label>
+        <label>Verification status
+          <select [ngModel]="verificationFilter()" (ngModelChange)="updateVerificationFilter($event)">
+            <option value="all">All verification states</option>
+            <option value="unverified">Needs full details ({{ unverifiedCount() }})</option>
+            <option value="verified">Verified only</option>
+          </select>
         </label>
         <label>Lifecycle
           <select [ngModel]="lifecycleFilter()" (ngModelChange)="updateLifecycleFilter($event)">
@@ -80,78 +93,199 @@
             <option value="all">All locations</option><option *ngFor="let site of service.activeSites()" [value]="site.id">{{ site.name }}</option>
           </select>
         </label>
-        <div class="identity-note"><strong>Identity rule</strong><p>At least one serial number, VIN or number plate is required. Every supplied identifier is unique.</p></div>
+        <div class="identity-note">
+          <strong>Client Register Rule</strong>
+          <p>Initial client records require verified identifiers (VIN/plate), custodian sign-off, and compliance evidence via OCR scan or manual review.</p>
+        </div>
       </aside>
 
       <div class="asset-list-panel">
         <div class="list-toolbar">
           <div><strong>{{ filteredAssets().length }}</strong> assets in this view</div>
-          <div class="legend"><span><i class="dot ready-dot"></i> Ready</span><span><i class="dot attention-dot"></i> Attention</span><span><i class="dot blocked-dot"></i> Blocked</span></div>
+          <div class="legend">
+            <span><i class="dot ready-dot"></i> Ready</span>
+            <span><i class="dot attention-dot"></i> Attention</span>
+            <span><i class="dot blocked-dot"></i> Blocked</span>
+            <span class="legend-verify"><i class="dot warn-dot"></i> Needs Details</span>
+          </div>
         </div>
 
         <div class="asset-table" role="table" aria-label="Asset register">
           <div class="asset-table-head" role="row">
-            <span>Asset</span><span>Identifier</span><span>Location</span><span>Readiness</span><span>{{ activeWorkspace() === 'engineering' ? 'Latest meter' : 'Custodian' }}</span>
+            <span>Asset</span>
+            <span>Identifier</span>
+            <span>Location</span>
+            <span>Readiness</span>
+            <span>Verification</span>
+            <span>{{ activeWorkspace() === 'engineering' ? 'Latest meter' : 'Custodian' }}</span>
           </div>
           <button type="button" class="asset-row" *ngFor="let asset of pagedAssets()" [class.active]="selectedAssetEffectiveId() === asset.id" (click)="selectAsset(asset)" role="row">
-            <span class="asset-name"><strong>{{ asset.make }} {{ asset.model }}</strong><small>{{ asset.assetClass || asset.type }}</small></span>
-            <span class="identifier"><strong>{{ assetIdentifier(asset) }}</strong><small>{{ asset.type }}</small></span>
-            <span><strong>{{ service.getSiteName(asset.assignedSiteId || '') || 'Unassigned' }}</strong><small>{{ asset.lifecycleState || 'active' }}</small></span>
-            <span class="readiness" [attr.data-state]="assetReadiness(asset)"><i class="dot"></i>{{ readinessLabel(asset) }}</span>
-            <span><strong>{{ activeWorkspace() === 'engineering' ? meterLabel(latestMeterForTemplate(asset.id)) : (asset.custodianName || 'Unassigned') }}</strong><small>{{ activeWorkspace() === 'engineering' ? 'Recorded meter' : 'Current custody' }}</small></span>
+            <span class="asset-name">
+              <strong>{{ asset.make }} {{ asset.model }}</strong>
+              <small>{{ asset.yearModel ? 'Model ' + asset.yearModel + ' · ' : '' }}{{ asset.assetClass || asset.type }}</small>
+            </span>
+            <span class="identifier">
+              <strong>{{ assetIdentifier(asset) }}</strong>
+              <small>{{ asset.type }}</small>
+            </span>
+            <span>
+              <strong>{{ service.getSiteName(asset.assignedSiteId || '') || 'Unassigned' }}</strong>
+              <small>{{ asset.lifecycleState || 'active' }}</small>
+            </span>
+            <span class="readiness" [attr.data-state]="assetReadiness(asset)">
+              <i class="dot"></i>{{ readinessLabel(asset) }}
+            </span>
+            <span class="verification-cell">
+              <span class="verification-pill" [attr.data-status]="verificationBadge(asset).tone">
+                <i class="dot"></i>{{ verificationBadge(asset).label }}
+              </span>
+              <button *ngIf="isUnverified(asset)" type="button" class="btn-verify-action" (click)="openVerification(asset, 'combo'); $event.stopPropagation()" title="Check and add full asset details">
+                Verify
+              </button>
+            </span>
+            <span>
+              <strong>{{ activeWorkspace() === 'engineering' ? meterLabel(latestMeterForTemplate(asset.id)) : (asset.custodianName || 'Unassigned') }}</strong>
+              <small>{{ activeWorkspace() === 'engineering' ? 'Recorded meter' : 'Current custody' }}</small>
+            </span>
           </button>
-          <div *ngIf="!filteredAssets().length" class="empty-register"><strong>No assets match this view</strong><p>Clear the filters or register the first asset for this workspace.</p></div>
+          <div *ngIf="!filteredAssets().length" class="empty-register">
+            <strong>No assets match this view</strong>
+            <p>Clear filters or adjust your search to view assets.</p>
+          </div>
         </div>
 
         <div class="pagination" *ngIf="filteredAssets().length">
           <span>Page {{ page() }} of {{ totalPages() }}</span>
-          <div><button type="button" (click)="page.set(page() - 1)" [disabled]="page() === 1" aria-label="Previous page">←</button><button type="button" (click)="page.set(page() + 1)" [disabled]="page() === totalPages()" aria-label="Next page">→</button></div>
+          <div>
+            <button type="button" (click)="page.set(page() - 1)" [disabled]="page() === 1" aria-label="Previous page">←</button>
+            <button type="button" (click)="page.set(page() + 1)" [disabled]="page() === totalPages()" aria-label="Next page">→</button>
+          </div>
         </div>
       </div>
 
       <aside class="asset-inspector" *ngIf="selectedAsset() as asset; else noSelection">
-        <div class="inspector-title">
-          <div><h2>{{ asset.make }} {{ asset.model }}</h2><p>{{ asset.assetClass || asset.type }} · {{ assetIdentifier(asset) }}</p></div>
-          <span class="service-status" [class.offline]="assetReadiness(asset) === 'blocked'"><i></i>{{ assetReadiness(asset) === 'blocked' ? 'Out of service' : 'In service' }}</span>
+        <!-- Verification card in inspector -->
+        <div class="inspector-verification-card" [class.unverified]="isUnverified(asset)" [class.verified]="!isUnverified(asset)">
+          <div class="v-card-top">
+            <span class="v-tag" [attr.data-status]="verificationBadge(asset).tone">{{ verificationBadge(asset).label }}</span>
+            <span class="v-source" *ngIf="asset.id.startsWith('client-')">Client Sourced Asset</span>
+          </div>
+          <div *ngIf="isUnverified(asset)" class="v-card-content">
+            <p>Initial client register record. Sourced from plant sheet. Full details (VIN, licence compliance date, custodian, document evidence) must be checked and verified.</p>
+            <div class="v-btn-stack">
+              <button type="button" class="btn-v-main" (click)="openVerification(asset, 'combo')">
+                <span>⚡</span> Check &amp; Verify (Combo)
+              </button>
+              <div class="v-btn-row">
+                <button type="button" class="btn-v-sub" (click)="openVerification(asset, 'ocr')" title="OCR Document Scan">
+                  📷 OCR Scan
+                </button>
+                <button type="button" class="btn-v-sub" (click)="openVerification(asset, 'manual')" title="Manual form entry">
+                  ✍️ Manual
+                </button>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="!isUnverified(asset)" class="v-card-content verified-ok">
+            <p>✓ All asset details and evidence verified against client records.</p>
+            <small *ngIf="asset.verifiedAt">Verified: {{ asset.verifiedAt | date:'mediumDate' }} via {{ (asset.verificationMode || 'combo') | uppercase }}</small>
+          </div>
         </div>
+
+        <div class="inspector-title">
+          <div>
+            <h2>{{ asset.make }} {{ asset.model }}</h2>
+            <p>{{ asset.assetClass || asset.type }} · {{ assetIdentifier(asset) }}</p>
+          </div>
+          <span class="service-status" [class.offline]="assetReadiness(asset) === 'blocked'">
+            <i></i>{{ assetReadiness(asset) === 'blocked' ? 'Out of service' : 'In service' }}
+          </span>
+        </div>
+
         <div class="readiness-callout" [attr.data-state]="assetReadiness(asset)">
           <span><small>Operational readiness</small><strong><i class="dot"></i>{{ readinessLabel(asset) }}</strong></span>
           <button type="button" (click)="manageOpen.set(true)">Review</button>
         </div>
+
         <dl class="detail-grid">
           <div><dt>Location</dt><dd>{{ service.getSiteName(asset.assignedSiteId || '') || 'Unassigned' }}</dd></div>
           <div><dt>Custodian</dt><dd>{{ asset.custodianName || 'Unassigned' }}</dd></div>
           <div><dt>Asset class</dt><dd>{{ asset.assetClass || asset.type }}</dd></div>
           <div><dt>Make / model</dt><dd>{{ asset.make }} {{ asset.model }}</dd></div>
+          <div><dt>Year model</dt><dd>{{ asset.yearModel || 'Not recorded' }}</dd></div>
+          <div><dt>Date acquired</dt><dd>{{ asset.dateAcquired || 'Not recorded' }}</dd></div>
         </dl>
-        <div class="identifier-block"><small>Verified identifiers</small><p>{{ assetIdentifierDetails(asset) }}</p></div>
+
+        <div class="identifier-block">
+          <small>Verified identifiers</small>
+          <p>{{ assetIdentifierDetails(asset) }}</p>
+        </div>
+
         <div class="operational-fact">
-          <span class="fact-icon">◷</span><span><small>{{ activeWorkspace() === 'engineering' ? 'Latest meter' : 'Licence / compliance date' }}</small><strong>{{ activeWorkspace() === 'engineering' ? meterLabel(selectedLatestMeter()) : (asset.licenseExpiry || 'Not recorded') }}</strong></span>
+          <span class="fact-icon">◷</span>
+          <span>
+            <small>{{ activeWorkspace() === 'engineering' ? 'Latest meter' : 'Licence / compliance date' }}</small>
+            <strong>{{ activeWorkspace() === 'engineering' ? meterLabel(selectedLatestMeter()) : (asset.licenseExpiry || 'Not recorded') }}</strong>
+          </span>
         </div>
         <div class="operational-fact">
-          <span class="fact-icon">◈</span><span><small>Compliance</small><strong>{{ complianceLabel(asset.id) }}</strong></span>
+          <span class="fact-icon">◈</span>
+          <span>
+            <small>Compliance</small>
+            <strong>{{ complianceLabel(asset.id) }}</strong>
+          </span>
         </div>
         <div class="operational-fact">
-          <span class="fact-icon">⌁</span><span><small>Open work orders</small><strong>{{ selectedWorkOrders().length ? selectedWorkOrders().length + ' require action' : 'None open' }}</strong></span>
+          <span class="fact-icon">⌁</span>
+          <span>
+            <small>Open work orders</small>
+            <strong>{{ selectedWorkOrders().length ? selectedWorkOrders().length + ' require action' : 'None open' }}</strong>
+          </span>
         </div>
-        <button type="button" class="button button-primary manage-button" (click)="manageOpen.set(!manageOpen())">{{ manageOpen() ? 'Close operations' : 'Manage asset' }}</button>
-        <div class="inspector-links"><button type="button" (click)="openEditor(asset)">Edit record</button><button type="button" *ngIf="(asset.lifecycleState || 'active') !== 'retired'" (click)="retireAsset(asset)">Retire asset</button></div>
+
+        <button type="button" class="button button-primary manage-button" (click)="manageOpen.set(!manageOpen())">
+          {{ manageOpen() ? 'Close operations' : 'Manage asset' }}
+        </button>
+        <div class="inspector-links">
+          <button type="button" (click)="openEditor(asset)">Edit record</button>
+          <button type="button" *ngIf="(asset.lifecycleState || 'active') !== 'retired'" (click)="retireAsset(asset)">Retire asset</button>
+        </div>
       </aside>
-      <ng-template #noSelection><aside class="asset-inspector no-selection"><strong>No asset selected</strong><p>Choose an asset to inspect its full operational record.</p></aside></ng-template>
+
+      <ng-template #noSelection>
+        <aside class="asset-inspector no-selection">
+          <strong>No asset selected</strong>
+          <p>Choose an asset to inspect its full operational record.</p>
+        </aside>
+      </ng-template>
     </section>
 
     <section class="operations-drawer" *ngIf="manageOpen() && selectedAsset()">
-      <div class="operations-heading"><div><h2>Lifecycle operations</h2><p>Record the event once. Custody, compliance, meter and maintenance histories remain attached to the same asset dossier.</p></div><button type="button" (click)="manageOpen.set(false)" aria-label="Close operations">×</button></div>
+      <div class="operations-heading">
+        <div>
+          <h2>Lifecycle operations</h2>
+          <p>Record the event once. Custody, compliance, meter and maintenance histories remain attached to the same asset dossier.</p>
+        </div>
+        <button type="button" (click)="manageOpen.set(false)" aria-label="Close operations">×</button>
+      </div>
       <app-asset-operations [assetId]="selectedAssetEffectiveId()"></app-asset-operations>
     </section>
   </main>
 
   <div class="overlay" *ngIf="overlayMode()" (click)="overlayMode.set(null)">
     <section class="overlay-panel" (click)="$event.stopPropagation()">
-      <div class="overlay-heading"><div><h2>{{ overlayMode() === 'register' ? (assetForm.id ? 'Edit asset record' : 'Register asset') : 'Controlled CSV import' }}</h2><p>{{ overlayMode() === 'register' ? 'The record is owned by Senatla Trading and available to authorised operational roles.' : 'A dry run checks identifiers and reports conflicts before anything is written.' }}</p></div><button type="button" (click)="overlayMode.set(null)" aria-label="Close">×</button></div>
+      <div class="overlay-heading">
+        <div>
+          <h2>{{ overlayMode() === 'register' ? (assetForm.id ? 'Check, Verify & Edit Asset' : 'Register Asset') : 'Controlled CSV import' }}</h2>
+          <p>{{ overlayMode() === 'register' ? 'Choose between OCR document scan, manual form entry, or Combo mode to verify details.' : 'A dry run checks identifiers and reports conflicts before anything is written.' }}</p>
+        </div>
+        <button type="button" (click)="overlayMode.set(null)" aria-label="Close">×</button>
+      </div>
       <app-asset-registration-workspace
         *ngIf="overlayMode() === 'register'"
         [asset]="assetForm"
+        [mode]="selectedMode()"
+        (modeChange)="selectedMode.set($event)"
         [sites]="service.activeSites()"
         [draft]="activeDraft()"
         [evidence]="activeEvidence()"
@@ -173,9 +307,19 @@
         (completionRequested)="saveAsset()"
       ></app-asset-registration-workspace>
       <div *ngIf="overlayMode() === 'import'" class="import-panel">
-        <label class="file-drop"><strong>Choose a CSV asset register</strong><span>Required: make, model and at least one serial number, VIN or number plate</span><input type="file" accept=".csv,text/csv" (change)="previewImport($event)"></label>
+        <label class="file-drop">
+          <strong>Choose a CSV asset register</strong>
+          <span>Required: make, model and at least one serial number, VIN or number plate</span>
+          <input type="file" accept=".csv,text/csv" (change)="previewImport($event)">
+        </label>
         <div *ngIf="importMessage()" class="import-message">{{ importMessage() }}</div>
-        <div *ngIf="importPreview() as preview" class="import-result"><p><strong>{{ preview.totalRows }}</strong> rows checked · <span>{{ preview.validAssets.length }} valid</span> · <em>{{ preview.conflicts.length }} conflicts</em></p><ul *ngIf="preview.conflicts.length"><li *ngFor="let conflict of preview.conflicts">Row {{ conflict.rowNumber }}: {{ conflict.identifier || 'No identifier' }} — {{ conflict.reason }}</li></ul><button type="button" class="button button-primary" (click)="commitImport()" [disabled]="preview.conflicts.length > 0 || !preview.validAssets.length">Commit verified import</button></div>
+        <div *ngIf="importPreview() as preview" class="import-result">
+          <p><strong>{{ preview.totalRows }}</strong> rows checked · <span>{{ preview.validAssets.length }} valid</span> · <em>{{ preview.conflicts.length }} conflicts</em></p>
+          <ul *ngIf="preview.conflicts.length">
+            <li *ngFor="let conflict of preview.conflicts">Row {{ conflict.rowNumber }}: {{ conflict.identifier || 'No identifier' }} — {{ conflict.reason }}</li>
+          </ul>
+          <button type="button" class="button button-primary" (click)="commitImport()" [disabled]="preview.conflicts.length > 0 || !preview.validAssets.length">Commit verified import</button>
+        </div>
       </div>
     </section>
   </div>

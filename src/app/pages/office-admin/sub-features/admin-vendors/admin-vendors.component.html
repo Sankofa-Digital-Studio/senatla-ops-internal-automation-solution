@@ -1,0 +1,110 @@
+<div class="space-y-4">
+  @if (feedback()) {
+    <div class="rounded-xl border border-yellow-700/60 bg-yellow-950/40 p-3 text-xs text-yellow-200">
+      {{ feedback() }}
+    </div>
+  }
+
+  <div class="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
+    <!-- Left: Log Vendor Invoice -->
+    <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Log Vendor Invoice</h2>
+      <div class="mt-4 space-y-3">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Supplier / Vendor</label>
+          <select [(ngModel)]="invoiceForm.vendorId" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500">
+            <option value="">Select vendor</option>
+            @for (v of service.vendorAccounts(); track v.id) {
+              <option [value]="v.id">{{ v.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">Purchase Order #</label>
+            <input [(ngModel)]="invoiceForm.orderNumber" placeholder="PO-9921" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500" />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">Invoice Number</label>
+            <input [(ngModel)]="invoiceForm.invoiceNumber" placeholder="INV-2026-04" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">Invoice Date</label>
+            <input [(ngModel)]="invoiceForm.invoiceDate" type="date" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500" />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">Total Amount (ZAR)</label>
+            <input [(ngModel)]="invoiceForm.total" type="number" step="0.01" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Items / Service Description</label>
+          <textarea [(ngModel)]="invoiceForm.itemsPurchased" rows="3" placeholder="e.g. Hydraulic fluid 200L, filter replacements..." class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500"></textarea>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Responsible Officer / Requisitioner</label>
+          <input [(ngModel)]="invoiceForm.responsiblePerson" placeholder="e.g. Site Engineer" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500" />
+        </div>
+        <button
+          type="button"
+          (click)="submitInvoice()"
+          [disabled]="busy() || !invoiceForm.vendorId || !invoiceForm.orderNumber || !invoiceForm.total"
+          class="w-full rounded-lg bg-yellow-500 hover:bg-yellow-400 px-4 py-3 text-sm font-bold text-black disabled:opacity-50 transition-colors"
+        >
+          Capture Vendor Invoice
+        </button>
+      </div>
+    </div>
+
+    <!-- Right: Invoices Registry -->
+    <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+      <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Captured Invoices</h2>
+        <select
+          [ngModel]="selectedVendorId()"
+          (ngModelChange)="selectedVendorId.set($event)"
+          class="rounded-lg border border-gray-700 bg-gray-950 px-2.5 py-1 text-xs text-white"
+        >
+          <option value="">All Vendors</option>
+          @for (v of service.vendorAccounts(); track v.id) {
+            <option [value]="v.id">{{ v.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="mt-4 space-y-3 max-h-[38rem] overflow-y-auto pr-1">
+        @if (filteredInvoices().length === 0) {
+          <div class="rounded-xl border border-gray-800 bg-gray-950 py-12 text-center text-sm text-gray-500">
+            No invoices captured for this vendor selection.
+          </div>
+        } @else {
+          @for (inv of filteredInvoices(); track inv.id) {
+            <div class="rounded-xl border border-gray-800 bg-gray-950 p-4 hover:border-gray-700 transition-colors">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <p class="font-bold text-white">{{ vendorName(inv.vendorId) }}</p>
+                    <app-erp-status-badge [label]="inv.status" [variant]="statusVariant(inv.status)"></app-erp-status-badge>
+                  </div>
+                  <p class="text-xs text-gray-400 mt-1">
+                    PO: <span class="text-yellow-400 font-mono">{{ inv.orderNumber }}</span>
+                    @if (inv.invoiceNumber) {
+                      · Inv: <span class="font-mono">{{ inv.invoiceNumber }}</span>
+                    }
+                  </p>
+                  <p class="text-xs text-gray-500 mt-0.5">{{ inv.itemsPurchased }}</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-base font-bold text-emerald-400">R {{ inv.total | number:'1.2-2' }}</p>
+                  <p class="text-[11px] text-gray-500 mt-0.5">{{ inv.invoiceDate | date:'mediumDate' }}</p>
+                </div>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </div>
+</div>

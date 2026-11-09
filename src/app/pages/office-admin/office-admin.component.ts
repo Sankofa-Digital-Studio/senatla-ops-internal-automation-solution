@@ -1,8 +1,16 @@
+import { AdminOverviewComponent } from './sub-features/admin-overview/admin-overview.component';
+import { AdminUsersComponent } from './sub-features/admin-users/admin-users.component';
+import { AdminWorkforceComponent } from './sub-features/admin-workforce/admin-workforce.component';
+import { AdminTimesheetsComponent } from './sub-features/admin-timesheets/admin-timesheets.component';
+import { AdminSitesComponent } from './sub-features/admin-sites/admin-sites.component';
+import { AdminIssuesComponent } from './sub-features/admin-issues/admin-issues.component';
+import { AdminVendorsComponent } from './sub-features/admin-vendors/admin-vendors.component';
+import { AdminGovernanceComponent } from './sub-features/admin-governance/admin-governance.component';
+
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { TimesheetSummaryComponent } from '../../components/timesheet-summary.component';
 import { UiButtonComponent } from '../../components/ui-button.component';
 import { UiFeedbackComponent } from '../../components/ui-feedback.component';
 import { UiTabNavComponent } from '../../components/ui-tab-nav.component';
@@ -48,7 +56,7 @@ const COST_PERIOD_END_EXCLUSIVE = new Date(new Date().getFullYear(), new Date().
   templateUrl: './office-admin.component.html',
   styleUrls: ['./office-admin.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe, DecimalPipe, RouterLink, TimesheetSummaryComponent, UiButtonComponent, UiFeedbackComponent, UiTabNavComponent],
+  imports: [CommonModule, FormsModule, DatePipe, DecimalPipe, RouterLink, UiButtonComponent, UiFeedbackComponent, UiTabNavComponent, AdminOverviewComponent, AdminUsersComponent, AdminWorkforceComponent, AdminTimesheetsComponent, AdminSitesComponent, AdminIssuesComponent, AdminVendorsComponent, AdminGovernanceComponent],
 })
 export class OfficeAdminComponent {
   readonly service = inject(OfficeAdminService);

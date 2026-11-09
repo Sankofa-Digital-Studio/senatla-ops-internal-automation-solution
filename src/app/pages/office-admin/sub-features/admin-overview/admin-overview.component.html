@@ -1,0 +1,101 @@
+<div class="grid gap-4 lg:grid-cols-2">
+  <div class="lg:col-span-2 grid gap-3 sm:grid-cols-2">
+    <article class="rounded-xl border border-gray-800 bg-gray-900 p-4">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-wider text-gray-400">New-hire readiness</p>
+          <p class="mt-1 text-xs text-gray-500">Criminal, fingerprint and medical checks complete</p>
+        </div>
+        <strong class="text-lg text-yellow-400">{{ onboardingProgress() }}%</strong>
+      </div>
+      <div class="mt-3 h-2 overflow-hidden rounded-full bg-gray-800" role="progressbar" aria-label="New-hire readiness" [attr.aria-valuenow]="onboardingProgress()" aria-valuemin="0" aria-valuemax="100">
+        <div class="h-full rounded-full bg-yellow-500 transition-all duration-300" [style.width.%]="onboardingProgress()"></div>
+      </div>
+    </article>
+
+    <article class="rounded-xl border border-gray-800 bg-gray-900 p-4">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Workspace sync</p>
+          <p class="mt-1 text-xs text-gray-500">Processed integration events</p>
+        </div>
+        <strong class="text-lg text-emerald-400">{{ syncProgress() }}%</strong>
+      </div>
+      <div class="mt-3 h-2 overflow-hidden rounded-full bg-gray-800" role="progressbar" aria-label="Workspace sync" [attr.aria-valuenow]="syncProgress()" aria-valuemin="0" aria-valuemax="100">
+        <div class="h-full rounded-full bg-emerald-500 transition-all duration-300" [style.width.%]="syncProgress()"></div>
+      </div>
+    </article>
+  </div>
+
+  <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+    <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Admin Priorities</h2>
+    <div class="mt-4 grid gap-3 sm:grid-cols-2">
+      <app-erp-stat-card title="Users" [value]="service.users().length" subtext="Registered accounts"></app-erp-stat-card>
+      <app-erp-stat-card title="Active workforce" [value]="service.activeEmployees().length" tone="accent" subtext="Field and office staff"></app-erp-stat-card>
+      <app-erp-stat-card title="Open issues" [value]="openIssuesCount()" [tone]="openIssuesCount() > 0 ? 'warning' : 'success'" subtext="Escalations pending"></app-erp-stat-card>
+      <app-erp-stat-card title="Assets" [value]="service.assets().length" subtext="Tracked machinery & vehicles"></app-erp-stat-card>
+    </div>
+  </div>
+
+  <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+    <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Recent Activity</h2>
+    <div class="mt-4 space-y-3">
+      @if (service.activity().length === 0) {
+        <p class="text-xs text-gray-500 py-4 text-center">No recent activity recorded</p>
+      } @else {
+        @for (event of service.activity().slice(0, 8); track event.id) {
+          <div class="rounded-xl border border-gray-800 bg-gray-950 px-3 py-3">
+            <div class="flex items-center justify-between gap-3">
+              <p class="text-sm font-semibold">{{ activityLabel(event.action, event.details) }}</p>
+              <span class="text-[11px] uppercase tracking-wider text-gray-500">{{ event.occurredAt | date:'medium' }}</span>
+            </div>
+            <p class="mt-1 text-xs text-gray-400">{{ event.actorName }} / {{ activityMethod(event.details) }} / {{ event.entityType }}</p>
+          </div>
+        }
+      }
+    </div>
+  </div>
+
+  <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+    <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Saved Views</h2>
+    <div class="mt-4 flex gap-2">
+      <input [(ngModel)]="viewName" placeholder="View name" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-yellow-500">
+      <button type="button" (click)="saveView()" [disabled]="busy() || !viewName().trim()" class="rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-200 hover:bg-gray-800 disabled:opacity-40">Save</button>
+    </div>
+    <div class="mt-4 space-y-3">
+      @for (view of service.savedViews(); track view.id) {
+        <div class="rounded-xl border border-gray-800 bg-gray-950 px-3 py-3">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <p class="font-semibold">{{ view.name }}</p>
+              <p class="text-xs text-gray-500">{{ view.filters['tab'] || 'custom' }} · {{ view.createdAt | date:'short' }}</p>
+            </div>
+            <button type="button" (click)="applyView(view.filters.tab)" class="rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-200 hover:bg-gray-800">Apply</button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+    <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Anomaly Detection</h2>
+    <p class="mt-1 text-xs text-gray-500">Automated system checks computed from operational state.</p>
+    <div class="mt-4 space-y-3">
+      @if (service.anomalies().length === 0) {
+        <p class="text-xs text-emerald-400 py-3 text-center">✓ All operational metrics within normal parameters</p>
+      } @else {
+        @for (anomaly of service.anomalies(); track anomaly.id) {
+          <div class="rounded-xl border border-gray-800 bg-gray-950 px-3 py-3">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <p class="font-semibold">{{ anomaly.title }}</p>
+                <p class="text-xs text-gray-500">{{ anomaly.detail }}</p>
+              </div>
+              <app-erp-status-badge [label]="anomaly.severity" [variant]="anomalyVariant(anomaly.severity)"></app-erp-status-badge>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  </div>
+</div>

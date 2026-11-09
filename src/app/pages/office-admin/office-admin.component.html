@@ -20,479 +20,45 @@
     </header>
 
     <main class="admin-main flex-1 overflow-y-auto bg-gray-950 px-4 py-4">
-      <section *ngIf="activeTab() === 'overview'" class="grid gap-4 lg:grid-cols-2">
-        <div class="lg:col-span-2 grid gap-3 sm:grid-cols-2">
-          <article class="rounded-xl border border-gray-800 bg-gray-900 p-4">
-            <div class="flex items-center justify-between gap-3"><div><p class="text-xs font-bold uppercase tracking-wider text-gray-400">New-hire readiness</p><p class="mt-1 text-xs text-gray-500">Criminal, fingerprint and medical checks complete</p></div><strong class="text-lg text-yellow-400">{{ onboardingProgress() }}%</strong></div>
-            <div class="mt-3 h-2 overflow-hidden rounded-full bg-gray-800" role="progressbar" aria-label="New-hire readiness" [attr.aria-valuenow]="onboardingProgress()" aria-valuemin="0" aria-valuemax="100"><div class="h-full rounded-full bg-yellow-500 transition-all" [style.width.%]="onboardingProgress()"></div></div>
-          </article>
-          <article class="rounded-xl border border-gray-800 bg-gray-900 p-4">
-            <div class="flex items-center justify-between gap-3"><div><p class="text-xs font-bold uppercase tracking-wider text-gray-400">Workspace sync</p><p class="mt-1 text-xs text-gray-500">Processed integration events</p></div><strong class="text-lg text-emerald-400">{{ syncProgress() }}%</strong></div>
-            <div class="mt-3 h-2 overflow-hidden rounded-full bg-gray-800" role="progressbar" aria-label="Workspace sync" [attr.aria-valuenow]="syncProgress()" aria-valuemin="0" aria-valuemax="100"><div class="h-full rounded-full bg-emerald-500 transition-all" [style.width.%]="syncProgress()"></div></div>
-          </article>
-        </div>
-        <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Admin Priorities</h2>
-          <div class="mt-4 grid gap-3 sm:grid-cols-2">
-            <div class="rounded-xl border border-gray-800 bg-gray-950 p-4">
-              <p class="text-xs text-gray-500">Users</p>
-              <p class="mt-1 text-2xl font-bold">{{ service.users().length }}</p>
-            </div>
-            <div class="rounded-xl border border-gray-800 bg-gray-950 p-4">
-              <p class="text-xs text-gray-500">Active workforce</p>
-              <p class="mt-1 text-2xl font-bold">{{ service.activeEmployees().length }}</p>
-            </div>
-            <div class="rounded-xl border border-gray-800 bg-gray-950 p-4">
-              <p class="text-xs text-gray-500">Open issues</p>
-              <p class="mt-1 text-2xl font-bold">{{ openIssuesCount() }}</p>
-            </div>
-            <div class="rounded-xl border border-gray-800 bg-gray-950 p-4">
-              <p class="text-xs text-gray-500">Assets</p>
-              <p class="mt-1 text-2xl font-bold">{{ service.assets().length }}</p>
-            </div>
-          </div>
-        </div>
+      @if (activeTab() === 'overview') {
+        @defer (on idle) {
+          <app-admin-overview></app-admin-overview>
+        } @placeholder {
+          <div class="animate-pulse h-64 bg-gray-900 rounded-2xl"></div>
+        }
+      }
 
-        <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Recent Activity</h2>
-          <div class="mt-4 space-y-3">
-            <div *ngFor="let event of service.activity().slice(0, 8)" class="rounded-xl border border-gray-800 bg-gray-950 px-3 py-3">
-              <div class="flex items-center justify-between gap-3">
-                <p class="text-sm font-semibold">{{ activityLabel(event.action, event.details) }}</p>
-                <span class="text-[11px] uppercase tracking-wider text-gray-500">{{ event.occurredAt | date:'medium' }}</span>
-              </div>
-              <p class="mt-1 text-xs text-gray-400">{{ event.actorName }} / {{ activityMethod(event.details) }} / {{ event.entityType }}</p>
-            </div>
-          </div>
-        </div>
+      @if (activeTab() === 'users') {
+        @defer (on idle) {
+          <app-admin-users></app-admin-users>
+        } @placeholder {
+          <div class="animate-pulse h-64 bg-gray-900 rounded-2xl"></div>
+        }
+      }
 
-        <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Saved Views</h2>
-          <div class="mt-4 flex gap-2">
-            <input [(ngModel)]="viewName" placeholder="View name" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-            <button type="button" (click)="saveView()" [disabled]="busy() || !viewName.trim()" class="rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-200 disabled:opacity-40">Save</button>
-          </div>
-          <div class="mt-4 space-y-3">
-            <div *ngFor="let view of service.savedViews()" class="rounded-xl border border-gray-800 bg-gray-950 px-3 py-3">
-              <div class="flex items-center justify-between gap-3">
-                <div><p class="font-semibold">{{ view.name }}</p><p class="text-xs text-gray-500">{{ view.filters.tab }} · {{ view.createdAt | date:'short' }}</p></div>
-                <button type="button" (click)="applyView(view.id)" class="rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-200">Apply</button>
-              </div>
-            </div>
-          </div>
-        </div>
+      @if (activeTab() === 'people' || activeTab() === 'workforce') {
+        @defer (on idle) {
+          <app-admin-workforce></app-admin-workforce>
+        } @placeholder {
+          <div class="animate-pulse h-64 bg-gray-900 rounded-2xl"></div>
+        }
+      }
 
-        <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Anomaly Detection</h2>
-          <p class="mt-1 text-xs text-gray-500">These checks are computed client-side from persisted records and are ready to move server-side later.</p>
-          <div class="mt-4 space-y-3">
-            <div *ngFor="let anomaly of service.anomalies()" class="rounded-xl border border-gray-800 bg-gray-950 px-3 py-3">
-              <div class="flex items-center justify-between gap-3">
-                <div><p class="font-semibold">{{ anomaly.title }}</p><p class="text-xs text-gray-500">{{ anomaly.detail }}</p></div>
-                <span class="rounded-full border border-gray-700 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-yellow-300">{{ anomaly.severity }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      @if (activeTab() === 'sites') {
+        @defer (on idle) {
+          <app-admin-sites></app-admin-sites>
+        } @placeholder {
+          <div class="animate-pulse h-64 bg-gray-900 rounded-2xl"></div>
+        }
+      }
 
-      <section *ngIf="activeTab() === 'users'" class="space-y-4">
-        <div class="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
-        <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Invite User</h2>
-          <div class="mt-4 space-y-3">
-            <input [(ngModel)]="inviteForm.email" placeholder="user@company.com" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-            <input [(ngModel)]="inviteForm.displayName" placeholder="Display name" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-            <p class="rounded-lg border border-lime-900 bg-lime-950/40 px-3 py-2 text-xs leading-5 text-lime-100">New invitations always start with minimum Site access. Administrator access requires a separately issued, verified code.</p>
-            <button type="button" (click)="submitInvite()" [disabled]="busy()" class="w-full rounded-lg bg-yellow-500 px-4 py-3 text-sm font-bold text-black disabled:opacity-50">Send Invite</button>
-          </div>
-        </div>
-
-        <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Access Directory</h2>
-          <div class="mt-4 space-y-3">
-            <div *ngFor="let user of service.users()" class="rounded-xl border border-gray-800 bg-gray-950 px-3 py-3">
-              <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div><p class="font-semibold">{{ user.displayName }}</p><p class="text-xs text-gray-500">{{ user.username }}</p></div>
-                <div class="flex flex-wrap items-center gap-2">
-                  <select #roleSelect [ngModel]="user.role" class="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white">
-                    <option value="site">Site</option><option value="office">Office</option><option value="director">Director</option>
-                  </select>
-                  <label class="flex items-center gap-2 text-xs text-gray-300"><input #activeToggle type="checkbox" [checked]="user.isActive" class="accent-yellow-500">Active</label>
-                  <button type="button" (click)="updateUser(user, roleSelect.value, activeToggle.checked)" class="rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-200">Apply</button>
-                  <button type="button" (click)="resetUserPassword(user)" class="rounded-lg border border-yellow-700 px-3 py-2 text-xs font-bold uppercase tracking-wider text-yellow-200">Reset</button>
-                  <button *ngIf="user.isActive" type="button" (click)="suspendUser(user)" class="rounded-lg border border-red-900 px-3 py-2 text-xs font-bold uppercase tracking-wider text-red-300">Suspend</button>
-                  <button *ngIf="!user.isActive" type="button" (click)="reactivateUser(user)" class="rounded-lg border border-green-900 px-3 py-2 text-xs font-bold uppercase tracking-wider text-green-300">Reactivate</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        </div>
-      </section>
-
-      <section data-tour="admin-people" *ngIf="activeTab() === 'people'" class="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-        <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Workforce search</h2>
-              <p class="mt-1 text-xs text-gray-500">Sites must be created before employee profiles are added.</p>
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
-              <button type="button" (click)="openCreateEmployeeModal()" class="rounded-lg bg-yellow-500 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-black hover:bg-yellow-400 transition-colors shadow">+ Add Employee</button>
-              <button type="button" (click)="createEmployeeProfile()" [disabled]="busy() || !service.activeSites().length" class="rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-200 disabled:opacity-40" title="Start a new employee profile after at least one site exists">+ Inline form</button>
-            </div>
-          </div>
-          <div class="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
-            <input [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" placeholder="Search name, surname, or masked ID" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-            <select [ngModel]="selectedSiteId()" (ngModelChange)="selectedSiteId.set($event)" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-              <option value="">All sites</option><option *ngFor="let site of service.activeSites()" [value]="site.id">{{ site.name }}</option>
-            </select>
-          </div>
-          <div class="mt-3 flex flex-wrap gap-2">
-            <select [ngModel]="bulkSiteId()" (ngModelChange)="setBulkSiteId($event)" class="min-h-11 rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white">
-              <option value="">Assignment target site</option><option *ngFor="let site of service.activeSites()" [value]="site.id">{{ site.name }}</option>
-            </select>
-            <button data-tour="employee-site-assignment" type="button" (click)="reviewBulkSiteAssignment()" [disabled]="busy() || !selectedEmployeeIds().length || !bulkSiteId()" class="min-h-11 rounded-lg border border-yellow-700 px-3 py-2 text-xs font-bold uppercase tracking-wider text-yellow-200 disabled:opacity-40">Review assignment</button>
-          </div>
-          <section *ngIf="assignmentReview() as review" aria-live="polite" class="mt-3 rounded-xl border border-gray-700 bg-gray-950 p-3">
-            <div class="flex flex-wrap items-center justify-between gap-2"><div><p class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Human-reviewed assignment</p><h3 class="text-sm font-bold text-white">{{ review.outcome | titlecase }} - {{ review.items.length }} resource(s)</h3></div><span class="rounded-full px-2 py-1 text-[10px] font-bold uppercase" [class.bg-red-950]="review.outcome === 'blocked'" [class.text-red-300]="review.outcome === 'blocked'" [class.bg-amber-950]="review.outcome === 'warning' || review.outcome === 'unknown'" [class.text-amber-300]="review.outcome === 'warning' || review.outcome === 'unknown'" [class.bg-emerald-950]="review.outcome === 'ready'" [class.text-emerald-300]="review.outcome === 'ready'">{{ review.outcome }}</span></div>
-            <div class="mt-3 space-y-3">
-              <article *ngFor="let item of review.items" class="rounded-lg border border-gray-800 p-3">
-                <div class="flex flex-wrap justify-between gap-2"><strong class="text-sm text-white">{{ item.label }}</strong><span class="text-xs uppercase text-gray-400">{{ item.roleOrClass }} / {{ item.outcome }}</span></div>
-                <div *ngFor="let reason of item.reasons" class="mt-2 text-xs"><p class="font-semibold text-amber-200">{{ reason.message }}</p><p class="mt-1 text-gray-500">{{ reason.action }}</p></div>
-                <div *ngIf="item.alternatives.length" class="mt-3"><p class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Ranked eligible alternatives</p><button *ngFor="let alternative of item.alternatives" type="button" (click)="selectAssignmentAlternative(item.entityId, alternative.entityId)" class="mt-2 min-h-11 w-full rounded-lg border border-gray-700 px-3 py-2 text-left text-xs hover:border-yellow-600"><span class="font-semibold text-white">{{ alternative.label }}</span><span class="ml-2 text-gray-500">{{ alternative.score }} points - {{ alternative.scoreReasons.join(', ') }}</span></button></div>
-              </article>
-            </div>
-            <label class="mt-3 block text-[10px] font-bold uppercase tracking-wider text-gray-500">Controlled decision reason<select [ngModel]="assignmentReasonCode()" (ngModelChange)="assignmentReasonCode.set($event)" class="mt-1 min-h-11 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white"><option value="">Select when rejecting or overriding</option><optgroup label="Reject"><option value="assignment_deferred">Assignment deferred</option><option value="alternative_not_suitable">Alternative not suitable</option><option value="additional_evidence_required">Additional evidence required</option></optgroup><optgroup label="Override warning"><option value="restricted_duties_confirmed">Restricted duties confirmed</option><option value="operational_continuity">Operational continuity</option><option value="manager_authorized">Manager authorised</option></optgroup></select></label>
-            <div class="mt-3 grid gap-2 sm:grid-cols-3"><button *ngIf="review.outcome === 'ready'" type="button" (click)="runBulkSiteAssignment('accept')" [disabled]="busy()" class="min-h-11 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-bold uppercase text-black">Accept assignment</button><button *ngIf="review.outcome === 'warning'" type="button" (click)="runBulkSiteAssignment('override')" [disabled]="busy() || !assignmentReasonCode()" class="min-h-11 rounded-lg bg-amber-400 px-3 py-2 text-xs font-bold uppercase text-black disabled:opacity-40">Override warning</button><button type="button" (click)="runBulkSiteAssignment('reject')" [disabled]="busy() || !assignmentReasonCode()" class="min-h-11 rounded-lg border border-red-800 px-3 py-2 text-xs font-bold uppercase text-red-300 disabled:opacity-40">Reject suggestion</button></div>
-          </section>
-          <div class="mt-4 max-h-[34rem] space-y-3 overflow-y-auto pr-1">
-            <div *ngFor="let employee of filteredEmployees()" class="w-full rounded-xl border border-gray-800 bg-gray-950 px-3.5 py-3 hover:border-yellow-700 transition-colors" [class.border-yellow-500]="selectedEmployeeId() === employee.id">
-              <div class="flex items-start justify-between gap-2">
-                <div class="flex items-start gap-3 flex-1 cursor-pointer" (click)="selectEmployee(employee.id)">
-                  <input type="checkbox" [checked]="selectedEmployeeIds().includes(employee.id)" (click)="$event.stopPropagation()" (change)="toggleSelectedEmployee(employee.id, $any($event.target).checked)" class="mt-1 accent-yellow-500">
-                  <div class="min-w-0">
-                    <p class="font-semibold text-white">{{ employee.surname }}, {{ employee.firstName }}</p>
-                    <p class="truncate text-xs text-gray-500">{{ employee.role }} · {{ service.getSiteName(employee.siteId) }} · {{ service.maskIdNumber(employee.idNumber) }}</p>
-                    <span class="inline-block mt-1 rounded px-2 py-0.5 text-[10px] font-bold uppercase" [class.bg-emerald-500/10]="(employee.employmentStatus || 'active') === 'active'" [class.text-emerald-400]="(employee.employmentStatus || 'active') === 'active'" [class.bg-gray-800]="(employee.employmentStatus || 'active') !== 'active'" [class.text-gray-400]="(employee.employmentStatus || 'active') !== 'active'">{{ employee.employmentStatus || 'active' }}</span>
-                  </div>
-                </div>
-                <div class="flex items-center gap-1.5 shrink-0">
-                  <button type="button" (click)="openEditEmployeeModal(employee)" class="rounded-lg border border-gray-700 bg-gray-900 px-2.5 py-1 text-xs font-bold text-gray-200 hover:border-yellow-500 hover:text-white transition-colors" title="Edit in modal">Edit</button>
-                  <button type="button" (click)="quickToggleEmployeeStatus(employee)" class="rounded-lg border border-gray-800 px-2 py-1 text-[11px] text-gray-400 hover:text-white transition-colors" title="Toggle status">{{ (employee.employmentStatus || 'active') === 'active' ? 'Archive' : 'Activate' }}</button>
-                </div>
-              </div>
-            </div>
-            <p *ngIf="!filteredEmployees().length" class="rounded-xl border border-gray-800 bg-gray-950 px-3 py-8 text-center text-sm text-gray-500">No workforce records match this search.</p>
-          </div>
-        </div>
-        <div class="space-y-4">
-          <div *ngIf="selectedEmployee() as employee; else noEmployeeSelected" class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-            <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-              <div><p class="text-[10px] font-bold uppercase tracking-wider text-yellow-400">Employee Profile</p><h2 class="mt-1 text-xl font-bold">{{ employee.firstName }} {{ employee.surname }}</h2><p class="mt-1 text-sm text-gray-400">{{ employee.role }} · {{ service.getSiteName(employee.siteId) }}</p></div>
-              <div class="flex flex-wrap gap-2">
-                <button type="button" (click)="openEditEmployeeModal(employee)" class="rounded-lg bg-yellow-500 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-black hover:bg-yellow-400 transition-colors">Edit in Modal</button>
-                <button type="button" (click)="editEmployee(employee)" class="rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-200">Inline Edit</button>
-                <button type="button" (click)="stageEmployeeDeletion(employee)" class="rounded-lg border border-red-800 px-3 py-2 text-xs font-bold uppercase tracking-wider text-red-300">Archive</button>
-              </div>
-            </div>
-            <dl class="mt-4 grid gap-3 sm:grid-cols-2">
-              <div class="rounded-xl border border-gray-800 bg-gray-950 p-3"><dt class="text-[10px] uppercase tracking-wider text-gray-500">Masked ID</dt><dd class="mt-1 font-semibold">{{ service.maskIdNumber(employee.idNumber) }}</dd></div>
-              <div class="rounded-xl border border-gray-800 bg-gray-950 p-3"><dt class="text-[10px] uppercase tracking-wider text-gray-500">Company number</dt><dd class="mt-1 font-semibold">{{ employee.companyNumber || 'Not captured' }}</dd></div>
-              <div class="rounded-xl border border-gray-800 bg-gray-950 p-3"><dt class="text-[10px] uppercase tracking-wider text-gray-500">Designation</dt><dd class="mt-1 font-semibold">{{ employee.designation || employee.role }}</dd></div>
-              <div class="rounded-xl border border-gray-800 bg-gray-950 p-3"><dt class="text-[10px] uppercase tracking-wider text-gray-500">Employment start</dt><dd class="mt-1 font-semibold">{{ employee.startDate | date:'mediumDate' }}</dd></div>
-              <div class="rounded-xl border border-gray-800 bg-gray-950 p-3"><dt class="text-[10px] uppercase tracking-wider text-gray-500">Status</dt><dd class="mt-1 font-semibold">{{ employee.employmentStatus || 'active' }}</dd></div>
-
-            </dl>
-            <article class="mt-4 rounded-xl border border-gray-800 bg-gray-950 p-3"><h3 class="text-xs font-bold uppercase tracking-wider text-gray-400">Safety qualifications</h3><div class="mt-2 flex flex-wrap gap-2"><span *ngFor="let qualification of employee.safetyQualifications" class="rounded-full bg-emerald-950 px-2 py-1 text-xs text-emerald-200">{{ qualification }}</span><span *ngIf="!employee.safetyQualifications?.length" class="text-xs text-gray-500">None captured</span></div><dl *ngIf="employee.additionalFields | keyvalue as fields" class="mt-3 grid gap-2 sm:grid-cols-2"><div *ngFor="let field of fields"><dt class="text-[10px] uppercase text-gray-500">{{ field.key }}</dt><dd class="text-xs text-gray-300">{{ field.value }}</dd></div></dl></article>
-            <div class="mt-4 grid gap-3 md:grid-cols-2">
-              <article class="rounded-xl border border-gray-800 bg-gray-950 p-3"><h3 class="text-xs font-bold uppercase tracking-wider text-gray-400">Asset custodian</h3><p class="mt-2 text-sm text-gray-300">{{ selectedEmployeeAssets().length ? 'Assigned company asset' : 'No assigned company asset' }}</p><div class="mt-2 space-y-2"><p *ngFor="let asset of selectedEmployeeAssets()" class="text-xs text-gray-500">{{ asset.registrationNumber || asset.vin || asset.serialNumber }} · {{ asset.make }} {{ asset.model }}</p></div></article>
-              <article class="rounded-xl border border-gray-800 bg-gray-950 p-3"><h3 class="text-xs font-bold uppercase tracking-wider text-gray-400">Current issue</h3><p class="mt-2 text-sm text-gray-300">{{ selectedEmployeeOpenIssues().length || 0 }} open item(s)</p><p *ngFor="let issue of selectedEmployeeOpenIssues().slice(0, 2)" class="mt-2 text-xs text-gray-500">{{ issue.description }}</p></article>
-            </div>
-          </div>
-          <ng-template #noEmployeeSelected><div class="rounded-2xl border border-gray-800 bg-gray-900 px-4 py-12 text-center text-sm text-gray-500">Select a workforce record to view the summary.</div></ng-template>
-          <div *ngIf="showEmployeeForm()" class="rounded-2xl border border-yellow-900/60 bg-gray-900 p-4">
-            <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Employee profile form</h2>
-            <div class="mt-4 grid gap-3 md:grid-cols-2">
-              <input [(ngModel)]="personForm.firstName" placeholder="First name" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-              <input [(ngModel)]="personForm.surname" placeholder="Surname" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-              <input [(ngModel)]="personForm.idNumber" placeholder="UAT employee reference" maxlength="12" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-              <input [(ngModel)]="personForm.companyNumber" placeholder="Company employee number" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-              <input [(ngModel)]="personForm.designation" placeholder="Actual designation" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-
-
-              <select [(ngModel)]="personForm.role" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"><option value="General Worker">General Worker</option><option value="Driver">Driver</option><option value="Safety Rep">SHE Rep</option><option value="Operator">Heavy Machinery Operator</option><option value="Foreman">Foreman</option></select>
-              <select [(ngModel)]="personForm.siteId" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"><option value="">Select site</option><option *ngFor="let site of service.activeSites()" [value]="site.id">{{ site.name }}</option></select>
-              <select [(ngModel)]="personForm.employmentStatus" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"><option value="active">Active</option><option value="inactive">Inactive</option><option value="suspended">Suspended</option></select>
-              <button type="button" (click)="loadSyntheticEmployeeCandidate()" class="rounded-lg border border-emerald-700 px-4 py-3 text-sm font-bold text-emerald-200 md:col-span-2">Load synthetic test candidate</button>
-              <button type="button" (click)="submitEmployee()" [disabled]="busy() || !personForm.firstName.trim() || !personForm.surname.trim() || !personForm.siteId || !personForm.idNumber.match('^UAT-EMP-[0-9]{4,}$')" class="rounded-lg bg-yellow-500 px-4 py-3 text-sm font-bold text-black disabled:opacity-50 md:col-span-2">Review employee change</button>
-            </div>
-            <section *ngIf="pendingEmployeeCandidate() as candidate" class="mt-4 rounded-xl border border-amber-700 bg-amber-950/30 p-4" aria-live="polite">
-              <p class="text-[10px] font-bold uppercase tracking-wider text-amber-300">Approval required - no database write yet</p>
-              <h3 class="mt-2 font-semibold text-white">{{ candidate.firstName }} {{ candidate.surname }}</h3>
-              <p class="mt-1 text-xs text-gray-300">{{ candidate.companyNumber || 'No company number' }} / {{ candidate.designation || candidate.role }} / {{ candidate.idNumber }}</p>
-              <p class="mt-1 text-xs text-gray-400">{{ service.getSiteName(candidate.siteId) }} / {{ candidate.startDate | date:'mediumDate' }} / {{ candidate.safetyQualifications?.join(', ') || 'No qualifications captured' }}</p>
-              <div class="mt-3 flex flex-wrap gap-2"><button type="button" (click)="approveEmployeeCandidate()" [disabled]="busy()" class="rounded-lg bg-emerald-500 px-4 py-2 text-xs font-bold uppercase text-black">Approve and save</button><button type="button" (click)="cancelEmployeeCandidate()" [disabled]="busy()" class="rounded-lg border border-gray-600 px-4 py-2 text-xs font-bold uppercase text-gray-200">Discard staged change</button></div>
-            </section>
-          </div>
-          <section *ngIf="pendingEmployeeDeletion() as employee" class="rounded-2xl border border-red-800 bg-red-950/30 p-4" aria-live="assertive"><p class="text-[10px] font-bold uppercase tracking-wider text-red-300">Archive approval required</p><h3 class="mt-2 font-semibold text-white">{{ employee.firstName }} {{ employee.surname }}</h3><p class="mt-1 text-xs text-gray-300">This will mark the employee inactive, preserve linked records, and create a DELETE audit entry with the approving user and timestamp.</p><div class="mt-3 flex gap-2"><button type="button" (click)="approveEmployeeDeletion()" [disabled]="busy()" class="rounded-lg bg-red-500 px-4 py-2 text-xs font-bold uppercase text-white">Approve archive</button><button type="button" (click)="pendingEmployeeDeletion.set(null)" class="rounded-lg border border-gray-600 px-4 py-2 text-xs font-bold uppercase text-gray-200">Cancel archive</button></div></section>
-        </div>
-      </section>      <section *ngIf="activeTab() === 'workforce'" class="admin-tab-panel space-y-4">
-        <div class="grid gap-4 xl:grid-cols-2">
-          <article class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-            <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">Employee bulk load</h2>
-            <p class="mt-2 text-xs text-gray-400">Staged CSV import supports: Names, optional source ID for duplicate detection only, Company No, Designation, Emp.Start Date, Xtream Safety, Employment Status, and Source Reference. Each accepted row receives a generated UAT employee reference; source IDs and rates are never retained.</p>
-            <label class="mt-4 block text-xs text-gray-400">Assign imported employees to site<select [ngModel]="selectedSiteId()" (ngModelChange)="selectedSiteId.set($event); employeeImportRows.set([])" class="mt-1 w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"><option value="">Select site before staging</option><option *ngFor="let site of service.activeSites()" [value]="site.id">{{ site.name }}</option></select></label>
-            <label class="mt-4 block cursor-pointer rounded-xl border border-dashed border-gray-700 bg-gray-950 p-5 text-center text-sm text-gray-300">Choose employee CSV<input type="file" accept=".csv,text/csv" (change)="importEmployees($event)" class="sr-only"></label>
-            <section *ngIf="employeeImportRows().length" class="mt-4 space-y-3" aria-live="polite">
-              <div class="grid grid-cols-3 gap-2 text-center text-xs"><span class="rounded bg-emerald-950 p-2 text-emerald-200">{{ employeeImportSummary().ready }} ready</span><span class="rounded bg-amber-950 p-2 text-amber-200">{{ employeeImportSummary().warning }} warning</span><span class="rounded bg-red-950 p-2 text-red-200">{{ employeeImportSummary().error }} error</span></div>
-              <div class="max-h-80 space-y-2 overflow-y-auto">
-                <article *ngFor="let row of employeeImportRows()" class="rounded-lg border border-gray-800 bg-gray-950 p-3">
-                  <div class="flex justify-between gap-2"><strong class="text-sm text-white">{{ row.employee.surname }}, {{ row.employee.firstName }}</strong><span class="text-[10px] font-bold uppercase" [class.text-red-300]="row.status === 'error'" [class.text-amber-300]="row.status === 'warning'" [class.text-emerald-300]="row.status === 'ready'">Row {{ row.sourceRow }} / {{ row.status }}</span></div>
-                  <p class="mt-1 text-xs text-gray-400">{{ row.employee.companyNumber || 'No company number' }} / {{ row.employee.designation || 'No designation' }} / {{ row.employee.idNumber }}</p>
-                  <p *ngFor="let error of row.errors" class="mt-1 text-xs text-red-300">{{ error }}</p><p *ngFor="let warning of row.warnings" class="mt-1 text-xs text-amber-300">{{ warning }}</p>
-                </article>
-              </div>
-              <button type="button" (click)="commitEmployeeImport()" [disabled]="busy() || employeeImportSummary().ready + employeeImportSummary().warning === 0" class="w-full rounded-lg bg-emerald-500 px-4 py-3 text-sm font-bold text-black disabled:opacity-40">Import valid rows</button>
-            </section>
-          </article>
-          <article class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-            <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">New-hire screening & medical</h2>
-            <div class="mt-4 grid gap-3 sm:grid-cols-2">
-              <select [(ngModel)]="onboardingForm.employeeId" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white sm:col-span-2"><option value="">Select employee</option><option *ngFor="let employee of service.employees()" [value]="employee.id">{{ employeeName(employee.id) }}</option></select>
-              <label class="text-xs text-gray-400">Criminal check<select [(ngModel)]="onboardingForm.criminalCheckStatus" class="mt-1 w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"><option value="pending">Pending</option><option value="clear">Clear</option><option value="review">Review</option><option value="failed">Failed</option></select></label>
-              <label class="text-xs text-gray-400">Fingerprint check<select [(ngModel)]="onboardingForm.fingerprintCheckStatus" class="mt-1 w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"><option value="pending">Pending</option><option value="clear">Clear</option><option value="review">Review</option><option value="failed">Failed</option></select></label>
-              <label class="text-xs text-gray-400">Medical status<select [(ngModel)]="onboardingForm.medicalStatus" class="mt-1 w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"><option value="pending">Pending</option><option value="fit">Fit</option><option value="restricted">Restricted</option><option value="unfit">Unfit</option></select></label>
-              <label class="text-xs text-gray-400">Red ticket number<input [(ngModel)]="onboardingForm.redTicketNumber" class="mt-1 w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"></label>
-              <label class="text-xs text-gray-400">Issued<input [(ngModel)]="onboardingForm.redTicketIssuedAt" type="date" class="mt-1 w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"></label>
-              <label class="text-xs text-gray-400">Expires<input [(ngModel)]="onboardingForm.redTicketExpiresAt" type="date" class="mt-1 w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"></label>
-              <textarea [(ngModel)]="onboardingForm.notes" placeholder="Restricted-access notes" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white sm:col-span-2"></textarea>
-              <button type="button" (click)="submitOnboarding()" [disabled]="busy() || !onboardingForm.employeeId" class="rounded-lg bg-yellow-500 px-4 py-3 text-sm font-bold text-black disabled:opacity-50 sm:col-span-2">Save screening record</button>
-            </div>
-          </article>
-        </div>
-        <div class="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
-          <article class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-            <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">Issue or request PPE</h2>
-            <div class="mt-4 grid gap-3 sm:grid-cols-2">
-              <select [(ngModel)]="ppeForm.employeeId" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white sm:col-span-2"><option value="">Select employee</option><option *ngFor="let employee of service.employees()" [value]="employee.id">{{ employeeName(employee.id) }}</option></select>
-              <select [(ngModel)]="ppeForm.itemType" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"><option value="overall_pants">Overall pants</option><option value="overall_jacket">Overall jacket</option><option value="safety_boots">Safety boots</option></select>
-              <input [(ngModel)]="ppeForm.brand" placeholder="Brand" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-              <input [(ngModel)]="ppeForm.size" placeholder="Size" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-              <input [(ngModel)]="ppeForm.unitCost" type="number" min="0" placeholder="Unit cost" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-              <label class="text-xs text-gray-400">Order date<input [(ngModel)]="ppeForm.orderDate" type="date" class="mt-1 w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"></label>
-              <label class="text-xs text-gray-400">Collection date<input [(ngModel)]="ppeForm.collectionDate" type="date" class="mt-1 w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"></label>
-              <select [(ngModel)]="ppeForm.status" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white sm:col-span-2"><option value="requested">Requested</option><option value="ordered">Ordered</option><option value="ready">Ready</option><option value="collected">Collected</option></select>
-              <button type="button" (click)="submitPpe()" [disabled]="busy() || !ppeForm.employeeId || !ppeForm.size" class="rounded-lg bg-yellow-500 px-4 py-3 text-sm font-bold text-black disabled:opacity-50 sm:col-span-2">Save PPE record</button>
-            </div>
-          </article>
-          <article class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-            <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">PPE tracking & digital confirmation</h2>
-            <div class="mt-4 space-y-3"><div *ngFor="let issue of service.ppeIssues()" class="rounded-xl border border-gray-800 bg-gray-950 p-3"><div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div><p class="font-semibold">{{ employeeName(issue.employeeId) }} · {{ issue.itemType.replace('_', ' ') }}</p><p class="text-xs text-gray-500">{{ issue.brand || 'Brand pending' }} · Size {{ issue.size }} · R {{ issue.unitCost | number:'1.2-2' }} · {{ issue.status }}</p><p class="mt-1 text-[11px] text-gray-500">Office: {{ issue.officeConfirmedAt ? 'confirmed' : 'pending' }} · Employee: {{ issue.employeeConfirmedAt ? 'confirmed' : 'pending' }}</p></div><div class="flex gap-2"><button type="button" (click)="confirmPpe(issue.id, 'office')" [disabled]="!!issue.officeConfirmedAt" class="rounded-lg border border-yellow-800 px-3 py-2 text-xs text-yellow-200 disabled:opacity-40">Office confirm</button><button type="button" (click)="confirmPpe(issue.id, 'employee')" [disabled]="!!issue.employeeConfirmedAt" class="rounded-lg border border-green-800 px-3 py-2 text-xs text-green-200 disabled:opacity-40">Employee confirm</button></div></div></div></div>
-          </article>
-        </div>
-      </section>
-      <section *ngIf="activeTab() === 'sites'" class="space-y-4">
-        <!-- Sites Header & Action Toolbar -->
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-gray-800 bg-gray-900 p-4">
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="rounded bg-yellow-500/10 px-2 py-0.5 text-xs font-bold text-yellow-400 border border-yellow-500/20">Site Operations</span>
-              <span class="text-xs text-gray-500">· {{ service.sites().length }} total registered sites</span>
-            </div>
-            <h2 class="mt-1 text-lg font-bold text-white">Operational Sites Directory</h2>
-            <p class="text-xs text-gray-400">Manage mining shafts, extraction plants, processing yards, and regional hubs.</p>
-          </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              (click)="openCreateSiteModal()"
-              class="rounded-lg bg-yellow-500 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-black hover:bg-yellow-400 transition-colors flex items-center gap-1.5 shadow"
-            >
-              <span>+ Add New Site</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Filter Toolbar -->
-        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 rounded-xl border border-gray-800 bg-gray-900/60 p-3">
-          <div class="sm:col-span-2">
-            <input
-              [ngModel]="siteSearchTerm()"
-              (ngModelChange)="siteSearchTerm.set($event)"
-              placeholder="Search site name, location, job #, or team..."
-              class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-yellow-500 focus:outline-none"
-            >
-          </div>
-          <div>
-            <select
-              [ngModel]="siteStatusFilter()"
-              (ngModelChange)="siteStatusFilter.set($event)"
-              class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
-            >
-              <option value="all">All Statuses</option>
-              <option value="active">Active Only</option>
-              <option value="inactive">Inactive Only</option>
-            </select>
-          </div>
-          <div class="flex items-center justify-end text-xs text-gray-400 px-2">
-            Showing <strong class="text-white mx-1">{{ filteredSites().length }}</strong> of {{ service.sites().length }} sites
-          </div>
-        </div>
-
-        <!-- Sites Cards Grid -->
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <div
-            *ngFor="let site of filteredSites()"
-            class="rounded-2xl border border-gray-800 bg-gray-900 p-5 flex flex-col justify-between hover:border-gray-700 transition-all shadow-sm"
-          >
-            <div>
-              <div class="flex items-start justify-between gap-3">
-                <div>
-                  <h3 class="text-base font-bold text-white">{{ site.name }}</h3>
-                  <p class="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
-                    <span>📍</span> {{ site.location }}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  (click)="quickToggleSiteActive(site)"
-                  class="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase transition-all"
-                  [class.bg-emerald-500/10]="site.isActive"
-                  [class.text-emerald-400]="site.isActive"
-                  [class.border]="site.isActive"
-                  [class.border-emerald-500/20]="site.isActive"
-                  [class.bg-gray-800]="!site.isActive"
-                  [class.text-gray-400]="!site.isActive"
-                  title="Click to toggle status"
-                >
-                  {{ site.isActive ? 'Active' : 'Inactive' }}
-                </button>
-              </div>
-
-              <div class="mt-4 grid grid-cols-2 gap-2 text-xs border-y border-gray-800 py-3">
-                <div>
-                  <span class="text-gray-500 block text-[10px] uppercase font-semibold">Job / Contract Number</span>
-                  <strong class="text-yellow-400 font-mono">{{ site.jobNumber || 'Unassigned' }}</strong>
-                </div>
-                <div>
-                  <span class="text-gray-500 block text-[10px] uppercase font-semibold">Assigned Team</span>
-                  <span class="text-gray-300">{{ site.teamName || 'General Crew' }}</span>
-                </div>
-                <div class="mt-2">
-                  <span class="text-gray-500 block text-[10px] uppercase font-semibold">Duration Target</span>
-                  <span class="text-gray-300">{{ site.estimatedDuration || 'Ongoing' }}</span>
-                </div>
-                <div class="mt-2">
-                  <span class="text-gray-500 block text-[10px] uppercase font-semibold">Workforce Count</span>
-                  <span class="text-emerald-400 font-semibold">{{ service.employees().filter(e => e.siteId === site.id).length }} personnel</span>
-                </div>
-              </div>
-
-              <!-- Compliance Checklist Tags -->
-              <div class="mt-3">
-                <span class="text-[10px] uppercase font-bold text-gray-500">Compliance Protocol</span>
-                <div class="mt-1 flex flex-wrap gap-1.5">
-                  <span
-                    *ngFor="let check of site.complianceChecklist"
-                    class="rounded-md bg-gray-950 border border-gray-800 px-2 py-0.5 text-[10px] text-gray-300"
-                  >
-                    ✓ {{ check }}
-                  </span>
-                  <span *ngIf="!site.complianceChecklist?.length" class="text-[11px] text-gray-500 italic">
-                    No custom checklist items specified
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Action Controls -->
-            <div class="mt-5 pt-3 border-t border-gray-800 flex items-center justify-between gap-2">
-              <span class="text-[11px] text-gray-500 font-mono">ID: {{ site.id.slice(0, 8) }}</span>
-              <div class="flex items-center gap-2">
-                <button
-                  type="button"
-                  (click)="openEditSiteModal(site)"
-                  class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-gray-200 hover:border-yellow-500 hover:text-white transition-colors"
-                >
-                  Edit Details
-                </button>
-                <button
-                  type="button"
-                  (click)="stageSiteDeletion(site)"
-                  class="rounded-lg border border-rose-900/60 bg-rose-950/20 px-2.5 py-1.5 text-xs font-bold uppercase tracking-wider text-rose-300 hover:bg-rose-950 hover:text-white transition-colors"
-                  title="Remove or deactivate site"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div *ngIf="!filteredSites().length" class="col-span-full rounded-2xl border border-gray-800 bg-gray-900 p-8 text-center text-sm text-gray-400">
-            No operational sites match the current search or filter criteria.
-          </div>
-        </div>
-      </section>
-
-      <section *ngIf="activeTab() === 'issues'" class="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
-        <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Issue Form</h2>
-          <div class="mt-4 space-y-3">
-            <select [(ngModel)]="issueForm.siteId" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-              <option value="">Select site</option><option *ngFor="let site of service.activeSites()" [value]="site.id">{{ site.name }}</option>
-            </select>
-            <input [(ngModel)]="issueForm.reportedBy" placeholder="Reported by" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-            <textarea [(ngModel)]="issueForm.description" rows="4" placeholder="Issue description" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"></textarea>
-            <div class="grid gap-3 md:grid-cols-2">
-              <select [(ngModel)]="issueForm.severity" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-                <option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="critical">Critical</option>
-              </select>
-              <input [(ngModel)]="issueForm.dueAt" type="date" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-            </div>
-            <select [(ngModel)]="issueForm.ownerProfileId" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-              <option [ngValue]="null">Select owner</option>
-              <option *ngFor="let user of service.users()" [ngValue]="user.id" [disabled]="!user.isActive">{{ user.displayName }} · {{ user.role }}</option>
-            </select>
-            <p *ngIf="issueForm.severity === 'high' || issueForm.severity === 'critical'" class="rounded-lg border border-amber-800 bg-amber-950/40 px-3 py-2 text-xs text-amber-100">
-              High and critical issues require both an active owner and a due date.
-            </p>
-            <button type="button" (click)="submitIssue()" [disabled]="busy()" class="w-full rounded-lg bg-yellow-500 px-4 py-3 text-sm font-bold text-black disabled:opacity-50">Save Issue</button>
-          </div>
-        </div>
-        <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Issue Board</h2>
-          <div class="mt-4 space-y-3">
-            <div *ngFor="let issue of service.issues()" class="rounded-xl border border-gray-800 bg-gray-950 px-3 py-3">
-              <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p class="font-semibold">{{ issue.description }}</p>
-                  <p class="text-xs text-gray-500">{{ service.getSiteName(issue.siteId) }} · {{ issue.reportedBy }} · {{ issue.severity || 'medium' }} · {{ issue.status }}</p>
-                  <p class="mt-1 text-xs" [class.text-red-300]="issueSlaState(issue) === 'Overdue'" [class.text-gray-400]="issueSlaState(issue) !== 'Overdue'">
-                    Owner: {{ issueOwnerName(issue) }} · SLA: {{ issueSlaState(issue) }}
-                  </p>
-                </div>
-                <button type="button" (click)="editIssue(issue)" class="rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-200">Edit</button>
-              </div>
-              <div *ngIf="issue.status !== 'Resolved'" class="mt-3 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
-                <input [(ngModel)]="issueTransitionReasons[issue.id]" placeholder="Required transition reason" class="min-w-0 rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white">
-                <button *ngIf="issue.status === 'Open'" type="button" (click)="transitionIssue(issue, 'Escalated')" [disabled]="busy()" class="rounded-lg border border-amber-700 px-3 py-2 text-xs font-bold text-amber-200 disabled:opacity-50">Escalate</button>
-                <button type="button" (click)="transitionIssue(issue, 'Resolved')" [disabled]="busy()" class="rounded-lg border border-green-700 px-3 py-2 text-xs font-bold text-green-200 disabled:opacity-50">Resolve</button>
-              </div>
-              <details *ngIf="issue.events && issue.events.length" class="mt-3 rounded-lg border border-gray-800 px-3 py-2">
-                <summary class="cursor-pointer text-xs font-bold uppercase tracking-wider text-gray-400">History · {{ issue.events.length }}</summary>
-                <ol class="mt-2 space-y-2">
-                  <li *ngFor="let event of issue.events" class="border-l-2 border-gray-700 pl-3 text-xs text-gray-400">
-                    <span class="font-semibold text-gray-200">{{ event.eventType.replace('_', ' ') }}</span> by {{ event.actorName }} · {{ event.occurredAt | date:'medium' }}
-                    <span *ngIf="event.reason" class="block">{{ event.reason }}</span>
-                  </li>
-                </ol>
-              </details>
-            </div>
-          </div>
-        </div>
-      </section>
+      @if (activeTab() === 'issues') {
+        @defer (on idle) {
+          <app-admin-issues></app-admin-issues>
+        } @placeholder {
+          <div class="animate-pulse h-64 bg-gray-900 rounded-2xl"></div>
+        }
+      }
 
       <section data-tour="admin-assets" *ngIf="activeTab() === 'assets'" class="space-y-4">
         <!-- Asset Header & Quick Controls -->
@@ -649,60 +215,24 @@
         </div>
       </section>
 
-      <section *ngIf="activeTab() === 'timesheets'" class="space-y-4">
-        <div class="flex flex-col gap-3 border-b border-gray-800 pb-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h2 class="text-base font-bold">Timesheet Register</h2>
-            <p class="mt-1 text-xs text-gray-400">Review daily site attendance for operational reconciliation.</p>
-          </div>
-          <div class="grid gap-2 sm:grid-cols-3 lg:min-w-[640px]">
-            <label class="text-xs text-gray-400">Work date
-              <input type="date" [ngModel]="timesheetDate()" (ngModelChange)="timesheetDate.set($event)" class="mt-1 w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-            </label>
-            <label class="text-xs text-gray-400">Site
-              <select [ngModel]="selectedSiteId()" (ngModelChange)="selectedSiteId.set($event)" class="mt-1 w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-                <option value="">All sites</option>
-                <option *ngFor="let site of service.activeSites()" [value]="site.id">{{ site.name }}</option>
-              </select>
-            </label>
-            <label class="text-xs text-gray-400">Employee or role
-              <input type="search" [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" placeholder="Search register" class="mt-1 w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-white">
-            </label>
-          </div>
-        </div>
+      
 
-        <app-timesheet-summary [summary]="timesheetSummary()"></app-timesheet-summary>
+      @if (activeTab() === 'timesheets') {
+        @defer (on idle) {
+          <app-admin-timesheets></app-admin-timesheets>
+        } @placeholder {
+          <div class="animate-pulse h-64 bg-gray-900 rounded-2xl"></div>
+        }
+      }
 
-        <div class="overflow-x-auto border-y border-gray-800">
-          <table class="w-full min-w-[780px] border-collapse text-left text-sm">
-            <thead class="bg-gray-900 text-[10px] uppercase text-gray-500">
-              <tr><th class="px-3 py-3">Employee</th><th class="px-3 py-3">Site</th><th class="px-3 py-3">Status</th><th class="px-3 py-3">Reason</th><th class="px-3 py-3">Comment</th><th class="px-3 py-3">Proof</th></tr>
-            </thead>
-            <tbody class="divide-y divide-gray-800">
-              <tr *ngFor="let row of timesheetRows()" class="bg-gray-950">
-                <td class="px-3 py-3"><p class="font-semibold">{{ row.employeeName }}</p><p class="text-xs text-gray-500">{{ row.employeeRole }}</p></td>
-                <td class="px-3 py-3 text-gray-300">{{ row.siteName }}</td>
-                <td class="px-3 py-3"><span class="font-bold uppercase" [class.text-emerald-400]="row.status === 'present'" [class.text-red-400]="row.status === 'absent'" [class.text-gray-400]="row.status === 'pending'">{{ row.status }}</span></td>
-                <td class="px-3 py-3 text-gray-300">{{ row.reason || '-' }}</td>
-                <td class="max-w-[280px] px-3 py-3 text-gray-300">{{ row.comment || '-' }}</td>
-                <td class="px-3 py-3 text-xs"><span *ngIf="row.hasEvidence" class="text-blue-300">Evidence</span><span *ngIf="row.isFlagged" class="ml-2 text-orange-300">Flagged</span><span *ngIf="!row.hasEvidence && !row.isFlagged" class="text-gray-600">None</span></td>
-              </tr>
-              <tr *ngIf="!timesheetRows().length"><td colspan="6" class="px-3 py-10 text-center text-sm text-gray-500">No employees match this register view.</td></tr>
-            </tbody>
-          </table>
-        </div>
+      @if (activeTab() === 'vendors') {
+        @defer (on idle) {
+          <app-admin-vendors></app-admin-vendors>
+        } @placeholder {
+          <div class="animate-pulse h-64 bg-gray-900 rounded-2xl"></div>
+        }
+      }
 
-        <div class="flex justify-end">
-          <app-ui-button variant="primary" size="sm" [disabled]="!timesheetRows().length" (pressed)="exportTimesheetRegister()">Export CSV</app-ui-button>
-        </div>
-      </section>
-<section *ngIf="activeTab() === 'vendors'" class="space-y-4"><div class="flex justify-end"><button type="button" (click)="showPlannedFeature('Purchase-order workspace')" class="rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold text-gray-300">Purchase orders · planned</button></div>
-        <div class="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
-          <article class="rounded-2xl border border-gray-800 bg-gray-900 p-4"><h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Supplier / vendor account</h2><p class="mt-1 text-xs text-gray-500">Create the vendor first, then submit invoice details to Director approval.</p><div class="mt-4 space-y-3"><input [(ngModel)]="vendorForm.name" placeholder="Vendor name" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"><textarea [(ngModel)]="vendorForm.description" rows="3" placeholder="General description" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"></textarea><input [(ngModel)]="vendorForm.taxNumber" placeholder="VAT / tax number (when available)" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"><input [(ngModel)]="vendorForm.totalOwingAmount" type="number" min="0" placeholder="Opening amount owing" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"><button type="button" (click)="submitVendorAccount()" [disabled]="busy() || !vendorForm.name.trim()" class="w-full rounded-lg bg-yellow-500 px-4 py-3 text-sm font-bold text-black disabled:opacity-50">Save Vendor</button></div></article>
-          <article class="rounded-2xl border border-gray-800 bg-gray-900 p-4"><h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Invoice to Director</h2><div class="mt-4 grid gap-3 md:grid-cols-2"><select [(ngModel)]="vendorInvoiceForm.vendorId" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white md:col-span-2"><option value="">Select vendor</option><option *ngFor="let vendor of service.vendorAccounts()" [value]="vendor.id">{{ vendor.name }}</option></select><input [(ngModel)]="vendorInvoiceForm.invoiceDate" type="date" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"><input [(ngModel)]="vendorInvoiceForm.orderNumber" placeholder="Order number" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"><input [(ngModel)]="vendorInvoiceForm.invoiceNumber" placeholder="Supplier invoice number (when available)" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"><input [(ngModel)]="vendorInvoiceForm.supplierOrderNumber" placeholder="Supplier order number" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"><input [(ngModel)]="vendorInvoiceForm.internalOrderNumber" placeholder="Internal order number" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"><textarea [(ngModel)]="vendorInvoiceForm.itemsPurchased" rows="3" placeholder="Items purchased" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white md:col-span-2"></textarea><input [(ngModel)]="vendorInvoiceForm.total" type="number" min="0" placeholder="Invoice total" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"><input [(ngModel)]="vendorInvoiceForm.responsiblePerson" placeholder="Responsible person" class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"><button type="button" (click)="submitVendorInvoice()" [disabled]="busy() || !vendorInvoiceForm.vendorId || !vendorInvoiceForm.invoiceDate || !vendorInvoiceForm.internalOrderNumber?.trim() || !(vendorInvoiceForm.invoiceNumber?.trim() || vendorInvoiceForm.supplierOrderNumber?.trim()) || !vendorInvoiceForm.itemsPurchased.trim() || !vendorInvoiceForm.responsiblePerson.trim() || vendorInvoiceForm.total <= 0" class="rounded-lg bg-yellow-500 px-4 py-3 text-sm font-bold text-black disabled:opacity-50 md:col-span-2">Submit invoice for Director approval</button></div></article>
-        </div>
-        <div class="grid gap-4 xl:grid-cols-2"><article class="rounded-2xl border border-gray-800 bg-gray-900 p-4"><h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Vendor balances</h2><div class="mt-4 space-y-3"><div *ngFor="let vendor of service.vendorAccounts()" class="rounded-xl border border-gray-800 bg-gray-950 p-3"><div class="flex items-start justify-between gap-3"><div><p class="font-semibold">{{ vendor.name }}</p><p class="mt-1 text-xs text-gray-500">{{ vendor.description || 'No description' }}</p></div><p class="font-mono text-sm font-bold text-yellow-400">R {{ vendor.totalOwingAmount | number:'1.2-2' }}</p></div></div></div></article><article class="rounded-2xl border border-gray-800 bg-gray-900 p-4"><h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Invoice status</h2><div class="mt-4 space-y-3"><div *ngFor="let invoice of service.vendorInvoices()" class="rounded-xl border border-gray-800 bg-gray-950 p-3"><div class="flex items-start justify-between gap-3"><div><p class="font-semibold">{{ invoice.orderNumber }} · R {{ invoice.total | number:'1.2-2' }}</p><p class="mt-1 text-xs text-gray-500">{{ invoice.invoiceDate | date:'mediumDate' }} · {{ invoice.responsiblePerson }}</p><p class="mt-1 text-xs text-gray-400">{{ invoice.itemsPurchased }}</p></div><span class="rounded-full border border-gray-700 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-yellow-300">{{ invoice.status }}</span></div></div></div></article></div>
-      </section>
       <section *ngIf="activeTab() === 'costs'" class="space-y-4" aria-label="Site and job cost attribution">
         <article class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
           <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">Cost Attribution</h2><p class="mt-1 text-xs text-gray-500">Reconcile existing source records without creating a parallel ledger.</p></div><div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto]"><label class="text-xs text-gray-400">From<input type="date" [ngModel]="costPeriodStart()" (ngModelChange)="costPeriodStart.set($event)" class="mt-1 w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"></label><label class="text-xs text-gray-400">To, exclusive<input type="date" [ngModel]="costPeriodEndExclusive()" (ngModelChange)="costPeriodEndExclusive.set($event)" class="mt-1 w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"></label><label class="text-xs text-gray-400">Site<select [ngModel]="costSiteId()" (ngModelChange)="costSiteId.set($event)" class="mt-1 w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white"><option value="">All sites</option><option *ngFor="let site of service.activeSites()" [value]="site.id">{{ site.name }} · {{ site.jobNumber || 'No job number' }}</option></select></label><button type="button" (click)="refreshCostAttribution()" [disabled]="costAttribution.isLoading() || costPeriodEndExclusive() <= costPeriodStart()" class="min-h-11 rounded-lg bg-yellow-500 px-4 py-2 text-xs font-bold uppercase text-black disabled:opacity-50">{{ costAttribution.isLoading() ? 'Reconciling…' : 'Reconcile' }}</button></div></div><p *ngIf="costAttribution.error()" class="mt-4 rounded-lg border border-red-800 bg-red-950 px-3 py-2 text-sm text-red-200">{{ costAttribution.error() }}</p>
@@ -733,57 +263,15 @@
         </div>
       </section>
 
-      <section *ngIf="activeTab() === 'recovery'" class="space-y-4">
-        <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">Items waiting to sync</h2>
-          <p class="mt-2 text-xs leading-5 text-gray-400">Use this when office work did not reach the backend. Check the plain error, confirm the source record is correct, then retry once. Keep failed items for audit evidence.</p>
-        </div>
-        <section class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-          <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between"><div><h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">Attendance delivery queue</h2><p class="mt-2 text-xs leading-5 text-gray-400">Authoritative Site Manager submissions, scoped to this organization. Rejected records retain diagnostics; only retryable outcomes can be retried.</p></div><div class="grid grid-cols-3 gap-2 text-center text-xs"><div class="rounded-lg bg-gray-950 px-3 py-2"><strong class="block text-lg text-yellow-300">{{ attendanceDeliverySummary().pending }}</strong>Pending</div><div class="rounded-lg bg-gray-950 px-3 py-2"><strong class="block text-lg text-red-300">{{ attendanceDeliverySummary().failed }}</strong>Failed</div><div class="rounded-lg bg-gray-950 px-3 py-2"><strong class="block text-lg text-emerald-300">{{ attendanceDeliverySummary().completed }}</strong>Completed</div></div></div>
-          <div class="delivery-cards mt-4 space-y-3 lg:hidden"><article *ngFor="let delivery of service.attendanceQueue()" class="rounded-xl border border-gray-800 bg-gray-950 p-3"><div class="flex justify-between gap-3"><div><p class="font-semibold">{{ service.getSiteName(delivery.siteId) }}</p><p class="text-xs text-gray-500">{{ delivery.workDate }} · attempt {{ delivery.attempts }}</p></div><span class="text-xs font-bold uppercase" [class.text-emerald-300]="delivery.outcome === 'accepted'" [class.text-red-300]="delivery.outcome === 'rejected'" [class.text-yellow-300]="delivery.outcome === 'retryable'">{{ delivery.outcome }}</span></div><p *ngIf="delivery.lastError" class="mt-2 text-xs text-red-200">{{ delivery.lastError }}</p><button *ngIf="delivery.outcome === 'retryable'" type="button" (click)="retryAttendanceSubmission(delivery.id)" [disabled]="busy()" class="mt-3 rounded-lg border border-yellow-700 px-3 py-2 text-xs font-bold uppercase text-yellow-200 disabled:opacity-50">Retry</button></article></div>
-          <div class="delivery-table mt-4 hidden overflow-x-auto lg:block"><table class="w-full min-w-[900px] text-left text-xs"><thead class="bg-gray-950 uppercase tracking-wider text-gray-500"><tr><th class="px-3 py-3">Site/date</th><th class="px-3 py-3">Submitter</th><th class="px-3 py-3">Status</th><th class="px-3 py-3">Outcome</th><th class="px-3 py-3">Attempts</th><th class="px-3 py-3">Diagnostic</th><th class="px-3 py-3">Action</th></tr></thead><tbody class="divide-y divide-gray-800"><tr *ngFor="let delivery of service.attendanceQueue()"><td class="px-3 py-3"><strong class="block text-white">{{ service.getSiteName(delivery.siteId) }}</strong><span class="text-gray-500">{{ delivery.workDate }}</span></td><td class="px-3 py-3 font-mono text-gray-400">{{ delivery.submittedBy }}</td><td class="px-3 py-3 uppercase">{{ delivery.status }}</td><td class="px-3 py-3 font-bold uppercase" [class.text-emerald-300]="delivery.outcome === 'accepted'" [class.text-red-300]="delivery.outcome === 'rejected'" [class.text-yellow-300]="delivery.outcome === 'retryable'">{{ delivery.outcome }}</td><td class="px-3 py-3">{{ delivery.attempts }}</td><td class="max-w-[280px] px-3 py-3 text-gray-400">{{ delivery.lastError || '—' }}</td><td class="px-3 py-3"><button *ngIf="delivery.outcome === 'retryable'" type="button" (click)="retryAttendanceSubmission(delivery.id)" [disabled]="busy()" class="rounded border border-yellow-700 px-3 py-2 font-bold uppercase text-yellow-200 disabled:opacity-50">Retry</button></td></tr></tbody></table></div>
-          <p *ngIf="!service.attendanceQueue().length" class="mt-4 rounded-xl border border-gray-800 bg-gray-950 px-4 py-8 text-center text-sm text-gray-500">No attendance submissions are visible for this organization.</p>
-        </section>
-        <div class="grid gap-4 xl:grid-cols-2">
-          <article *ngFor="let event of recoveryOutbox()" class="min-w-0 rounded-2xl border bg-gray-900 p-4" [class.border-red-900]="event.status === 'failed'" [class.border-gray-800]="event.status === 'pending'">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div class="min-w-0"><div class="flex flex-wrap items-center gap-2"><span class="rounded-full border px-2 py-1 text-[10px] font-bold uppercase tracking-wider" [class.text-red-300]="event.status === 'failed'" [class.text-yellow-300]="event.status === 'pending'">{{ event.status }}</span><span class="text-xs text-gray-500">{{ event.createdAt | date:'short' }}</span></div><h3 class="mt-3 break-words text-sm font-semibold">{{ event.eventType }}</h3><p class="mt-1 break-all text-xs text-gray-500">{{ event.aggregateType }} / {{ event.aggregateId }}</p></div>
-              <button *ngIf="event.status === 'failed' && event.attempts < 2" type="button" (click)="retryOutboxEvent(event.id)" [disabled]="busy()" class="rounded-lg border border-yellow-800 px-3 py-2 text-xs font-bold uppercase tracking-wider text-yellow-300 disabled:opacity-50">Retry sync</button>
-            </div>
-            <dl class="mt-4 grid gap-3 text-xs sm:grid-cols-2"><div class="rounded-lg border border-gray-800 bg-gray-950 p-3"><dt class="uppercase tracking-wider text-gray-500">Attempts</dt><dd class="mt-1 font-semibold text-white">{{ event.attempts }}</dd></div><div class="min-w-0 rounded-lg border border-gray-800 bg-gray-950 p-3"><dt class="uppercase tracking-wider text-gray-500">Idempotency key</dt><dd class="mt-1 break-all font-mono text-gray-200">{{ event.idempotencyKey }}</dd></div></dl>
-            <div *ngIf="event.status === 'failed'" class="mt-3 rounded-lg border border-red-950 bg-red-950/20 p-3"><p class="text-[10px] font-bold uppercase tracking-wider text-red-300">Why this needs attention</p><p class="mt-2 whitespace-pre-wrap break-words text-xs leading-5 text-red-100">{{ event.lastError || 'No error was recorded. Escalate with this audit reference before changing the source record.' }}</p></div>
-            <p *ngIf="event.status === 'failed' && event.attempts >= 2" class="mt-3 text-xs font-semibold text-orange-300">Repeated failure: stop retrying and escalate with the original audit reference.</p>
-          </article>
-        </div>
-        <div *ngIf="!recoveryOutbox().length" class="rounded-2xl border border-gray-800 bg-gray-900 px-4 py-10 text-center text-sm text-gray-500">All office sync work is clear. There are no pending or failed items.</div>
-      </section>
+      
 
-      <section *ngIf="activeTab() === 'activity'" class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Immutable Activity Log</h2>
-        <div class="mt-4 space-y-3">
-          <div *ngFor="let event of service.activity()" class="rounded-xl border border-gray-800 bg-gray-950 px-3 py-3">
-            <div class="flex items-center justify-between gap-3">
-              <div><p class="font-semibold">{{ activityLabel(event.action, event.details) }}</p><p class="text-xs text-gray-500">{{ event.actorName }} / {{ activityMethod(event.details) }} / {{ event.entityType }} · {{ event.entityId || 'n/a' }}</p></div>
-              <span class="text-[11px] uppercase tracking-wider text-gray-500">{{ event.occurredAt | date:'medium' }}</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section *ngIf="activeTab() === 'settings'" class="grid gap-4 lg:grid-cols-2">
-        <article class="rounded-2xl border border-gray-800 bg-gray-900 p-5">
-          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">Workspace settings</h2>
-          <p class="mt-2 text-sm leading-6 text-gray-400">Review operational readiness before asset and workforce work is released.</p>
-          <div class="mt-5 space-y-5">
-            <div><div class="flex justify-between text-xs"><span class="text-gray-300">New-hire readiness</span><strong class="text-yellow-400">{{ onboardingProgress() }}%</strong></div><div class="mt-2 h-2 overflow-hidden rounded-full bg-gray-800"><div class="h-full bg-yellow-500" [style.width.%]="onboardingProgress()"></div></div></div>
-            <div><div class="flex justify-between text-xs"><span class="text-gray-300">Integration sync health</span><strong class="text-emerald-400">{{ syncProgress() }}%</strong></div><div class="mt-2 h-2 overflow-hidden rounded-full bg-gray-800"><div class="h-full bg-emerald-500" [style.width.%]="syncProgress()"></div></div></div>
-          </div>
-        </article>
-        <article class="rounded-2xl border border-gray-800 bg-gray-900 p-5">
-          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">Administration defaults</h2>
-          <dl class="mt-4 space-y-3 text-sm"><div class="rounded-xl border border-gray-800 bg-gray-950 p-3"><dt class="text-gray-500">Default access</dt><dd class="mt-1 font-semibold">Least privilege / Site</dd></div><div class="rounded-xl border border-gray-800 bg-gray-950 p-3"><dt class="text-gray-500">Workforce identifiers</dt><dd class="mt-1 font-semibold">Generated UAT references only</dd></div><div class="rounded-xl border border-gray-800 bg-gray-950 p-3"><dt class="text-gray-500">Audit retention</dt><dd class="mt-1 font-semibold">Immutable activity history</dd></div></dl>
-        </article>
-      </section>
+      @if (activeTab() === 'recovery' || activeTab() === 'activity' || activeTab() === 'settings') {
+        @defer (on idle) {
+          <app-admin-governance [subTab]="activeTab()"></app-admin-governance>
+        } @placeholder {
+          <div class="animate-pulse h-64 bg-gray-900 rounded-2xl"></div>
+        }
+      }
 
       <section *ngIf="activeTab() === 'account'" class="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
         <article class="rounded-2xl border border-gray-800 bg-gray-900 p-5">
@@ -1373,3 +861,4 @@
 <ng-template #loadingState>
   <div class="flex h-full items-center justify-center bg-gray-950 px-6 text-center text-sm text-gray-400">Loading admin workspace...</div>
 </ng-template>
+

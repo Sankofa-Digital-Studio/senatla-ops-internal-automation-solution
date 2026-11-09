@@ -19,81 +19,168 @@ export interface AssetEvidenceFileSelection {
   evidenceType: AssetEvidenceType;
 }
 
+export type AssetVerificationMode = 'combo' | 'ocr' | 'manual';
+
 @Component({
   selector: 'app-asset-registration-workspace',
   standalone: true,
   imports: [CommonModule, FormsModule, AssetFormComponent, UiButtonComponent, UiFeedbackComponent],
   template: `
-    <div class="workflow">
+    <div class="workflow" [class.combo-layout]="activeMode() === 'combo'" [class.ocr-layout]="activeMode() === 'ocr'" [class.manual-layout]="activeMode() === 'manual'">
+      <!-- Input & Verification Mode Selector -->
+      <section class="mode-selector-strip full-row" aria-label="Input and verification mode selector">
+        <div class="mode-selector-tabs" role="tablist" aria-label="Input and verification options">
+          <button
+            type="button"
+            class="mode-pill"
+            [class.active]="activeMode() === 'combo'"
+            (click)="setMode('combo')"
+            role="tab"
+            [attr.aria-selected]="activeMode() === 'combo'"
+            title="Scan or upload documents side-by-side with live editable form"
+          >
+            <span class="mode-glyph">⚡</span>
+            <span class="mode-label">
+              <strong>Combo Mode</strong>
+              <small>OCR Scan + Live Form Side-by-Side</small>
+            </span>
+            <span class="rec-tag">Recommended</span>
+          </button>
+
+          <button
+            type="button"
+            class="mode-pill"
+            [class.active]="activeMode() === 'ocr'"
+            (click)="setMode('ocr')"
+            role="tab"
+            [attr.aria-selected]="activeMode() === 'ocr'"
+            title="Scan licence discs, registration papers or invoices to extract data"
+          >
+            <span class="mode-glyph">📷</span>
+            <span class="mode-label">
+              <strong>OCR / Scan Only</strong>
+              <small>Document, disc &amp; serial plate extraction</small>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            class="mode-pill"
+            [class.active]="activeMode() === 'manual'"
+            (click)="setMode('manual')"
+            role="tab"
+            [attr.aria-selected]="activeMode() === 'manual'"
+            title="Direct field entry from physical paperwork without scanning"
+          >
+            <span class="mode-glyph">✍️</span>
+            <span class="mode-label">
+              <strong>Manual Input</strong>
+              <small>Direct field entry &amp; document cross-check</small>
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Registration draft status -->
       <section class="registration-status full-row" *ngIf="draft">
         <div><span></span><strong>{{ stateLabel(draft.state) }}</strong><small>Owned by {{ draft.ownerName }}</small></div>
         <app-ui-button size="sm" variant="secondary" [busy]="busy" (pressed)="draftSaveRequested.emit()">Save draft</app-ui-button>
       </section>
 
-      <section class="capture-workspace">
-        <header><h3>Capture and scan</h3><p>Scan a serial number, number plate or licence disc. Evidence is validated and attached to the registration draft; detected values still require human review.</p></header>
-        <div class="capture-grid">
-          <button *ngFor="let option of captureOptions" type="button" [disabled]="busy" (click)="captureRequested.emit(option.type)">
-            <span>{{ option.symbol }}</span><strong>{{ option.label }}</strong><small>{{ option.detail }}</small>
-          </button>
-        </div>
-        <div class="document-grid">
-          <label *ngFor="let option of documentOptions"><strong>{{ option.label }}</strong><span>PDF or image</span><input type="file" accept="application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif" [disabled]="busy" (change)="selectFile($event, option.type)"></label>
-        </div>
-        <aside *ngIf="showOcrGuide" class="ocr-guide" aria-live="polite">
-          <div><strong>How OCR review works</strong><p>Capture or upload a document, apply detected fields, then compare every value with the source before you verify and save.</p></div>
-          <button type="button" (click)="dismissOcrGuide()" title="Hide this guide on this device">Got it</button>
-        </aside>
-        <div class="ocr-review-input">
-          <label for="manual-ocr-text"><strong>OCR review text</strong><span id="manual-ocr-help">Paste text from an approved scanner when this browser cannot detect text. Only recognised form fields are used.</span></label>
-          <textarea id="manual-ocr-text" [(ngModel)]="manualOcrText" [disabled]="busy" maxlength="8000" rows="5" aria-describedby="manual-ocr-help" placeholder="Registration: ABC 123 GP&#10;VIN: ...&#10;Make: Toyota&#10;Model: Hilux&#10;Expiry: 2027-06-30"></textarea>
-          <app-ui-button size="sm" variant="secondary" [busy]="busy" (pressed)="applyManualOcrText()">Convert text to form</app-ui-button>
+      <!-- Manual Mode Notice -->
+      <section class="manual-mode-notice full-row" *ngIf="activeMode() === 'manual'">
+        <div class="notice-body">
+          <span class="notice-icon">✍️</span>
+          <div>
+            <strong>Manual Verification Mode</strong>
+            <p>Direct entry mode active. Complete asset details (Year Model, Date Acquired, VIN, Custodian, Compliance Date) directly into the form. Switch to <em>Combo</em> or <em>OCR</em> mode if you need to upload source documents or scan plates.</p>
+          </div>
         </div>
       </section>
 
-      <section class="evidence-review" *ngIf="evidence.length">
-        <header><h3>Evidence and extraction review</h3><p>Tap an image to zoom before confirming captured values.</p></header>
-        <div class="evidence-list">
-          <article *ngFor="let item of evidence">
-            <button *ngIf="item.previewUrl" type="button" class="preview-button" (click)="openLightbox(item)" [attr.aria-label]="'View ' + evidenceLabel(item.evidenceType)"><img *ngIf="!isImageFailed(item.id)" [src]="item.previewUrl" [alt]="evidenceLabel(item.evidenceType)" (error)="onImageError(item.id)"><span *ngIf="isImageFailed(item.id)" class="thumb-fallback-icon" aria-hidden="true">⚠️</span></button>
-            <div><strong>{{ evidenceLabel(item.evidenceType) }}</strong><small>{{ item.fileName }} · {{ provenanceLabel(item) }}</small><span [class.needs-review]="item.extractionState === 'review_required'">{{ extractionLabel(item) }}</span><dl *ngIf="extractedEntries(item).length" class="extracted-fields"><div *ngFor="let field of extractedEntries(item)"><dt>{{ fieldLabel(field[0]) }}</dt><dd>{{ field[1] }}</dd></div></dl></div>
-            <div class="evidence-actions">
-              <app-ui-button *ngIf="item.extractionState === 'review_required'" size="sm" variant="secondary" [busy]="busy" (pressed)="extractionRequested.emit(item)">Apply values</app-ui-button>
-              <app-ui-button *ngIf="isEnhanceAvailable(item)" size="sm" variant="ghost" [busy]="busy" (pressed)="enhanceRequested.emit(item)">Enhance with Cloud OCR</app-ui-button>
-            </div>
-          </article>
-        </div>
-      </section>
+      <!-- OCR and Evidence capture (visible in Combo and OCR modes) -->
+      <div class="ocr-column" *ngIf="activeMode() !== 'manual'">
+        <section class="capture-workspace">
+          <header>
+            <h3>Capture and scan</h3>
+            <p>Scan a serial number, number plate or licence disc. Evidence is validated and attached to the registration draft; detected values still require human review.</p>
+          </header>
+          <div class="capture-grid">
+            <button *ngFor="let option of captureOptions" type="button" [disabled]="busy" (click)="captureRequested.emit(option.type)">
+              <span>{{ option.symbol }}</span><strong>{{ option.label }}</strong><small>{{ option.detail }}</small>
+            </button>
+          </div>
+          <div class="document-grid">
+            <label *ngFor="let option of documentOptions">
+              <strong>{{ option.label }}</strong>
+              <span>PDF or image</span>
+              <input type="file" accept="application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif" [disabled]="busy" (change)="selectFile($event, option.type)">
+            </label>
+          </div>
+          <aside *ngIf="showOcrGuide" class="ocr-guide" aria-live="polite">
+            <div><strong>How OCR review works</strong><p>Capture or upload a document, apply detected fields, then compare every value with the source before you verify and save.</p></div>
+            <button type="button" (click)="dismissOcrGuide()" title="Hide this guide on this device">Got it</button>
+          </aside>
+          <div class="ocr-review-input">
+            <label for="manual-ocr-text"><strong>OCR review text</strong><span id="manual-ocr-help">Paste text from an approved scanner when this browser cannot detect text. Only recognised form fields are used.</span></label>
+            <textarea id="manual-ocr-text" [(ngModel)]="manualOcrText" [disabled]="busy" maxlength="8000" rows="5" aria-describedby="manual-ocr-help" placeholder="Registration: ABC 123 GP&#10;VIN: ...&#10;Make: Toyota&#10;Model: Hilux&#10;Expiry: 2027-06-30"></textarea>
+            <app-ui-button size="sm" variant="secondary" [busy]="busy" (pressed)="applyManualOcrText()">Convert text to form</app-ui-button>
+          </div>
+        </section>
 
-      <section class="verification-checkpoint">
-        <label><input type="checkbox" [ngModel]="detailsVerified" (ngModelChange)="detailsVerifiedChange.emit($event)" [disabled]="!canComplete || busy"> <span>I verified the captured image and all asset details are correct.</span></label>
-        <p>{{ canComplete ? 'Verification enables final review and save.' : 'Complete the required fields before verification.' }}</p>
-      </section>
+        <section class="evidence-review" *ngIf="evidence.length">
+          <header><h3>Evidence and extraction review</h3><p>Tap an image to zoom before confirming captured values.</p></header>
+          <div class="evidence-list">
+            <article *ngFor="let item of evidence">
+              <button *ngIf="item.previewUrl" type="button" class="preview-button" (click)="openLightbox(item)" [attr.aria-label]="'View ' + evidenceLabel(item.evidenceType)"><img *ngIf="!isImageFailed(item.id)" [src]="item.previewUrl" [alt]="evidenceLabel(item.evidenceType)" (error)="onImageError(item.id)"><span *ngIf="isImageFailed(item.id)" class="thumb-fallback-icon" aria-hidden="true">⚠️</span></button>
+              <div><strong>{{ evidenceLabel(item.evidenceType) }}</strong><small>{{ item.fileName }} · {{ provenanceLabel(item) }}</small><span [class.needs-review]="item.extractionState === 'review_required'">{{ extractionLabel(item) }}</span><dl *ngIf="extractedEntries(item).length" class="extracted-fields"><div *ngFor="let field of extractedEntries(item)"><dt>{{ fieldLabel(field[0]) }}</dt><dd>{{ field[1] }}</dd></div></dl></div>
+              <div class="evidence-actions">
+                <app-ui-button *ngIf="item.extractionState === 'review_required'" size="sm" variant="secondary" [busy]="busy" (pressed)="extractionRequested.emit(item)">Apply values</app-ui-button>
+                <app-ui-button *ngIf="isEnhanceAvailable(item)" size="sm" variant="ghost" [busy]="busy" (pressed)="enhanceRequested.emit(item)">Enhance with Cloud OCR</app-ui-button>
+              </div>
+            </article>
+          </div>
+        </section>
+      </div>
 
-      <section class="validation-panel full-row" *ngIf="validationMessages.length" data-testid="asset-registration-validation">
-        <strong>Complete before final save</strong>
-        <ul><li *ngFor="let message of validationMessages">{{ message }}</li></ul>
-      </section>
+      <!-- Form and verification column -->
+      <div class="form-column" [class.full-width]="activeMode() === 'manual'">
+        <section class="verification-checkpoint">
+          <label>
+            <input type="checkbox" [ngModel]="detailsVerified" (ngModelChange)="detailsVerifiedChange.emit($event)" [disabled]="!canComplete || busy">
+            <span>
+              {{ activeMode() === 'manual' ? 'I verified that all manually entered details match client records and physical equipment.' : 'I verified the captured image and all asset details are correct.' }}
+            </span>
+          </label>
+          <p>{{ canComplete ? 'Verification enables final review and save.' : 'Complete the required fields before verification.' }}</p>
+        </section>
 
-      <app-ui-feedback class="full-row" *ngIf="message" [message]="message" tone="warning"></app-ui-feedback>
-      <app-asset-form
-        [asset]="asset"
-        [sites]="sites"
-        [busy]="busy"
-        [message]="error"
-        [canSubmit]="canComplete && detailsVerified"
-        [submitDisabledReason]="completionBlocker"
-        submitLabel="Review and save asset"
-        (changed)="detailsVerifiedChange.emit(false)"
-        (save)="openConfirmation()"
-      ></app-asset-form>
+        <section class="validation-panel full-row" *ngIf="validationMessages.length" data-testid="asset-registration-validation">
+          <strong>Complete before final save</strong>
+          <ul><li *ngFor="let message of validationMessages">{{ message }}</li></ul>
+        </section>
 
-      <section class="reminder-preview full-row" *ngIf="reminders.length">
-        <header><h3>Licence reminder schedule</h3><p>Device notifications cover renewal and the 30-day grace window.</p></header>
-        <ol><li *ngFor="let item of reminders"><span>{{ dateLabel(item.scheduledAt) }}</span><strong>{{ item.title }}</strong><small>{{ item.phase === 'expiry' ? 'Renewal' : 'Grace period' }}</small></li></ol>
-      </section>
+        <app-ui-feedback class="full-row" *ngIf="message" [message]="message" tone="warning"></app-ui-feedback>
+        <app-asset-form
+          [asset]="asset"
+          [sites]="sites"
+          [busy]="busy"
+          [message]="error"
+          [canSubmit]="canComplete && detailsVerified"
+          [submitDisabledReason]="completionBlocker"
+          [submitLabel]="asset.id ? 'Verify and save asset' : 'Review and save asset'"
+          (changed)="detailsVerifiedChange.emit(false)"
+          (save)="openConfirmation()"
+        ></app-asset-form>
 
-            <div
+        <section class="reminder-preview full-row" *ngIf="reminders.length">
+          <header><h3>Licence reminder schedule</h3><p>Device notifications cover renewal and the 30-day grace window.</p></header>
+          <ol><li *ngFor="let item of reminders"><span>{{ dateLabel(item.scheduledAt) }}</span><strong>{{ item.title }}</strong><small>{{ item.phase === 'expiry' ? 'Renewal' : 'Grace period' }}</small></li></ol>
+        </section>
+      </div>
+
+      <!-- Lightbox modal -->
+      <div
         class="image-lightbox"
         *ngIf="zoomedEvidence"
         role="dialog"
@@ -183,6 +270,7 @@ export interface AssetEvidenceFileSelection {
         </div>
       </div>
 
+      <!-- Confirmation modal -->
       <div class="confirmation-backdrop" *ngIf="confirmationOpen" (click)="confirmationOpen = false">
         <section class="confirmation-modal" (click)="$event.stopPropagation()">
           <header><h3>Confirm asset registration</h3><button type="button" (click)="confirmationOpen = false" aria-label="Close confirmation">Close</button></header>
@@ -191,10 +279,12 @@ export interface AssetEvidenceFileSelection {
             <dl>
               <div><dt>Identifier</dt><dd>{{ summaryIdentifier() }}</dd></div>
               <div><dt>Asset</dt><dd>{{ asset.make }} {{ asset.model }}</dd></div>
+              <div><dt>Year / Acquired</dt><dd>{{ asset.yearModel || '—' }} / {{ asset.dateAcquired || '—' }}</dd></div>
               <div><dt>Class</dt><dd>{{ asset.assetClass || asset.type }}</dd></div>
               <div><dt>Site</dt><dd>{{ siteName(asset.assignedSiteId) }}</dd></div>
               <div><dt>Custodian</dt><dd>{{ asset.custodianName || 'Not assigned' }}</dd></div>
               <div><dt>Licence / compliance</dt><dd>{{ asset.licenseExpiry }}</dd></div>
+              <div><dt>Verification mode</dt><dd class="capitalize font-bold text-yellow-400">{{ activeMode() }}</dd></div>
             </dl>
           </div>
           <footer><button type="button" class="secondary" (click)="confirmationOpen = false">Back to details</button><button type="button" [disabled]="!isReadyToComplete()" (click)="completeRegistration()">Save asset</button></footer>
@@ -203,8 +293,33 @@ export interface AssetEvidenceFileSelection {
     </div>
   `,
   styles: [`
-    .workflow { display: grid; grid-template-columns: minmax(280px,.9fr) minmax(360px,1.1fr); gap: 12px; align-items: start; }
+    .workflow { display: grid; grid-template-columns: minmax(280px,.95fr) minmax(360px,1.05fr); gap: 12px; align-items: start; }
+    .workflow.manual-layout { grid-template-columns: 1fr; }
     .full-row { grid-column: 1/-1; }
+    .ocr-column { display: grid; gap: 12px; }
+    .form-column { display: grid; gap: 12px; }
+    .form-column.full-width { max-width: 860px; margin: 0 auto; width: 100%; }
+
+    /* Mode Selector Strip */
+    .mode-selector-strip { padding: 4px; border: 1px solid #33404d; border-radius: 8px; background: #0c1218; }
+    .mode-selector-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .mode-pill { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: 1px solid #273440; border-radius: 6px; background: #131b23; color: #a5b4c4; cursor: pointer; text-align: left; transition: all .15s ease; }
+    .mode-pill:hover { border-color: #48596a; background: #18222c; color: #f2f5f8; }
+    .mode-pill.active { border-color: #f59e0b; background: #1f2a36; color: #ffffff; box-shadow: 0 0 0 1px rgba(245, 158, 11, .3); }
+    .mode-glyph { font-size: 18px; line-height: 1; flex-shrink: 0; }
+    .mode-label { display: grid; gap: 2px; }
+    .mode-label strong { font-size: 12px; font-weight: 700; color: #f2f5f8; }
+    .mode-label small { font-size: 10px; color: #8797a7; }
+    .mode-pill.active .mode-label small { color: #cbd5e1; }
+    .rec-tag { position: absolute; top: 6px; right: 8px; padding: 1px 6px; border-radius: 4px; background: #f59e0b; color: #0f172a; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+
+    /* Manual Mode Notice */
+    .manual-mode-notice { padding: 12px 14px; border: 1px solid #334155; border-radius: 6px; background: #0f172a; color: #e2e8f0; }
+    .notice-body { display: flex; align-items: center; gap: 12px; }
+    .notice-icon { font-size: 24px; line-height: 1; }
+    .notice-body strong { display: block; font-size: 13px; color: #f8fafc; }
+    .notice-body p { margin: 2px 0 0; font-size: 11px; color: #94a3b8; line-height: 1.4; }
+
     .registration-status { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid #33404d; border-radius: 6px; background: #151d25; }
     .registration-status>div { display: grid; grid-template-columns: 8px auto; align-items: center; gap: 2px 8px; }
     .registration-status>div>span { width: 8px; height: 8px; border-radius: 50%; background: #f4c542; }
@@ -258,20 +373,15 @@ export interface AssetEvidenceFileSelection {
     .lightbox-nav { z-index: 10; min-width: 44px; min-height: 44px; border: 1px solid #4a5968; border-radius: 50%; background: rgba(17,26,34,.82); color: #f7fafc; font-size: 26px; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s ease, transform .1s ease; margin: 0 12px; }
     .lightbox-nav:hover { background: #eab308; color: #111827; border-color: #eab308; }
     .lightbox-nav:active { transform: scale(0.95); }
-    .image-error-fallback { display: grid; place-items: center; gap: 10px; max-width: 400px; padding: 24px; text-align: center; color: #e2e8f0; }
-    .error-badge { display: inline-block; padding: 4px 10px; border-radius: 4px; background: rgba(239,68,68,.16); border: 1px solid rgba(239,68,68,.36); color: #fca5a5; font-size: 12px; font-weight: 700; }
-    .image-error-fallback p { margin: 0; color: #94a3b8; font-size: 12px; line-height: 1.5; }
-    .retry-btn { border: 1px solid #64748b; border-radius: 6px; background: #1e293b; color: #f8fafc; padding: 6px 14px; font-size: 12px; cursor: pointer; }
-    .retry-btn:hover { background: #334155; }
-    .lightbox-strip { border-top: 1px solid #283542; background: #101720; padding: 8px 12px; overflow-x: auto; }
-    .thumbnail-strip { display: flex; gap: 8px; justify-content: center; }
-    .thumb-tile { position: relative; width: 52px; height: 40px; padding: 0; border: 2px solid transparent; border-radius: 4px; background: #1a2430; overflow: hidden; cursor: pointer; opacity: .7; transition: border-color .15s, opacity .15s; }
-    .thumb-tile:hover { opacity: 1; }
-    .thumb-tile.active { border-color: #eab308; opacity: 1; }
-    .thumb-tile img { width: 100%; height: 100%; object-fit: cover; }
-    .thumb-tile .thumb-fallback-icon { display: flex; align-items: center; justify-content: center; height: 100%; font-size: 14px; }
-    .thumb-tile .thumb-index { position: absolute; bottom: 2px; right: 2px; font-size: 9px; font-weight: 700; background: rgba(0,0,0,.65); color: #fff; padding: 0 3px; border-radius: 2px; }
-    .thumb-fallback-icon { display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #1e293b; color: #f59e0b; font-size: 18px; }
+    .lightbox-strip { padding: 10px 16px; border-top: 1px solid #283542; background: #101822; }
+    .thumbnail-strip { display: flex; gap: 8px; overflow-x: auto; }
+    .thumb-tile { position: relative; width: 48px; height: 42px; padding: 0; border: 1px solid #374756; border-radius: 4px; background: #1a2632; cursor: pointer; flex-shrink: 0; }
+    .thumb-tile.active { border-color: #eab308; box-shadow: 0 0 0 2px #eab308; }
+    .thumb-tile img { width: 100%; height: 100%; object-fit: cover; border-radius: 3px; }
+    .thumb-index { position: absolute; bottom: 2px; right: 2px; background: rgba(0,0,0,.7); color: #fff; font-size: 8px; padding: 1px 3px; border-radius: 2px; }
+    .image-error-fallback { display: grid; place-items: center; text-align: center; gap: 8px; padding: 24px; color: #f87171; }
+    .error-badge { padding: 4px 10px; border-radius: 4px; background: rgba(239,68,68,.15); font-weight: 700; font-size: 12px; }
+    .retry-btn { border: 1px solid #ef4444; border-radius: 4px; background: transparent; color: #f87171; padding: 6px 12px; cursor: pointer; }
     .confirmation-modal { width: min(760px, 96vw); border: 1px solid #42505f; border-radius: 8px; background: #0f171f; color: #eef3f7; box-shadow: 0 24px 80px rgba(0,0,0,.38); }
     .confirmation-modal header,.confirmation-modal footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #283542; }
     .confirmation-modal footer { border-top: 1px solid #283542; border-bottom: 0; }
@@ -283,11 +393,13 @@ export interface AssetEvidenceFileSelection {
     .confirmation-modal footer button { border: 0; border-radius: 6px; padding: 10px 14px; font-weight: 800; }
     .confirmation-modal footer button:last-child { background: #eab308; color: #111827; } .confirmation-modal footer .secondary { background: #263241; color: #edf2f7; }
     .confirmation-modal footer button:disabled { cursor: not-allowed; opacity: .55; }
-    @media (max-width:980px) { .workflow { grid-template-columns:1fr; } .full-row { grid-column:auto; } }
+    @media (max-width:980px) { .workflow { grid-template-columns:1fr; } .mode-selector-tabs { grid-template-columns: 1fr; } }
     @media (max-width:760px) { .capture-grid,.document-grid,.confirmation-body,dl { grid-template-columns:1fr; } .ocr-guide { align-items:stretch; flex-direction:column; } .capture-grid button { min-height:82px; } .registration-status { position:sticky; top:0; z-index:4; } .evidence-list article { grid-template-columns:48px 1fr; } .preview-button,.preview-button img,.evidence-list img { width:48px; } .evidence-list app-ui-button { grid-column:1/-1; } li { grid-template-columns:82px 1fr; } li small { grid-column:2; } .confirmation-modal header,.confirmation-modal footer { align-items: stretch; flex-direction: column; } .confirmation-modal header button { justify-self: stretch; } }
   `],
 })
 export class AssetRegistrationWorkspaceComponent implements OnDestroy {
+  readonly activeMode = signal<AssetVerificationMode>('combo');
+
   readonly captureOptions: Array<{ type: AssetEvidenceType; symbol: string; label: string; detail: string }> = [
     { type: 'asset_photo', symbol: 'CAM', label: 'Asset photo', detail: 'Overall condition and identity' },
     { type: 'number_plate', symbol: 'SCAN', label: 'Serial or number plate', detail: 'OCR or barcode assisted capture' },
@@ -311,6 +423,10 @@ export class AssetRegistrationWorkspaceComponent implements OnDestroy {
   @Input() completionBlocker = '';
   @Input() validationMessages: string[] = [];
   @Input() detailsVerified = false;
+  @Input() set mode(value: AssetVerificationMode | undefined) {
+    if (value) this.activeMode.set(value);
+  }
+  @Output() readonly modeChange = new EventEmitter<AssetVerificationMode>();
   @Output() readonly draftSaveRequested = new EventEmitter<void>();
   @Output() readonly captureRequested = new EventEmitter<AssetEvidenceType>();
   @Output() readonly fileSelected = new EventEmitter<AssetEvidenceFileSelection>();
@@ -349,6 +465,11 @@ export class AssetRegistrationWorkspaceComponent implements OnDestroy {
     }
     const current = this._zoomedEvidence();
     return current ? [current] : [];
+  }
+
+  setMode(mode: AssetVerificationMode) {
+    this.activeMode.set(mode);
+    this.modeChange.emit(mode);
   }
 
   openLightbox(item: AssetRegistrationEvidence) {
@@ -482,6 +603,7 @@ export class AssetRegistrationWorkspaceComponent implements OnDestroy {
     const confidence = evidence.ocrConfidence === null ? '' : ` · OCR ${Math.round(evidence.ocrConfidence * 100)}%`;
     return `${source}${confidence}`;
   }
+
   extractionLabel(evidence: AssetRegistrationEvidence) {
     if (evidence.extractionState === 'review_required') return 'Values detected - apply and verify';
     if (evidence.extractionState === 'pending') return 'Saved for manual review';
@@ -544,6 +666,9 @@ export class AssetRegistrationWorkspaceComponent implements OnDestroy {
   completeRegistration() {
     if (!this.isReadyToComplete()) return;
     this.confirmationOpen = false;
+    this.asset.verificationStatus = 'verified';
+    this.asset.verifiedAt = new Date().toISOString();
+    this.asset.verificationMode = this.activeMode();
     this.completionRequested.emit();
   }
 

@@ -279,6 +279,9 @@ export interface AttendanceAuditEvent {
   siteId?: string;
   details?: string;
 }
+export type AssetVerificationStatus = 'unverified' | 'partially_verified' | 'verified';
+export type AssetVerificationMode = 'ocr' | 'manual' | 'combo';
+
 export interface VehicleAsset {
   id: string;
   organizationId?: string;
@@ -296,6 +299,12 @@ export interface VehicleAsset {
   assetClass?: string;
   lifecycleState?: AssetLifecycleState;
   retiredAt?: string | null;
+  yearModel?: number | string;
+  dateAcquired?: string;
+  verificationStatus?: AssetVerificationStatus;
+  verifiedAt?: string | null;
+  verifiedBy?: string | null;
+  verificationMode?: AssetVerificationMode;
 }
 
 export type AssetRegistrationState = 'draft' | 'review_required' | 'ready' | 'completed';

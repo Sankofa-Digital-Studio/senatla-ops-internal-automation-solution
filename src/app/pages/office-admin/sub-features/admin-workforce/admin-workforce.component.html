@@ -1,0 +1,361 @@
+<div class="space-y-4">
+  @if (feedback()) {
+    <div class="rounded-xl border border-yellow-700/60 bg-yellow-950/40 p-3 text-xs text-yellow-200">
+      {{ feedback() }}
+    </div>
+  }
+
+  <div class="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+    <!-- Left Column: Search, Filters & Employee Directory -->
+    <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Workforce Directory</h2>
+          <p class="mt-0.5 text-xs text-gray-500">{{ filteredEmployees().length }} personnel listed</p>
+        </div>
+        <button
+          type="button"
+          (click)="openAddModal()"
+          class="inline-flex items-center gap-1.5 rounded-lg bg-yellow-500 hover:bg-yellow-400 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-black transition-colors shadow"
+        >
+          <span>+</span> Add Employee
+        </button>
+      </div>
+
+      <!-- Filters -->
+      <div class="mt-4 grid gap-3 sm:grid-cols-2">
+        <input
+          [ngModel]="searchTerm()"
+          (ngModelChange)="searchTerm.set($event)"
+          placeholder="Search name, surname, or ID..."
+          class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-yellow-500"
+        />
+        <select
+          [ngModel]="selectedSiteId()"
+          (ngModelChange)="selectedSiteId.set($event)"
+          class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-500"
+        >
+          <option value="">All sites</option>
+          @for (site of service.activeSites(); track site.id) {
+            <option [value]="site.id">{{ site.name }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Employee List -->
+      <div class="mt-4 max-h-[38rem] space-y-2.5 overflow-y-auto pr-1">
+        @if (filteredEmployees().length === 0) {
+          <div class="rounded-xl border border-gray-800 bg-gray-950 py-12 text-center text-sm text-gray-500">
+            No workforce records found.
+          </div>
+        } @else {
+          @for (emp of filteredEmployees(); track emp.id) {
+            <div
+              class="w-full rounded-xl border border-gray-800 bg-gray-950 px-3.5 py-3 hover:border-yellow-600/70 transition-colors cursor-pointer"
+              [ngClass]="{ 'border-yellow-500 bg-gray-900/90': selectedEmployeeId() === emp.id }"
+              (click)="selectEmployee(emp.id)"
+            >
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <p class="font-semibold text-white">{{ emp.surname }}, {{ emp.firstName }}</p>
+                    <app-erp-status-badge
+                      [label]="emp.employmentStatus || 'active'"
+                      [variant]="statusVariant(emp.employmentStatus)"
+                    ></app-erp-status-badge>
+                  </div>
+                  <p class="text-xs text-gray-400 mt-0.5">
+                    {{ emp.role }} · {{ service.getSiteName(emp.siteId) }}
+                  </p>
+                  <p class="text-[11px] font-mono text-gray-500 mt-0.5">
+                    ID: {{ service.maskIdNumber(emp.idNumber) }}
+                  </p>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0" (click)="$event.stopPropagation()">
+                  <button
+                    type="button"
+                    (click)="quickToggleStatus(emp)"
+                    class="rounded-lg border border-gray-800 hover:border-gray-600 px-2.5 py-1 text-[11px] text-gray-400 hover:text-white transition-colors"
+                  >
+                    {{ emp.employmentStatus === 'active' ? 'Archive' : 'Activate' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </div>
+
+    <!-- Right Column: Employee Profile Details & Onboarding Progress -->
+    <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+      @if (selectedEmployee(); as emp) {
+        <div>
+          <div class="flex items-start justify-between border-b border-gray-800 pb-4">
+            <div>
+              <p class="text-[10px] font-bold uppercase tracking-wider text-yellow-400">Personnel Dossier</p>
+              <h3 class="text-xl font-bold text-white mt-1">{{ emp.firstName }} {{ emp.surname }}</h3>
+              <p class="text-xs text-gray-400 mt-0.5">{{ emp.role }} · {{ service.getSiteName(emp.siteId) }}</p>
+            </div>
+            <app-erp-status-badge
+              [label]="emp.employmentStatus || 'active'"
+              [variant]="statusVariant(emp.employmentStatus)"
+            ></app-erp-status-badge>
+          </div>
+
+          <!-- Basic Data Grid -->
+          <div class="mt-4 grid grid-cols-2 gap-3">
+            <div class="rounded-xl border border-gray-800 bg-gray-950 p-3">
+              <p class="text-[10px] uppercase text-gray-500 font-semibold">ID Number</p>
+              <p class="text-xs font-mono font-bold text-white mt-0.5">{{ service.maskIdNumber(emp.idNumber) }}</p>
+            </div>
+            <div class="rounded-xl border border-gray-800 bg-gray-950 p-3">
+              <p class="text-[10px] uppercase text-gray-500 font-semibold">Basic Rate</p>
+              <p class="text-xs font-bold text-emerald-400 mt-0.5">R {{ emp.basicRate || 250 }} / day</p>
+            </div>
+          </div>
+
+          <!-- Onboarding & Medical Compliance -->
+          <div class="mt-5">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2.5">Compliance & Medical Checklist</h4>
+            @if (selectedEmployeeOnboarding(); as ob) {
+              <div class="space-y-2">
+                <div class="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-xs">
+                  <span class="text-gray-300">Criminal Clearance Check</span>
+                  <app-erp-status-badge [label]="ob.criminalCheckStatus" [variant]="ob.criminalCheckStatus === 'clear' ? 'success' : 'warning'"></app-erp-status-badge>
+                </div>
+                <div class="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-xs">
+                  <span class="text-gray-300">Biometric Fingerprints</span>
+                  <app-erp-status-badge [label]="ob.fingerprintCheckStatus" [variant]="ob.fingerprintCheckStatus === 'clear' ? 'success' : 'warning'"></app-erp-status-badge>
+                </div>
+                <div class="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-xs">
+                  <span class="text-gray-300">Medical Fitness Certificate</span>
+                  <app-erp-status-badge [label]="ob.medicalStatus" [variant]="ob.medicalStatus === 'fit' ? 'success' : 'warning'"></app-erp-status-badge>
+                </div>
+                @if (ob.redTicketNumber) {
+                  <div class="rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-xs text-gray-400">
+                    Red Ticket: <span class="font-mono text-white">{{ ob.redTicketNumber }}</span>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="text-xs text-gray-500 italic">No onboarding checklist recorded</p>
+            }
+          </div>
+
+          <!-- PPE Issued -->
+          <div class="mt-5">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2.5">PPE Allocation History</h4>
+            @if (selectedEmployeePpe().length === 0) {
+              <p class="text-xs text-gray-500 italic">No PPE equipment recorded for this employee</p>
+            } @else {
+              <div class="space-y-2">
+                @for (item of selectedEmployeePpe(); track item.id) {
+                  <div class="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-xs">
+                    <div>
+                      <p class="font-semibold text-white capitalize">{{ item.itemType }} (Size {{ item.size }})</p>
+                      <p class="text-[10px] text-gray-500">{{ item.brand || 'Standard' }} · R {{ item.unitCost }}</p>
+                    </div>
+                    <app-erp-status-badge [label]="item.status" [variant]="item.status === 'collected' ? 'success' : 'info'"></app-erp-status-badge>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      } @else {
+        <div class="flex flex-col items-center justify-center py-24 text-center">
+          <p class="text-sm font-semibold text-gray-300">Select an employee from the directory</p>
+          <p class="text-xs text-gray-500 mt-1 max-w-xs">View full medical status, onboarding clearance, and PPE equipment issuance history.</p>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Add Employee Multi-Step Wizard Modal -->
+  <app-erp-modal
+    [isOpen]="isAddModalOpen()"
+    title="New Employee Onboarding Wizard"
+    size="lg"
+    [hasFooter]="true"
+    (closed)="closeAddModal()"
+  >
+    <div class="space-y-5">
+      <app-erp-workflow-stepper
+        [steps]="wizardSteps"
+        [currentStepIndex]="currentWizardStep()"
+        (stepChange)="setWizardStep($event)"
+      ></app-erp-workflow-stepper>
+
+      <!-- Step 1: Personal Details -->
+      @if (currentWizardStep() === 0) {
+        <div class="space-y-3 pt-2">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-gray-400 mb-1">First Name *</label>
+              <input [(ngModel)]="newEmployee.firstName" placeholder="Sipho" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500" />
+            </div>
+            <div>
+              <label class="block text-xs text-gray-400 mb-1">Surname *</label>
+              <input [(ngModel)]="newEmployee.surname" placeholder="Sithole" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">South African ID Number *</label>
+            <input [(ngModel)]="newEmployee.idNumber" placeholder="9201015000085" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-gray-400 mb-1">Designation / Role</label>
+              <select [(ngModel)]="newEmployee.role" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500">
+                <option value="General Worker">General Worker</option>
+                <option value="Machine Operator">Machine Operator</option>
+                <option value="Safety Officer">Safety Officer</option>
+                <option value="Site Supervisor">Site Supervisor</option>
+                <option value="Artisan">Artisan</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-gray-400 mb-1">Assigned Site</label>
+              <select [(ngModel)]="newEmployee.siteId" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500">
+                @for (site of service.activeSites(); track site.id) {
+                  <option [value]="site.id">{{ site.name }}</option>
+                }
+              </select>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Step 2: Compliance & Medical -->
+      @if (currentWizardStep() === 1) {
+        <div class="space-y-3 pt-2">
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">Criminal Background Check</label>
+            <select [(ngModel)]="newOnboarding.criminalCheckStatus" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500">
+              <option value="pending">Pending</option>
+              <option value="clear">Clear (Verified)</option>
+              <option value="flagged">Flagged for Review</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">Biometric Fingerprints</label>
+            <select [(ngModel)]="newOnboarding.fingerprintCheckStatus" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500">
+              <option value="pending">Pending</option>
+              <option value="captured">Captured</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-gray-400 mb-1">Medical Fitness Status</label>
+              <select [(ngModel)]="newOnboarding.medicalStatus" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500">
+                <option value="pending">Pending</option>
+                <option value="fit">Fit for Work</option>
+                <option value="unfit">Unfit</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-gray-400 mb-1">Red Ticket Reference</label>
+              <input [(ngModel)]="newOnboarding.redTicketNumber" placeholder="RT-2026-001" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500" />
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Step 3: PPE Allocation -->
+      @if (currentWizardStep() === 2) {
+        <div class="space-y-3 pt-2">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-gray-400 mb-1">Safety Boot Size (UK)</label>
+              <select [(ngModel)]="newPpe.bootSize" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500">
+                <option value="5">Size 5</option>
+                <option value="6">Size 6</option>
+                <option value="7">Size 7</option>
+                <option value="8">Size 8</option>
+                <option value="9">Size 9</option>
+                <option value="10">Size 10</option>
+                <option value="11">Size 11</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-gray-400 mb-1">Work Overall Size</label>
+              <select [(ngModel)]="newPpe.overallSize" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500">
+                <option value="34">Size 34</option>
+                <option value="36">Size 36</option>
+                <option value="38">Size 38</option>
+                <option value="40">Size 40</option>
+                <option value="42">Size 42</option>
+                <option value="44">Size 44</option>
+              </select>
+            </div>
+          </div>
+          <div class="rounded-xl border border-gray-800 bg-gray-950 p-3 space-y-2">
+            <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
+              <input type="checkbox" [(ngModel)]="newPpe.safetyGlasses" class="accent-yellow-500"> Issue UV Protective Safety Glasses
+            </label>
+            <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
+              <input type="checkbox" [(ngModel)]="newPpe.earPlugs" class="accent-yellow-500"> Issue Noise Reduction Ear Defenders
+            </label>
+          </div>
+        </div>
+      }
+
+      <!-- Step 4: Confirmation -->
+      @if (currentWizardStep() === 3) {
+        <div class="rounded-xl border border-gray-800 bg-gray-950 p-4 space-y-3">
+          <h4 class="text-sm font-bold text-white">Summary Review</h4>
+          <dl class="grid grid-cols-2 gap-2 text-xs">
+            <div><dt class="text-gray-500">Full Name</dt><dd class="font-semibold text-white">{{ newEmployee.firstName }} {{ newEmployee.surname }}</dd></div>
+            <div><dt class="text-gray-500">ID Number</dt><dd class="font-mono text-white">{{ newEmployee.idNumber }}</dd></div>
+            <div><dt class="text-gray-500">Role</dt><dd class="text-white">{{ newEmployee.role }}</dd></div>
+            <div><dt class="text-gray-500">Site</dt><dd class="text-white">{{ service.getSiteName(newEmployee.siteId || '') }}</dd></div>
+            <div><dt class="text-gray-500">Medical Status</dt><dd class="text-yellow-400 capitalize">{{ newOnboarding.medicalStatus }}</dd></div>
+            <div><dt class="text-gray-500">Boot & Overall Size</dt><dd class="text-white">Boot {{ newPpe.bootSize }}, Overall {{ newPpe.overallSize }}</dd></div>
+          </dl>
+        </div>
+      }
+    </div>
+
+    <!-- Modal Footer Controls -->
+    <div modal-footer class="flex items-center justify-between w-full">
+      <button
+        type="button"
+        (click)="prevWizardStep()"
+        [disabled]="currentWizardStep() === 0"
+        class="px-4 py-2 text-xs font-bold uppercase rounded-lg border border-gray-700 text-gray-300 hover:bg-gray-800 disabled:opacity-30"
+      >
+        Back
+      </button>
+
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          (click)="closeAddModal()"
+          class="px-4 py-2 text-xs font-bold uppercase text-gray-400 hover:text-white"
+        >
+          Cancel
+        </button>
+
+        @if (currentWizardStep() < 3) {
+          <button
+            type="button"
+            (click)="nextWizardStep()"
+            class="px-4 py-2 text-xs font-bold uppercase rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black font-semibold"
+          >
+            Next Step
+          </button>
+        } @else {
+          <button
+            type="button"
+            (click)="saveNewEmployee()"
+            [disabled]="busy()"
+            class="px-5 py-2 text-xs font-bold uppercase rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-semibold disabled:opacity-50"
+          >
+            Confirm & Save
+          </button>
+        }
+      </div>
+    </div>
+  </app-erp-modal>
+</div>

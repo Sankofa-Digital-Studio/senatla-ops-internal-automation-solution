@@ -1,0 +1,127 @@
+<div class="space-y-4">
+  @if (feedback()) {
+    <div class="rounded-xl border border-yellow-700/60 bg-yellow-950/40 p-3 text-xs text-yellow-200">
+      {{ feedback() }}
+    </div>
+  }
+
+  <div class="flex flex-col gap-3 border-b border-gray-800 pb-4 lg:flex-row lg:items-end lg:justify-between">
+    <div>
+      <h2 class="text-base font-bold text-white">Timesheet Register & Reconciliation</h2>
+      <p class="mt-1 text-xs text-gray-400">Review and audit daily site attendance for operational reconciliation.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-3">
+      <div>
+        <label class="block text-[11px] text-gray-400 uppercase font-semibold mb-1">Work Date</label>
+        <input
+          type="date"
+          [ngModel]="timesheetDate()"
+          (ngModelChange)="timesheetDate.set($event)"
+          class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-1.5 text-xs text-white focus:outline-none focus:border-yellow-500"
+        />
+      </div>
+      <div>
+        <label class="block text-[11px] text-gray-400 uppercase font-semibold mb-1">Site Filter</label>
+        <select
+          [ngModel]="timesheetSiteId()"
+          (ngModelChange)="timesheetSiteId.set($event)"
+          class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-1.5 text-xs text-white focus:outline-none focus:border-yellow-500"
+        >
+          <option value="">All sites</option>
+          @for (site of service.activeSites(); track site.id) {
+            <option [value]="site.id">{{ site.name }}</option>
+          }
+        </select>
+      </div>
+      <div class="pt-4">
+        <app-erp-export-trigger
+          label="Export Register"
+          [busy]="busy()"
+          (exportRequested)="onExportRequested($event)"
+        ></app-erp-export-trigger>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary KPI Bar -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div class="rounded-xl border border-gray-800 bg-gray-900/60 p-3">
+      <p class="text-[10px] uppercase font-bold text-gray-500">Present</p>
+      <p class="text-xl font-bold text-emerald-400 mt-1">{{ attendanceSummary().present }}</p>
+    </div>
+    <div class="rounded-xl border border-gray-800 bg-gray-900/60 p-3">
+      <p class="text-[10px] uppercase font-bold text-gray-500">Absent</p>
+      <p class="text-xl font-bold text-rose-400 mt-1">{{ attendanceSummary().absent }}</p>
+    </div>
+    <div class="rounded-xl border border-gray-800 bg-gray-900/60 p-3">
+      <p class="text-[10px] uppercase font-bold text-gray-500">Pending</p>
+      <p class="text-xl font-bold text-amber-400 mt-1">{{ attendanceSummary().pending }}</p>
+    </div>
+    <div class="rounded-xl border border-gray-800 bg-gray-900/60 p-3">
+      <p class="text-[10px] uppercase font-bold text-gray-500">Total Scheduled</p>
+      <p class="text-xl font-bold text-white mt-1">{{ attendanceSummary().total }}</p>
+    </div>
+  </div>
+
+  <!-- Timesheets Table -->
+  <div class="rounded-xl border border-gray-800 bg-gray-900/60 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm text-gray-200">
+        <thead class="bg-gray-950/80 border-b border-gray-800 text-xs uppercase tracking-wider text-gray-400">
+          <tr>
+            <th class="px-4 py-3 font-semibold">Employee</th>
+            <th class="px-4 py-3 font-semibold">Role</th>
+            <th class="px-4 py-3 font-semibold">Assigned Site</th>
+            <th class="px-4 py-3 font-semibold">Status</th>
+            <th class="px-4 py-3 font-semibold">Reason</th>
+            <th class="px-4 py-3 font-semibold text-right">Quick Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-800/60">
+          @if (timesheetRows().length === 0) {
+            <tr>
+              <td colspan="6" class="px-4 py-12 text-center text-sm text-gray-500">
+                No timesheet records found for this date and site selection.
+              </td>
+            </tr>
+          } @else {
+            @for (row of timesheetRows(); track row.id) {
+              <tr class="hover:bg-gray-800/40 transition-colors">
+                <td class="px-4 py-3 font-medium text-white">{{ row.name }}</td>
+                <td class="px-4 py-3 text-xs text-gray-400">{{ row.role }}</td>
+                <td class="px-4 py-3 text-xs text-gray-400">{{ row.siteName }}</td>
+                <td class="px-4 py-3">
+                  <app-erp-status-badge
+                    [label]="row.status"
+                    [variant]="row.status === 'present' ? 'success' : row.status === 'absent' ? 'danger' : 'warning'"
+                  ></app-erp-status-badge>
+                </td>
+                <td class="px-4 py-3 text-xs text-gray-400">{{ row.reason }}</td>
+                <td class="px-4 py-3 text-right">
+                  <div class="inline-flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      (click)="markAttendance(row.id, 'present')"
+                      [disabled]="busy()"
+                      class="px-2 py-1 text-[11px] font-bold rounded border border-emerald-700/60 text-emerald-300 hover:bg-emerald-950 transition-colors"
+                    >
+                      Present
+                    </button>
+                    <button
+                      type="button"
+                      (click)="markAttendance(row.id, 'absent')"
+                      [disabled]="busy()"
+                      class="px-2 py-1 text-[11px] font-bold rounded border border-rose-700/60 text-rose-300 hover:bg-rose-950 transition-colors"
+                    >
+                      Absent
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,108 @@
+<div class="space-y-4">
+  @if (feedback()) {
+    <div class="rounded-xl border border-yellow-700/60 bg-yellow-950/40 p-3 text-xs text-yellow-200">
+      {{ feedback() }}
+    </div>
+  }
+
+  <div class="grid gap-4 lg:grid-cols-2">
+    <!-- Recovery PIN Section -->
+    <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Emergency Recovery PIN</h2>
+      <p class="mt-1 text-xs text-gray-500">
+        Generate a one-time emergency credential for administrative password recovery when primary email access is unavailable.
+      </p>
+
+      <div class="mt-4 p-4 rounded-xl border border-gray-800 bg-gray-950">
+        @if (recoveryPin()) {
+          <div class="text-center py-2">
+            <p class="text-xs uppercase text-gray-400 font-semibold">Active Emergency PIN</p>
+            <p class="mt-2 text-2xl font-mono font-bold text-yellow-400 tracking-wider select-all">{{ recoveryPin() }}</p>
+            <p class="text-[11px] text-gray-500 mt-1">Provide this code securely to the requesting user.</p>
+          </div>
+        } @else {
+          <p class="text-xs text-gray-500 text-center py-4">No emergency PIN currently active.</p>
+        }
+      </div>
+
+      <div class="mt-4">
+        <button
+          type="button"
+          (click)="generateRecoveryPin()"
+          [disabled]="busy()"
+          class="w-full rounded-lg bg-yellow-500 hover:bg-yellow-400 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-black disabled:opacity-50 transition-colors"
+        >
+          Generate Recovery PIN
+        </button>
+      </div>
+    </div>
+
+    <!-- Outbox Queue Section -->
+    <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+      <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+        <div>
+          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Integration Outbox</h2>
+          <p class="text-xs text-gray-500 mt-0.5">{{ service.integrationOutbox().length }} queue events logged</p>
+        </div>
+        <button
+          type="button"
+          (click)="flushOutbox()"
+          [disabled]="busy() || service.integrationOutbox().length === 0"
+          class="rounded-lg border border-gray-700 hover:border-gray-500 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-gray-200 transition-colors disabled:opacity-40"
+        >
+          Process Queue
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-2 max-h-60 overflow-y-auto pr-1">
+        @if (service.integrationOutbox().length === 0) {
+          <p class="text-xs text-gray-500 py-6 text-center">Outbox is clear. All events synced.</p>
+        } @else {
+          @for (item of service.integrationOutbox(); track item.id) {
+            <div class="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-xs">
+              <div>
+                <p class="font-semibold text-white">{{ item.eventType }}</p>
+                <p class="text-[10px] font-mono text-gray-500">{{ item.aggregateType }} · {{ item.id.slice(0, 8) }}</p>
+              </div>
+              <app-erp-status-badge [label]="item.status" [variant]="outboxStatusVariant(item.status)"></app-erp-status-badge>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Audit Activity Trail Section -->
+  <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-gray-800 pb-3 gap-3">
+      <div>
+        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Governance & Audit Log</h2>
+        <p class="text-xs text-gray-500 mt-0.5">Immutable record of administrative actions, overrides, and security events.</p>
+      </div>
+      <input
+        [ngModel]="activityFilter()"
+        (ngModelChange)="activityFilter.set($event)"
+        placeholder="Search audit trail..."
+        class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500"
+      />
+    </div>
+
+    <div class="mt-4 space-y-2.5 max-h-72 overflow-y-auto pr-1">
+      @if (filteredActivity().length === 0) {
+        <p class="text-xs text-gray-500 py-6 text-center">No audit trail records found.</p>
+      } @else {
+        @for (event of filteredActivity(); track event.id) {
+          <div class="flex items-center justify-between rounded-xl border border-gray-800 bg-gray-950 px-4 py-3 text-xs">
+            <div>
+              <p class="font-semibold text-white">{{ event.action }}</p>
+              <p class="text-gray-400 mt-0.5">
+                Actor: <span class="text-yellow-400">{{ event.actorName }}</span> · Entity: {{ event.entityType }}
+              </p>
+            </div>
+            <span class="text-[11px] text-gray-500 whitespace-nowrap">{{ event.occurredAt | date:'medium' }}</span>
+          </div>
+        }
+      }
+    </div>
+  </div>
+</div>

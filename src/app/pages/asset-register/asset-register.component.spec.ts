@@ -185,4 +185,44 @@ describe('AssetRegisterComponent', () => {
     expect(milestones.filter((item) => item.phase === 'grace').length).toBe(6);
     expect(milestones[milestones.length - 1].scheduledAt.getTime() - new Date(2030, 5, 30, 9).getTime()).toBe(30 * 24 * 60 * 60 * 1000);
   });
+  it('loads real client sourced assets with initial unverified indicator', () => {
+    const assets = component.service.assets();
+    expect(assets.some((a) => a.serialNumber === 'PUNJE20BC2359917')).toBeTrue();
+    expect(assets.some((a) => a.registrationNumber === 'FBK 510 FS')).toBeTrue();
+    expect(assets.some((a) => a.make === 'Doosan' && a.model === 'DX300 LCA')).toBeTrue();
+    expect(assets.some((a) => a.make === 'Ansec' && a.model === 'TM958 Front End Loader')).toBeTrue();
+
+    const jcb = assets.find((a) => a.serialNumber === 'PUNJE20BC2359917')!;
+    expect(jcb.yearModel).toBe(2017);
+    expect(jcb.dateAcquired).toBe('2016');
+    expect(component.isUnverified(jcb)).toBeTrue();
+    expect(component.verificationBadge(jcb).label).toBe('Needs full details');
+  });
+
+  it('allows opening verification with combo, ocr, or manual mode and verifies asset on save', async () => {
+    const jcb = component.service.assets().find((a) => a.serialNumber === 'PUNJE20BC2359917')!;
+    component.openVerification(jcb, 'combo');
+    expect(component.overlayMode()).toBe('register');
+    expect(component.selectedMode()).toBe('combo');
+    expect(component.assetForm.id).toBe(jcb.id);
+
+    // Switch to manual mode
+    component.selectedMode.set('manual');
+    expect(component.selectedMode()).toBe('manual');
+
+    // Fill required verification details
+    component.assetForm.vin = 'JCB205EXCAV99120';
+    component.assetForm.custodianName = 'Mining Team B';
+    component.assetForm.assignedSiteId = component.service.activeSites()[0]?.id;
+    component.detailsVerified.set(true);
+
+    await component.saveAsset();
+
+    const updated = component.service.assets().find((a) => a.id === jcb.id)!;
+    expect(updated.verificationStatus).toBe('verified');
+    expect(updated.verifiedAt).toBeTruthy();
+    expect(updated.verificationMode).toBe('manual');
+    expect(component.isUnverified(updated)).toBeFalse();
+    expect(component.verificationBadge(updated).label).toBe('Verified');
+  });
 });

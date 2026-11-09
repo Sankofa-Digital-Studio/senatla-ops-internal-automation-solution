@@ -45,7 +45,8 @@
     "test:password-policy": "node --test scripts/password-policy.test.mjs",
     "seed:users": "node scripts/seed-operational-users.mjs",
     "test:seed-users": "node --test scripts/seed-operational-users.test.mjs",
-    "test:recovery-pin-contract": "node --test scripts/recovery-pin-contract.test.mjs"
+    "test:recovery-pin-contract": "node --test scripts/recovery-pin-contract.test.mjs",
+    "test:batch-export-contract": "node --experimental-strip-types --test scripts/batch-export-contract.test.mjs"
   },
   "private": true,
   "dependencies": {

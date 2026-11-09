@@ -1,0 +1,143 @@
+<div class="space-y-4">
+  @if (feedback()) {
+    <div class="rounded-xl border border-yellow-700/60 bg-yellow-950/40 p-3 text-xs text-yellow-200">
+      {{ feedback() }}
+    </div>
+  }
+
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-gray-800 pb-4">
+    <div>
+      <h2 class="text-base font-bold text-white">Operational Sites Registry</h2>
+      <p class="mt-0.5 text-xs text-gray-400">Manage client locations, project teams, and mandatory compliance protocols.</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <input
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event)"
+        placeholder="Search sites or job numbers..."
+        class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500"
+      />
+      <button
+        type="button"
+        (click)="openCreateModal()"
+        class="inline-flex items-center gap-1.5 rounded-lg bg-yellow-500 hover:bg-yellow-400 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-black transition-colors shadow"
+      >
+        <span>+</span> Add Site
+      </button>
+    </div>
+  </div>
+
+  <!-- Sites Cards Grid -->
+  <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    @if (filteredSites().length === 0) {
+      <div class="col-span-full rounded-2xl border border-gray-800 bg-gray-900 p-12 text-center text-sm text-gray-400">
+        No operational sites match the current search criteria.
+      </div>
+    } @else {
+      @for (site of filteredSites(); track site.id) {
+        <div class="rounded-2xl border border-gray-800 bg-gray-900 p-5 flex flex-col justify-between hover:border-gray-700 transition-all shadow-sm">
+          <div>
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="text-base font-bold text-white">{{ site.name }}</h3>
+                  <app-erp-status-badge
+                    [label]="site.isActive ? 'Active' : 'Archived'"
+                    [variant]="site.isActive ? 'success' : 'neutral'"
+                  ></app-erp-status-badge>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">📍 {{ site.location }}</p>
+                @if (site.jobNumber) {
+                  <p class="text-[11px] font-mono text-yellow-400 mt-0.5">Job: {{ site.jobNumber }}</p>
+                }
+              </div>
+            </div>
+
+            <!-- Site details -->
+            <div class="mt-4 grid grid-cols-2 gap-2 text-xs border-y border-gray-800 py-3">
+              <div>
+                <span class="text-gray-500 block text-[10px] uppercase font-semibold">Assigned Team</span>
+                <span class="text-gray-300">{{ site.teamName || 'General Crew' }}</span>
+              </div>
+              <div>
+                <span class="text-gray-500 block text-[10px] uppercase font-semibold">Active Crew</span>
+                <span class="text-emerald-400 font-semibold">{{ sitePersonnelCount(site.id) }} personnel</span>
+              </div>
+            </div>
+
+            <!-- Compliance Checklist Tags -->
+            <div class="mt-3">
+              <span class="text-[10px] uppercase font-bold text-gray-500">Compliance Protocol</span>
+              <div class="mt-1 flex flex-wrap gap-1.5">
+                @for (check of site.complianceChecklist; track check) {
+                  <span class="rounded-md bg-gray-950 border border-gray-800 px-2 py-0.5 text-[10px] text-gray-300">
+                    ✓ {{ check }}
+                  </span>
+                }
+                @if (!site.complianceChecklist?.length) {
+                  <span class="text-[11px] text-gray-500 italic">Standard protocols apply</span>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="mt-5 pt-3 border-t border-gray-800 flex items-center justify-between gap-2">
+            <span class="text-[10px] font-mono text-gray-600">ID: {{ site.id.slice(0, 8) }}</span>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                (click)="openEditModal(site)"
+                class="rounded-lg border border-gray-700 bg-gray-950 hover:bg-gray-800 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-gray-200 transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                (click)="toggleSiteStatus(site)"
+                class="rounded-lg border border-gray-800 px-2.5 py-1.5 text-xs font-medium text-gray-400 hover:text-white transition-colors"
+              >
+                {{ site.isActive ? 'Deactivate' : 'Reactivate' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    }
+  </div>
+
+  <!-- Add/Edit Site Modal -->
+  <app-erp-modal
+    [isOpen]="isModalOpen()"
+    [title]="siteForm.id ? 'Edit Operational Site' : 'New Operational Site'"
+    size="md"
+    [hasFooter]="true"
+    (closed)="closeModal()"
+  >
+    <div class="space-y-3">
+      <div>
+        <label class="block text-xs text-gray-400 mb-1">Site Name *</label>
+        <input [(ngModel)]="siteForm.name" placeholder="e.g. Senatla Shaft 4" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500" />
+      </div>
+      <div>
+        <label class="block text-xs text-gray-400 mb-1">Location / Province *</label>
+        <input [(ngModel)]="siteForm.location" placeholder="e.g. Rustenburg, North West" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500" />
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Job / Contract Number</label>
+          <input [(ngModel)]="siteForm.jobNumber" placeholder="JB-2026-088" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500" />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Team Designation</label>
+          <input [(ngModel)]="siteForm.teamName" placeholder="Drill Team Bravo" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500" />
+        </div>
+      </div>
+    </div>
+
+    <div modal-footer class="flex items-center justify-end gap-2 w-full">
+      <button type="button" (click)="closeModal()" class="px-4 py-2 text-xs font-bold uppercase text-gray-400 hover:text-white">Cancel</button>
+      <button type="button" (click)="saveSite()" [disabled]="busy()" class="px-5 py-2 text-xs font-bold uppercase rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black font-semibold disabled:opacity-50">Save Site</button>
+    </div>
+  </app-erp-modal>
+</div>
