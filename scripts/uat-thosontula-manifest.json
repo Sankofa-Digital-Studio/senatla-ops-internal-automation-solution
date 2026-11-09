@@ -1,0 +1,12 @@
+{
+  "users": [
+    {
+      "email": "thosontula@gmail.com",
+      "displayName": "Thoso Ntula",
+      "role": "director",
+      "tempPassword": "Sen4t!aFullAccessThoso2026!",
+      "organizationId": "00000000-0000-4000-8000-000000000001",
+      "siteIds": ["demo-workshop", "s1"]
+    }
+  ]
+}

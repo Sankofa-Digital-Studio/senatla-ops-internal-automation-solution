@@ -16,7 +16,8 @@ We have set up your dedicated testing profile as an **Office Admin**. Below are 
 
 ### 1. Your Login Details
 
-* **Sign-in Portal:** [https://senatla-ops.vercel.app/login/office](https://senatla-ops.vercel.app/login/office)
+* **UAT Testing Portal (Landing Page):** [https://senatla-ops-uat.vercel.app/landing](https://senatla-ops-uat.vercel.app/landing)
+* **Direct Office Sign-in:** [https://senatla-ops-uat.vercel.app/login/office](https://senatla-ops-uat.vercel.app/login/office)
 * **Username / Work Email:** `maggie+UAT@senatlatrading.com`
 * **Temporary Password:** `Sen4t!aOpsMaggieUAT2026`
 * **Role:** Office Admin
@@ -28,7 +29,7 @@ We have set up your dedicated testing profile as an **Office Admin**. Below are 
 You might notice the **`+UAT`** added to your email address. Here is what it means:
 
 1. **It sends all emails to your normal inbox:** Any messages, notifications, or password resets sent to `maggie+UAT@senatlatrading.com` will arrive directly in your regular work inbox (`maggie@senatlatrading.com`). You do **not** need a second email account or a new Microsoft/Google account.
-2. **It keeps testing safe and separate:** The `+UAT` tag tells the system you are in the **test environment**. This means you can create test employees, test sites, and test timesheets safely without affecting live production data or your permanent company account.
+2. **It keeps testing safe and separate:** The `+UAT` tag directs you to our dedicated testing environment (**`https://senatla-ops-uat.vercel.app/landing`**). This means you can create test employees, test sites, and test timesheets safely without affecting live production data or your permanent company account.
 
 ---
 
@@ -36,8 +37,9 @@ You might notice the **`+UAT`** added to your email address. Here is what it mea
 
 Here is what will happen the first time you log in:
 
-1. **Open the Link & Sign In:**
-   * Go to [https://senatla-ops.vercel.app/login/office](https://senatla-ops.vercel.app/login/office).
+1. **Open the UAT Portal & Sign In:**
+   * Go to [https://senatla-ops-uat.vercel.app/landing](https://senatla-ops-uat.vercel.app/landing).
+   * Click **Sign In** (or go directly to [https://senatla-ops-uat.vercel.app/login/office](https://senatla-ops-uat.vercel.app/login/office)).
    * Enter your username (`maggie+UAT@senatlatrading.com`) and your temporary password (`Sen4t!aOpsMaggieUAT2026`).
    * Click **Sign In**.
 
