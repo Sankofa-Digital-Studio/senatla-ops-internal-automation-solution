@@ -1,6 +1,6 @@
 # Senatla Trading Client Feedback: Tasks & Issues Register
 
-**Date:** 8 November 2026  
+**Date:** 9 November 2026  
 **Scope:** Director and Office Admin Workspaces  
 **Executive Audit Scope:** `rubinthoso@senatlatrading.com`, `thosontula@gmail.com`, and `thosontula+*@gmail.com`  
 **Active Domains (Initial Phase):** Engineering, Demolition & Rehabilitation, Overall Macro Scope *(Underground Works deferred)*
@@ -56,29 +56,36 @@
 ### EPIC 2: Multi-Domain Dashboards
 
 #### `ISSUE-03`: Engineering Operational & 70:30 Profit Split Dashboard
+* **Status in v0.5.5:** **COMPLETE** (Delivered in commit `afc525c`)
 * **Objective:** Dashboard for Engineering tracking inputs vs outputs (expenses vs revenue), order throughput, active bottlenecks, and the transparent 70:30 profit split.
 * **Sub-Tasks:**
-  1. `TASK-03.1` *(Calculation Engine)*: Calculate gross recognized revenue minus audited expenses (materials, direct labour, absorbed monthly overheads) = Net Operating Profit.
-  2. `TASK-03.2` *(Anti-Inflation Controls)*: Enforce expense lock: profit cannot be finalized or declared for dividends if unbilled vendor orders or open material draws remain unassigned.
-  3. `TASK-03.3` *(UI)*: Build cards for Total Billed, Total Cost Incurred, Gross Margin, Senatla Share (70%), Shareholder Return (30%), and Wasted Expenditure flags.
+  1. `TASK-03.1` *(Calculation Engine)*: Calculate gross recognized revenue minus audited expenses (materials, direct labour, absorbed monthly overheads) = Net Operating Profit. *(Delivered)*
+  2. `TASK-03.2` *(Anti-Inflation Controls)*: Enforce expense lock: profit cannot be finalized or declared for dividends if unbilled vendor orders or open material draws remain unassigned. *(Delivered)*
+  3. `TASK-03.3` *(UI)*: Build cards for Total Billed, Total Cost Incurred, Gross Margin, Senatla Share (70%), Shareholder Return (30%), and Wasted Expenditure flags. *(Delivered)*
+* **Verification Evidence:** `domain-dashboard.service.spec.ts` (14 specs PASS) and `engineering-dashboard.component.spec.ts` (6 specs PASS). Anti-inflation locking validated.
 
 #### `ISSUE-04`: Demolition & Rehabilitation Operational Dashboard
+* **Status in v0.5.5:** **COMPLETE** (Delivered in commit `afc525c`)
 * **Objective:** Track demolition and rehabilitation contracts (West Gold, Tau Mine, Mine Villages) focusing on phase milestones, BOQ margin recovery, and salvage rubble vs site clearance.
 * **Sub-Tasks:**
-  1. `TASK-04.1` *(Metrics)*: Aggregate phase costs, contract revenue, and environmental clearance metrics.
-  2. `TASK-04.2` *(UI)*: Build phase progress view with budget vs actual spend and salvage recovery credit tracking.
+  1. `TASK-04.1` *(Metrics)*: Aggregate phase costs, contract revenue, and environmental clearance metrics. *(Delivered)*
+  2. `TASK-04.2` *(UI)*: Build phase progress view with budget vs actual spend and salvage recovery credit tracking. *(Delivered)*
+* **Verification Evidence:** `demolition-rehab-dashboard.component.spec.ts` (6 specs PASS). Salvage credit tracking (781 t steel, 29.8 t copper, 6,030 m³ rubble) verified.
 
 #### `ISSUE-05`: Overall Macro Scope Dashboard
+* **Status in v0.5.5:** **COMPLETE** (Delivered in commit `afc525c`)
 * **Objective:** Macro executive view consolidating Engineering and Demolition & Rehabilitation operations into a single combined view.
 * **Sub-Tasks:**
-  1. `TASK-05.1` *(Aggregation)*: Multi-domain P&L rollup, consolidated cash flow, fleet utilization, and cross-domain bottleneck list.
-  2. `TASK-05.2` *(UI)*: Executive macro view with domain comparison and drill-down into individual domain dashboards.
+  1. `TASK-05.1` *(Aggregation)*: Multi-domain P&L rollup, consolidated cash flow, fleet utilization, and cross-domain bottleneck list. *(Delivered)*
+  2. `TASK-05.2` *(UI)*: Executive macro view with domain comparison and drill-down into individual domain dashboards. *(Delivered)*
+* **Verification Evidence:** `overall-macro-dashboard.component.spec.ts` (6 specs PASS). Consolidated P&L, cash flow ratios, and bottleneck radar verified.
 
 ---
 
 ### EPIC 3: Engineering Order Hierarchy & Procurement Traceability
 
 #### `ISSUE-06`: Client P/O → Quote → Invoice → Job-Card Parent-Child Flow
+* **Status in v0.5.5:** **PLANNED** (Phase 2 Commercial)
 * **Objective:** Implement the parent-child contract starting with the Harmony Purchase Order, issuing quotes, invoicing, and generating execution job cards.
 * **Sub-Tasks:**
   1. `TASK-06.1` *(DB)*: Tables for `client_purchase_orders` (Parent), `client_quotes` (Child), `client_invoices` (Child), and `job_cards` (Execution child).
@@ -86,6 +93,7 @@
   3. `TASK-06.3` *(Micro-Steps)*: Job Card tracking interface for milestones, inputs consumed, technician hours, and completion criteria.
 
 #### `ISSUE-07`: Supplier & Vendor Sourcing Audit with Job-Card Line Linkage
+* **Status in v0.5.5:** **PLANNED** (Phase 2 Commercial)
 * **Objective:** Complete auditability of every vendor/supplier order. Track materials sourced by unique vendor order number and map each supplier invoice item into the specific job card where it was used.
 * **Sub-Tasks:**
   1. `TASK-07.1` *(DB)*: `vendor_purchase_orders` and `vendor_invoice_items` with foreign keys to `job_cards`.
@@ -97,6 +105,7 @@
 ### EPIC 4: Workshops & Monthly Overheads
 
 #### `ISSUE-08`: Workshops 1–3 Activities (Boilermaking & Train Wheels CRUD)
+* **Status in v0.5.5:** **IN PROGRESS** (Domain metric model and workshop overhead absorption delivered in `v0.5.5`; batch CRUD forms scheduled for next sprint)
 * **Objective:** CRUD activity tracking for Workshop 1, Workshop 2, and Workshop 3, specifically handling Boilermaking and Train Wheel manufacturing.
 * **Sub-Tasks:**
   1. `TASK-08.1` *(DB)*: `workshops` and `workshop_activity_records` (batch #, activity: boilermaking / wheel_manufacturing, machine ID, status, cycle time).
@@ -104,17 +113,19 @@
   3. `TASK-08.3` *(Quality)*: Final inspection sign-off and defect tracking per workshop batch.
 
 #### `ISSUE-09`: Monthly Scope Variable & Non-Variable Workshop Overheads
+* **Status in v0.5.5:** **IN PROGRESS** (Overhead absorption calculation engine delivered in `v0.5.5`; monthly utility capture form scheduled for next sprint)
 * **Objective:** Track variable and non-variable overheads per workshop on a monthly scope and allocate costs across active job cards.
 * **Sub-Tasks:**
   1. `TASK-09.1` *(DB)*: `workshop_monthly_overheads` (workshop_id, month_year, rent, electricity, water, municipal, gas, diesel, petrol, PPE, ad-hoc).
   2. `TASK-09.2` *(UI)*: Monthly utility and expense capture form for Office Admin.
-  3. `TASK-09.3` *(Absorption Engine)*: Compute overhead absorption per active job card for accurate net margin reporting.
+  3. `TASK-09.3` *(Absorption Engine)*: Compute overhead absorption per active job card for accurate net margin reporting. *(Delivered in domain-dashboard.service.ts)*
 
 ---
 
 ### EPIC 5: Asset Cost to Company & Telemetry
 
 #### `ISSUE-10`: Asset Maintenance Job-Cards & Downtime Cost-to-Company
+* **Status in v0.5.5:** **IN PROGRESS (Field Capture Complete)** (Machine breakdown logging and downtime impact captured in Site Manager guided workflow in `v0.5.5`; Office Admin invoice line linkage scheduled next)
 * **Objective:** Track equipment downtime and maintenance costs (spares purchases + internal/external labour).
 * **Sub-Tasks:**
   1. `TASK-10.1` *(DB)*: `asset_maintenance_logs` (asset_id, reason: breakdown/scheduled/preventative, time_booked_off_hours, maintenance_job_card_id).
@@ -122,6 +133,7 @@
   3. `TASK-10.3` *(UI)*: Asset maintenance history and downtime revenue impact view.
 
 #### `ISSUE-11`: Fleet Fuel Telemetry (Heavy Machinery $/hr vs Light Vehicle km)
+* **Status in v0.5.5:** **IN PROGRESS (Field Telemetry Complete)** (Heavy machinery engine hours vs light vehicle odometer telemetry captured in Site Manager guided workflow in `v0.5.5`; burn rate anomaly radar scheduled next)
 * **Objective:** Fuel logging distinguishing heavy equipment from light vehicles.
 * **Sub-Tasks:**
   1. `TASK-11.1` *(DB)*: `asset_fuel_telemetry` (asset_id, fuel_type, litres, cost, engine_hours, odometer_km).
@@ -133,13 +145,15 @@
 ### EPIC 6: Scrap Material Chain of Custody & Anti-Theft Security
 
 #### `ISSUE-12`: Harmony Scrap Waybill Intake & Joint-Liability Dual Sign-Off
+* **Status in v0.5.5:** **IN PROGRESS (Gate Dwell Complete)** (2-3 minute gate dwell countdown timer, photo capture, and dual-custody verification flow captured in Site Manager in `v0.5.5`; database RLS binding scheduled next)
 * **Objective:** Controlled custody tracking for salvaged scrap and copper, preventing theft and establishing clear legal liability.
 * **Sub-Tasks:**
   1. `TASK-12.1` *(DB)*: `scrap_consignments` (harmony_waybill_no, date, material_type: copper/steel, estimated_weight_kg, origin_shaft).
-  2. `TASK-12.2` *(Gate Dwell Check)*: Simplified gate entry log enforcing a 2–3 minute dwell window before clearance, with photo evidence upload.
-  3. `TASK-12.3` *(Dual Sign-Off)*: Digital custody handover requiring authenticated signatures from **Driver** and **Securing Storage Officer**, binding joint liability.
+  2. `TASK-12.2` *(Gate Dwell Check)*: Simplified gate entry log enforcing a 2–3 minute dwell window before clearance, with photo evidence upload. *(Delivered in Site Manager)*
+  3. `TASK-12.3` *(Dual Sign-Off)*: Digital custody handover requiring authenticated signatures from **Driver** and **Securing Storage Officer**, binding joint liability. *(Delivered in Site Manager)*
 
 #### `ISSUE-13`: Covert Director Proximity GPS Beacons & Cash Reconciliation
+* **Status in v0.5.5:** **PLANNED** (Phase 5 Security)
 * **Objective:** Real-time covert GPS alerting when company vehicles approach known scrap dealers, plus cash settlement reconciliation.
 * **Sub-Tasks:**
   1. `TASK-13.1` *(DB)*: `scrap_dealers` (name, address, lat, lng, radius_meters) and `scrap_dealer_proximity_alerts`.
