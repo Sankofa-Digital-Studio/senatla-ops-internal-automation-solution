@@ -37,4 +37,29 @@ describe('ErpStatCardComponent', () => {
     expect(valueEl.className).toContain('text-yellow-400');
     expect(fixture.nativeElement.textContent).toContain('+4%');
   });
+
+  it('supports interactive mode with click and keydown event emissions', () => {
+    fixture.componentRef.setInput('title', 'Billed Revenue to Date');
+    fixture.componentRef.setInput('value', 'R 8,335,000.00');
+    fixture.componentRef.setInput('interactive', true);
+    fixture.componentRef.setInput('drilldownHint', 'Trace Milestones →');
+    fixture.detectChanges();
+
+    const article = fixture.nativeElement.querySelector('article');
+    expect(article.getAttribute('role')).toBe('button');
+    expect(article.getAttribute('tabindex')).toBe('0');
+    expect(fixture.nativeElement.textContent).toContain('Trace Milestones →');
+
+    let clicked = false;
+    component.cardClick.subscribe(() => {
+      clicked = true;
+    });
+
+    article.click();
+    expect(clicked).toBeTrue();
+
+    clicked = false;
+    article.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(clicked).toBeTrue();
+  });
 });

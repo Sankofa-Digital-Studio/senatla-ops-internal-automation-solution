@@ -70,6 +70,54 @@ export interface WorkshopActivityMetric {
   status: 'nominal' | 'attention' | 'critical';
 }
 
+export interface BoqLineItem {
+  section: string;
+  description: string;
+  estimatedCost: number;
+  contractValue: number;
+  marginPercent: number;
+  completionPercent: number;
+}
+
+export interface MilestonePaymentClaim {
+  claimNumber: string;
+  phase: string;
+  claimDate: string;
+  certifiedDate?: string;
+  claimedAmount: number;
+  certifiedAmount: number;
+  certifiedBy: string;
+  status: 'certified' | 'pending_verification' | 'in_progress';
+}
+
+export interface SalvageWaybillRecord {
+  waybillNumber: string;
+  dispatchDate: string;
+  materialType: 'Structural Steel' | 'Copper Cable' | 'Crushed Concrete Rubble';
+  grossWeightTon: number;
+  tareWeightTon: number;
+  netWeightTon: number;
+  unitRate: number;
+  totalCreditValue: number;
+  transporterName: string;
+  vehicleRegistration: string;
+  driverSignature: string;
+  storageOfficerSignature: string;
+  weighbridgeSlipNumber: string;
+  dwellCheckMinutes: number;
+  status: 'verified' | 'in_transit' | 'reconciled';
+}
+
+export interface EnvironmentalComplianceAudit {
+  permitNumber: string;
+  authority: string;
+  certificateType: string;
+  status: 'compliant' | 'active_clearance' | 'pending_renewal';
+  inspectionScore: number;
+  lastInspectedDate: string;
+  notes: string;
+}
+
 export interface DemolitionProject {
   id: string;
   contractName: string;
@@ -89,6 +137,10 @@ export interface DemolitionProject {
   environmentalComplianceScore: number; // %
   siteLocation: string;
   status: 'active' | 'near_completion' | 'planning';
+  boqLineItems?: BoqLineItem[];
+  paymentClaims?: MilestonePaymentClaim[];
+  salvageWaybills?: SalvageWaybillRecord[];
+  complianceAudits?: EnvironmentalComplianceAudit[];
 }
 
 export interface DemolitionSummary {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Output, computed, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export type ErpStatTone = 'default' | 'accent' | 'success' | 'warning' | 'danger';
@@ -10,13 +10,33 @@ export type ErpStatTone = 'default' | 'accent' | 'success' | 'warning' | 'danger
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <article
-      class="rounded-xl border p-4 bg-gray-900 transition-shadow hover:shadow-md"
-      [ngClass]="borderClass()"
+      class="rounded-xl border p-4 bg-gray-900 transition-all select-none"
+      [ngClass]="[
+        borderClass(),
+        interactive()
+          ? 'cursor-pointer hover:border-yellow-400/80 hover:ring-1 hover:ring-yellow-400/40 hover:shadow-lg hover:shadow-yellow-500/5 group active:scale-[0.99]'
+          : 'hover:shadow-md'
+      ]"
+      [attr.role]="interactive() ? 'button' : null"
+      [attr.tabindex]="interactive() ? 0 : null"
+      [attr.aria-label]="interactive() ? 'Inspect drill down for ' + title() : null"
+      (click)="onCardClick()"
+      (keydown)="onKeydown($event)"
     >
       <div class="flex items-start justify-between gap-3">
         <div>
-          <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">
-            {{ title() }}
+          <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+            <span>{{ title() }}</span>
+            @if (interactive()) {
+              <svg
+                class="w-3.5 h-3.5 text-yellow-500 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            }
           </p>
           <p class="mt-2 text-2xl font-bold tracking-tight" [ngClass]="valueColorClass()">
             {{ value() }}
@@ -32,9 +52,20 @@ export type ErpStatTone = 'default' | 'accent' | 'success' | 'warning' | 'danger
         }
       </div>
       @if (subtext()) {
-        <p class="mt-2 text-xs text-gray-400">
-          {{ subtext() }}
-        </p>
+        <div class="mt-2 text-xs text-gray-400 flex items-center justify-between gap-2">
+          <span class="truncate">{{ subtext() }}</span>
+          @if (interactive()) {
+            <span class="text-[10px] font-bold text-yellow-400/90 group-hover:text-yellow-300 group-hover:underline shrink-0">
+              {{ drilldownHint() || 'Trace &rarr;' }}
+            </span>
+          }
+        </div>
+      } @else if (interactive()) {
+        <div class="mt-2 text-right">
+          <span class="text-[10px] font-bold text-yellow-400/90 group-hover:text-yellow-300 group-hover:underline">
+            {{ drilldownHint() || 'Trace &rarr;' }}
+          </span>
+        </div>
       }
       <ng-content></ng-content>
     </article>
@@ -46,6 +77,23 @@ export class ErpStatCardComponent {
   readonly subtext = input<string>('');
   readonly badge = input<string>('');
   readonly tone = input<ErpStatTone>('default');
+  readonly interactive = input<boolean>(false);
+  readonly drilldownHint = input<string>('');
+
+  @Output() readonly cardClick = new EventEmitter<void>();
+
+  onCardClick(): void {
+    if (this.interactive()) {
+      this.cardClick.emit();
+    }
+  }
+
+  onKeydown(event: KeyboardEvent): void {
+    if (this.interactive() && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault();
+      this.cardClick.emit();
+    }
+  }
 
   readonly borderClass = computed(() => {
     switch (this.tone()) {
