@@ -9,21 +9,21 @@
 
 ## Issue & Task Summary Matrix
 
-| ID | Module / Epic | Issue Title | Priority | Estimate | Primary Role Scope |
-|:---|:---|:---|:---:|:---:|:---|
-| **ISSUE-01** | Governance & Access | 3-Domain Operational Scope & Dynamic Admin Provisioning | **P0** | 3 days | Director Full CRUD / Admin Provisioned |
-| **ISSUE-02** | Security & Compliance | Executive Root Audit & Office Admin Activity Traceability | **P0** | 2 days | Executive Restricted (`rubinthoso` / `thosontula`) |
-| **ISSUE-03** | Dashboards | Engineering Operational & 70:30 Profit Split Dashboard | **P0** | 3 days | Director & Office Admin (Engineering) |
-| **ISSUE-04** | Dashboards | Demolition & Rehabilitation Operational Dashboard | **P1** | 2 days | Director & Office Admin (Demolition) |
-| **ISSUE-05** | Dashboards | Overall Macro Scope (Combined P&L & Bottlenecks) Dashboard | **P1** | 2.5 days | Director & Office Admin (Macro) |
-| **ISSUE-06** | Order Management | Client P/O → Quote → Invoice → Job-Card Parent-Child Flow | **P0** | 3.5 days | Director & Office Admin |
-| **ISSUE-07** | Procurement | Supplier & Vendor Sourcing Audit with Job-Card Line Linkage | **P1** | 2.5 days | Director & Office Admin |
-| **ISSUE-08** | Workshop Operations | Workshops 1–3 Activities (Boilermaking & Train Wheels CRUD) | **P1** | 3 days | Director & Office Admin |
-| **ISSUE-09** | Financial Controls | Monthly Scope Variable & Non-Variable Workshop Overheads | **P1** | 2 days | Director & Office Admin |
-| **ISSUE-10** | Asset Management | Asset Maintenance Job-Cards & Downtime Cost-to-Company | **P1** | 2 days | Director & Office Admin |
-| **ISSUE-11** | Asset Management | Fleet Fuel Telemetry (Heavy Machinery $/hr vs Light Vehicle km) | **P2** | 2 days | Director & Office Admin |
-| **ISSUE-12** | Scrap Security | Harmony Scrap Waybill Intake & Joint-Liability Dual Sign-Off | **P0** | 2.5 days | Director & Office Admin |
-| **ISSUE-13** | Scrap Security | Covert Director Proximity GPS Beacons & Cash Reconciliation | **P0** | 3 days | Executive / Director Exclusive |
+| ID | Module / Epic | Issue Title | Priority | Status | Estimate | Primary Role Scope | Delivered in Release |
+|:---|:---|:---|:---:|:---:|:---:|:---|:---:|
+| **ISSUE-01** | Governance & Access | 3-Domain Operational Scope & Dynamic Admin Provisioning | **P0** | **PLANNED** | 3 days | Director Full CRUD / Admin Provisioned | Phase 1 Foundation |
+| **ISSUE-02** | Security & Compliance | Executive Root Audit & Office Admin Activity Traceability | **P0** | **PLANNED** | 2 days | Executive Restricted (`rubinthoso` / `thosontula`) | Phase 1 Foundation |
+| **ISSUE-03** | Dashboards | Engineering Operational & 70:30 Profit Split Dashboard | **P0** | **COMPLETE** | 3 days | Director & Office Admin (Engineering) | **v0.5.5** (`afc525c`) |
+| **ISSUE-04** | Dashboards | Demolition & Rehabilitation Operational Dashboard | **P1** | **COMPLETE** | 2 days | Director & Office Admin (Demolition) | **v0.5.5** (`afc525c`) |
+| **ISSUE-05** | Dashboards | Overall Macro Scope (Combined P&L & Bottlenecks) Dashboard | **P1** | **COMPLETE** | 2.5 days | Director & Office Admin (Macro) | **v0.5.5** (`afc525c`) |
+| **ISSUE-06** | Order Management | Client P/O → Quote → Invoice → Job-Card Parent-Child Flow | **P0** | **PLANNED** | 3.5 days | Director & Office Admin | Phase 2 Commercial |
+| **ISSUE-07** | Procurement | Supplier & Vendor Sourcing Audit with Job-Card Line Linkage | **P1** | **PLANNED** | 2.5 days | Director & Office Admin | Phase 2 Commercial |
+| **ISSUE-08** | Workshop Operations | Workshops 1–3 Activities (Boilermaking & Train Wheels CRUD) | **P1** | **IN PROGRESS** | 3 days | Director & Office Admin | Overview in v0.5.5 / Full CRUD next |
+| **ISSUE-09** | Financial Controls | Monthly Scope Variable & Non-Variable Workshop Overheads | **P1** | **IN PROGRESS** | 2 days | Director & Office Admin | Absorption in v0.5.5 / Utility form next |
+| **ISSUE-10** | Asset Management | Asset Maintenance Job-Cards & Downtime Cost-to-Company | **P1** | **IN PROGRESS** | 2 days | Director & Office Admin | Field Capture in **v0.5.5** |
+| **ISSUE-11** | Asset Management | Fleet Fuel Telemetry (Heavy Machinery $/hr vs Light Vehicle km) | **P2** | **IN PROGRESS** | 2 days | Director & Office Admin | Field Telemetry in **v0.5.5** |
+| **ISSUE-12** | Scrap Security | Harmony Scrap Waybill Intake & Joint-Liability Dual Sign-Off | **P0** | **IN PROGRESS** | 2.5 days | Director & Office Admin | Gate Dwell Timer in **v0.5.5** |
+| **ISSUE-13** | Scrap Security | Covert Director Proximity GPS Beacons & Cash Reconciliation | **P0** | **PLANNED** | 3 days | Executive / Director Exclusive | Phase 5 Security |
 
 ---
 
