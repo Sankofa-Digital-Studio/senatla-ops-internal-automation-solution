@@ -1,0 +1,64 @@
+Subject: Welcome to Senatla Ops (UAT) – Your Office Admin Login Details
+
+To: Maggie <maggie@senatlatrading.com>
+From: Senatla Operations Team
+
+Hi Maggie,
+
+Welcome to the testing phase (UAT – User Acceptance Testing) of our new Senatla Ops platform!
+
+We have set up your dedicated testing profile as an Office Admin. Below are your login credentials, a simple explanation of your test email, and an easy step-by-step guide to get you started.
+
+==================================================
+1. YOUR LOGIN DETAILS
+==================================================
+- Sign-in Portal: https://senatla-ops.vercel.app/login/office
+- Username / Work Email: maggie+UAT@senatlatrading.com
+- Temporary Password: Sen4t!aOpsMaggieUAT2026
+- Role: Office Admin
+
+==================================================
+2. WHAT DOES "maggie+UAT@senatlatrading.com" MEAN?
+==================================================
+You might notice the "+UAT" added to your email address. Here is what it means:
+
+1. It delivers straight to your regular inbox:
+Any messages, notifications, or password resets sent to maggie+UAT@senatlatrading.com will arrive directly in your normal work inbox (maggie@senatlatrading.com). You do NOT need a second email account or a separate Microsoft/Google inbox.
+
+2. It keeps testing safe and separate:
+The "+UAT" tag tells the system you are in the test environment (User Acceptance Testing). This allows you to test creating employees, reviewing timesheets, and checking assets without touching live company records or your permanent account.
+
+==================================================
+3. QUICK & SIMPLE ON-BOARDING FLOW (4 EASY STEPS)
+==================================================
+Step 1: Open the Link & Sign In
+- Go to: https://senatla-ops.vercel.app/login/office
+- Enter your email (maggie+UAT@senatlatrading.com) and temporary password (Sen4t!aOpsMaggieUAT2026).
+- Click "Sign In".
+
+Step 2: Set Your Permanent Password
+- Because this is your first time logging in, the system will immediately ask you to create your own permanent password.
+- Please choose a strong password (at least 12 characters, including uppercase, lowercase, numbers, and symbols).
+
+Step 3: Choose a 4- or 5-Digit Recovery PIN
+- Enter a 4- or 5-digit PIN of your choice (e.g. 4829).
+- Keep this PIN in mind; it serves as your security verification if you ever need to reset your password.
+
+Step 4: Explore the Office Admin Workspace
+- Once submitted, sign in with your new permanent password.
+- You will arrive in the Control Centre (/office-admin).
+- You can freely test:
+  * People & Workforce: Review employee records and site allocations.
+  * Timesheets: Check daily shift attendance and site logs.
+  * Sites & Assets: Inspect workshop facilities and machinery registers.
+  * Issues & Vendors: Track operational alerts and supplier entries.
+
+==================================================
+4. NEED HELP?
+==================================================
+If you have any questions or encounter any issues while signing in or testing, please reach out to us right away.
+
+Thank you for helping us test and refine the Senatla Ops workspace!
+
+Warm regards,
+Senatla Operations Team
