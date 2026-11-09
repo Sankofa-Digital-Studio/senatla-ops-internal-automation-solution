@@ -40,4 +40,16 @@ describe('OverallMacroDashboardComponent', () => {
     expect(text).toContain('Cross-Domain Operational Bottlenecks & Risk Radar');
     expect(text).toContain('Workshop 2 Axle Ingot Supplier Backlog');
   });
+
+  it('should open macro stat drilldown modal when clicking stat cards', () => {
+    expect(component.statModal()).toBeNull();
+    component.statModal.set('revenue');
+    fixture.detectChanges();
+
+    expect(component.statModal()).toBe('revenue');
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Consolidated Recognized Revenue');
+    expect(text).toContain('Engineering Operations');
+    expect(text).toContain('Demolition & Rehabilitation');
+  });
 });

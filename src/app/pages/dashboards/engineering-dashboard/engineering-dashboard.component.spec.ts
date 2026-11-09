@@ -59,4 +59,24 @@ describe('EngineeringDashboardComponent', () => {
     expect(text).toContain('HAR-PO-2026-8812');
     expect(text).toContain('JC-ENG-204');
   });
+
+  it('should open order drilldown modal when an order is selected', () => {
+    expect(component.selectedOrder()).toBeNull();
+    const order = service.engineeringOrders()[0];
+    component.selectedOrder.set(order);
+    fixture.detectChanges();
+
+    expect(component.selectedOrder()?.poNumber).toBe(order.poNumber);
+    expect(fixture.nativeElement.textContent).toContain('Full Traceability Chain');
+    expect(fixture.nativeElement.textContent).toContain(order.quoteNumber);
+  });
+
+  it('should open profit metric modal when clicking dividend or revenue cards', () => {
+    expect(component.selectedProfitMetric()).toBeNull();
+    component.selectedProfitMetric.set('shareholder');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Shareholders Return 30% Dividend Pool');
+    expect(fixture.nativeElement.textContent).toContain('Current Distribution Status');
+  });
 });

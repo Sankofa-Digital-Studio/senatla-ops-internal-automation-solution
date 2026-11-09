@@ -1,12 +1,16 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { DomainDashboardService } from '../../../core/services/domain-dashboard.service';
+import { EngineeringOrderRecord } from '../../../core/models/domain-dashboard.models';
 import { ErpStatusBadgeComponent } from '../../../components/erp/erp-status-badge.component';
+import { ErpModalComponent } from '../../../components/erp/erp-modal.component';
+
+export type ProfitMetricType = 'senatla' | 'shareholder' | 'revenue' | 'materials' | 'labour' | 'overheads';
 
 @Component({
   selector: 'app-engineering-dashboard',
   standalone: true,
-  imports: [CommonModule, DecimalPipe, ErpStatusBadgeComponent],
+  imports: [CommonModule, DecimalPipe, ErpStatusBadgeComponent, ErpModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="space-y-6" id="panel-engineering" role="tabpanel" aria-labelledby="tab-engineering">
@@ -58,12 +62,17 @@ import { ErpStatusBadgeComponent } from '../../../components/erp/erp-status-badg
             </p>
           </div>
 
-          <!-- 70:30 Split Visual Pill Meters -->
+          <!-- 70:30 Split Visual Pill Meters (Interactive) -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full lg:w-auto">
-            <div class="rounded-xl border border-yellow-500/40 bg-gray-950 p-4">
+            <div
+              (click)="selectedProfitMetric.set('senatla')"
+              class="rounded-xl border border-yellow-500/40 bg-gray-950 p-4 cursor-pointer hover:border-yellow-400 hover:ring-1 hover:ring-yellow-400/40 transition group"
+              role="button"
+              tabindex="0"
+            >
               <div class="flex items-center justify-between gap-3">
-                <span class="text-xs font-bold uppercase tracking-wider text-yellow-400">Senatla Share (70%)</span>
-                <span class="text-[10px] font-bold text-gray-400">Reinvestment Pool</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-yellow-400 group-hover:underline">Senatla Share (70%) &rarr;</span>
+                <span class="text-[10px] font-bold text-gray-400">Reinvestment</span>
               </div>
               <p class="mt-2 font-mono text-xl font-black text-white">
                 R {{ profit().senatlaShare70 | number:'1.2-2' }}
@@ -71,10 +80,15 @@ import { ErpStatusBadgeComponent } from '../../../components/erp/erp-status-badg
               <p class="text-[11px] text-gray-400 mt-1">Allocated to working capital, workshop tooling, and fleet reserve.</p>
             </div>
 
-            <div class="rounded-xl border border-emerald-500/40 bg-gray-950 p-4">
+            <div
+              (click)="selectedProfitMetric.set('shareholder')"
+              class="rounded-xl border border-emerald-500/40 bg-gray-950 p-4 cursor-pointer hover:border-emerald-400 hover:ring-1 hover:ring-emerald-400/40 transition group"
+              role="button"
+              tabindex="0"
+            >
               <div class="flex items-center justify-between gap-3">
-                <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Shareholders Return (30%)</span>
-                <span class="text-[10px] font-bold text-gray-400">Dividend Pool</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 group-hover:underline">Shareholders Return (30%) &rarr;</span>
+                <span class="text-[10px] font-bold text-gray-400">Dividend</span>
               </div>
               <p class="mt-2 font-mono text-xl font-black text-white">
                 R {{ profit().shareholderReturn30 | number:'1.2-2' }}
@@ -84,25 +98,37 @@ import { ErpStatusBadgeComponent } from '../../../components/erp/erp-status-badg
           </div>
         </div>
 
-        <!-- 4 Supporting Financial Metrics -->
+        <!-- 4 Supporting Financial Metrics (Interactive) -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-5">
-          <div>
-            <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Gross Recognized Revenue</p>
+          <div
+            (click)="selectedProfitMetric.set('revenue')"
+            class="cursor-pointer hover:bg-gray-800/60 p-2.5 -m-2.5 rounded-lg transition group"
+          >
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-400 group-hover:text-yellow-400">Gross Recognized Revenue &rarr;</p>
             <p class="mt-1 font-mono text-lg font-bold text-white">R {{ profit().totalBilledRevenue | number:'1.2-2' }}</p>
             <p class="text-[10px] text-gray-500">Client P/O recognized invoices</p>
           </div>
-          <div>
-            <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Materials Incurred</p>
+          <div
+            (click)="selectedProfitMetric.set('materials')"
+            class="cursor-pointer hover:bg-gray-800/60 p-2.5 -m-2.5 rounded-lg transition group"
+          >
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-400 group-hover:text-yellow-400">Materials Incurred &rarr;</p>
             <p class="mt-1 font-mono text-lg font-bold text-white">R {{ profit().materialsExpense | number:'1.2-2' }}</p>
             <p class="text-[10px] text-gray-500">Plate, axles, welding consumables</p>
           </div>
-          <div>
-            <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Direct Labour</p>
+          <div
+            (click)="selectedProfitMetric.set('labour')"
+            class="cursor-pointer hover:bg-gray-800/60 p-2.5 -m-2.5 rounded-lg transition group"
+          >
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-400 group-hover:text-yellow-400">Direct Labour &rarr;</p>
             <p class="mt-1 font-mono text-lg font-bold text-white">R {{ profit().labourExpense | number:'1.2-2' }}</p>
             <p class="text-[10px] text-gray-500">Boilermakers &amp; machinists</p>
           </div>
-          <div>
-            <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Absorbed Overheads</p>
+          <div
+            (click)="selectedProfitMetric.set('overheads')"
+            class="cursor-pointer hover:bg-gray-800/60 p-2.5 -m-2.5 rounded-lg transition group"
+          >
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-400 group-hover:text-yellow-400">Absorbed Overheads &rarr;</p>
             <p class="mt-1 font-mono text-lg font-bold text-white">R {{ profit().absorbedOverheadsExpense | number:'1.2-2' }}</p>
             <p class="text-[10px] text-gray-500">Power, gas, rent, PPE (Workshops 1-3)</p>
           </div>
@@ -194,14 +220,14 @@ import { ErpStatusBadgeComponent } from '../../../components/erp/erp-status-badg
         </div>
       </div>
 
-      <!-- Order Management Hierarchy Pipeline -->
+      <!-- Order Management Hierarchy Pipeline (Clickable Table Rows) -->
       <div class="rounded-xl border border-gray-800 bg-gray-900 p-5 shadow-sm space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-800 pb-3">
           <div>
             <h3 class="text-sm font-bold uppercase tracking-wider text-white">
               Client P/O &rarr; Quote &rarr; Invoice &rarr; Job Card Pipeline
             </h3>
-            <p class="text-xs text-gray-400">Parent-child traceability from Harmony Gold purchase order down to fabrication job cards.</p>
+            <p class="text-xs text-gray-400">Click any order to inspect complete fabrication details, materials draw, and delivery dates.</p>
           </div>
           <span class="rounded-full bg-gray-800 text-gray-300 px-3 py-1 text-xs font-semibold">
             {{ service.engineeringOrders().length }} Active Tracked Orders
@@ -219,12 +245,16 @@ import { ErpStatusBadgeComponent } from '../../../components/erp/erp-status-badg
                 <th class="p-3 text-right">Value</th>
                 <th class="p-3 text-right">Materials</th>
                 <th class="p-3 text-center">Status</th>
+                <th class="p-3 text-center">Action</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-800">
               @for (order of service.engineeringOrders(); track order.id) {
-                <tr class="hover:bg-gray-950/60 transition">
-                  <td class="p-3 font-mono font-bold text-yellow-400">{{ order.poNumber }}</td>
+                <tr
+                  class="hover:bg-gray-800/80 transition cursor-pointer group"
+                  (click)="selectedOrder.set(order)"
+                >
+                  <td class="p-3 font-mono font-bold text-yellow-400 group-hover:underline">{{ order.poNumber }}</td>
                   <td class="p-3 font-mono text-gray-300">{{ order.quoteNumber }}</td>
                   <td class="p-3 font-mono text-cyan-300">{{ order.jobCardNumber }}</td>
                   <td class="p-3 max-w-[240px]">
@@ -242,6 +272,9 @@ import { ErpStatusBadgeComponent } from '../../../components/erp/erp-status-badg
                       [status]="order.status === 'completed' ? 'completed' : order.status === 'in_progress' ? 'active' : 'pending'"
                       [label]="order.status === 'completed' ? 'Completed' : order.status === 'in_progress' ? 'In Fabrication' : 'Awaiting Parts'"
                     ></app-erp-status-badge>
+                  </td>
+                  <td class="p-3 text-center">
+                    <span class="text-xs font-bold text-yellow-400 group-hover:text-yellow-300">Inspect &rarr;</span>
                   </td>
                 </tr>
               }
@@ -291,11 +324,129 @@ import { ErpStatusBadgeComponent } from '../../../components/erp/erp-status-badg
         </div>
       }
     </section>
+
+    <!-- Order Detail Deep-Dive Modal -->
+    <app-erp-modal
+      [isOpen]="selectedOrder() !== null"
+      [title]="selectedOrder() ? 'Order Trace: ' + selectedOrder()?.poNumber : ''"
+      size="lg"
+      (closed)="selectedOrder.set(null)"
+    >
+      @if (selectedOrder(); as order) {
+        <div class="space-y-4 text-xs text-gray-200">
+          <div class="rounded-xl border border-gray-800 bg-gray-950 p-4">
+            <span class="text-[10px] font-mono text-yellow-400 font-bold uppercase tracking-wider">{{ order.id }}</span>
+            <h3 class="text-base font-bold text-white mt-1">{{ order.scopeDescription }}</h3>
+            <p class="text-xs text-gray-400 mt-0.5">Client: <strong class="text-white">{{ order.client }}</strong> · Workshop: {{ order.workshop }}</p>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="rounded-lg border border-gray-800 bg-gray-950 p-3">
+              <span class="text-[10px] uppercase text-gray-500">P/O Value</span>
+              <p class="font-mono font-bold text-white text-sm mt-1">R {{ order.value | number:'1.2-2' }}</p>
+            </div>
+            <div class="rounded-lg border border-gray-800 bg-gray-950 p-3">
+              <span class="text-[10px] uppercase text-gray-500">Materials Cost</span>
+              <p class="font-mono font-bold text-emerald-400 text-sm mt-1">R {{ order.materialsCost | number:'1.2-2' }}</p>
+            </div>
+            <div class="rounded-lg border border-gray-800 bg-gray-950 p-3">
+              <span class="text-[10px] uppercase text-gray-500">Labour Hours</span>
+              <p class="font-mono font-bold text-white text-sm mt-1">{{ order.labourHours }} hrs</p>
+            </div>
+            <div class="rounded-lg border border-gray-800 bg-gray-950 p-3">
+              <span class="text-[10px] uppercase text-gray-500">Delivery Target</span>
+              <p class="font-mono font-bold text-yellow-300 text-sm mt-1">{{ order.deliveryDate }}</p>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-gray-800 bg-gray-950 p-4 space-y-2">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-white">Full Traceability Chain</h4>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <p><strong class="text-gray-400">Client P/O #:</strong> <span class="font-mono text-yellow-400">{{ order.poNumber }}</span></p>
+              <p><strong class="text-gray-400">Quote #:</strong> <span class="font-mono text-gray-300">{{ order.quoteNumber }}</span></p>
+              <p><strong class="text-gray-400">Job Card #:</strong> <span class="font-mono text-cyan-300">{{ order.jobCardNumber }}</span></p>
+              <p><strong class="text-gray-400">Invoice Status:</strong> <span class="font-mono text-emerald-400">{{ order.invoiceNumber }}</span></p>
+            </div>
+          </div>
+        </div>
+      }
+    </app-erp-modal>
+
+    <!-- Profit Metric Drilldown Modal -->
+    <app-erp-modal
+      [isOpen]="selectedProfitMetric() !== null"
+      [title]="profitMetricTitle()"
+      size="md"
+      (closed)="selectedProfitMetric.set(null)"
+    >
+      <div class="space-y-4 text-xs text-gray-200">
+        @if (selectedProfitMetric() === 'senatla') {
+          <div class="rounded-xl border border-yellow-500/30 bg-yellow-950/20 p-4">
+            <span class="text-xs font-bold uppercase text-yellow-400">Senatla 70% Reinvestment Pool</span>
+            <h3 class="text-xl font-mono font-bold text-white mt-1">R {{ profit().senatlaShare70 | number:'1.2-2' }}</h3>
+            <p class="text-xs text-gray-300 mt-2">
+              70% of audited net operating profit retained in Senatla operational reserve for workshop capital expenditure, machine tool maintenance, and working capital buffers.
+            </p>
+          </div>
+        }
+
+        @if (selectedProfitMetric() === 'shareholder') {
+          <div class="rounded-xl border border-emerald-500/40 bg-emerald-950/20 p-4">
+            <span class="text-xs font-bold uppercase text-emerald-400">Shareholders Return 30% Dividend Pool</span>
+            <h3 class="text-xl font-mono font-bold text-white mt-1">R {{ profit().shareholderReturn30 | number:'1.2-2' }}</h3>
+            <p class="text-xs text-gray-300 mt-2">
+              Audited dividend distribution pool. Gated strictly by the Anti-Inflation Expense Lock: can only be declared once 100% of vendor invoices and material draws are reconciled.
+            </p>
+            <div class="mt-3 p-3 rounded-lg bg-gray-950 border border-gray-800">
+              <span class="font-bold text-gray-400">Current Distribution Status:</span>
+              <span class="ml-2 font-bold uppercase" [ngClass]="profit().isDividendDistributionPermitted ? 'text-emerald-400' : 'text-amber-400'">
+                {{ profit().isDividendDistributionPermitted ? 'Unlocked & Ready for Sign-Off' : 'Locked Pending Reconciliation' }}
+              </span>
+            </div>
+          </div>
+        }
+
+        @if (selectedProfitMetric() === 'revenue') {
+          <div class="p-4 rounded-xl border border-gray-800 bg-gray-950 space-y-2">
+            <h4 class="text-sm font-bold text-white">Gross Recognized Revenue</h4>
+            <p class="font-mono text-lg font-bold text-yellow-400">R {{ profit().totalBilledRevenue | number:'1.2-2' }}</p>
+            <p class="text-gray-400">Recognized billings across Harmony Gold purchase orders currently in progress and delivered.</p>
+          </div>
+        }
+
+        @if (selectedProfitMetric() === 'materials') {
+          <div class="p-4 rounded-xl border border-gray-800 bg-gray-950 space-y-2">
+            <h4 class="text-sm font-bold text-white">Materials Expense</h4>
+            <p class="font-mono text-lg font-bold text-white">R {{ profit().materialsExpense | number:'1.2-2' }}</p>
+            <p class="text-gray-400">Audited plate steel, forged axles, plasma consumables, and epoxy primers.</p>
+          </div>
+        }
+
+        @if (selectedProfitMetric() === 'labour') {
+          <div class="p-4 rounded-xl border border-gray-800 bg-gray-950 space-y-2">
+            <h4 class="text-sm font-bold text-white">Direct Boilermaker &amp; Machinist Labour</h4>
+            <p class="font-mono text-lg font-bold text-white">R {{ profit().labourExpense | number:'1.2-2' }}</p>
+            <p class="text-gray-400">Hours logged across fabrication shifts in Workshops 1, 2, and 3.</p>
+          </div>
+        }
+
+        @if (selectedProfitMetric() === 'overheads') {
+          <div class="p-4 rounded-xl border border-gray-800 bg-gray-950 space-y-2">
+            <h4 class="text-sm font-bold text-white">Workshop Absorbed Overheads</h4>
+            <p class="font-mono text-lg font-bold text-white">R {{ profit().absorbedOverheadsExpense | number:'1.2-2' }}</p>
+            <p class="text-gray-400">Allocation of rent, municipal high-voltage power, industrial gases, and PPE.</p>
+          </div>
+        }
+      </div>
+    </app-erp-modal>
   `,
 })
 export class EngineeringDashboardComponent {
   readonly service = inject(DomainDashboardService);
   readonly profit = this.service.engineeringProfitSummary;
+
+  readonly selectedOrder = signal<EngineeringOrderRecord | null>(null);
+  readonly selectedProfitMetric = signal<ProfitMetricType | null>(null);
 
   reconcileDraws(): void {
     this.service.reconcileUnassignedDraws();
@@ -303,5 +454,24 @@ export class EngineeringDashboardComponent {
 
   dismissAlert(id: string): void {
     this.service.dismissWastedAlert(id);
+  }
+
+  profitMetricTitle(): string {
+    switch (this.selectedProfitMetric()) {
+      case 'senatla':
+        return 'Senatla 70% Reinvestment Pool Audit';
+      case 'shareholder':
+        return 'Shareholders Return 30% Pool Audit';
+      case 'revenue':
+        return 'Recognized Engineering Revenue Audit';
+      case 'materials':
+        return 'Materials Incurred Audit';
+      case 'labour':
+        return 'Direct Workshop Labour Audit';
+      case 'overheads':
+        return 'Absorbed Overheads Audit';
+      default:
+        return 'Financial Breakdown Audit';
+    }
   }
 }
