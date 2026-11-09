@@ -58,6 +58,12 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/costing-model/costing-model.component').then((m) => m.CostingModelComponent),
   },
   {
+    path: 'dashboards',
+    canMatch: [roleCanMatch(['office', 'director'], 'director')],
+    canActivate: [roleCanActivate(['office', 'director'], 'director')],
+    loadComponent: () => import('./pages/dashboards/multi-domain-dashboard.component').then((m) => m.MultiDomainDashboardComponent),
+  },
+  {
     path: 'profile-settings',
     canMatch: [roleCanMatch()],
     canActivate: [roleCanActivate()],

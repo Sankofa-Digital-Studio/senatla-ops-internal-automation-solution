@@ -6,6 +6,7 @@ import { AdminSitesComponent } from './sub-features/admin-sites/admin-sites.comp
 import { AdminIssuesComponent } from './sub-features/admin-issues/admin-issues.component';
 import { AdminVendorsComponent } from './sub-features/admin-vendors/admin-vendors.component';
 import { AdminGovernanceComponent } from './sub-features/admin-governance/admin-governance.component';
+import { MultiDomainDashboardComponent } from '../dashboards/multi-domain-dashboard.component';
 
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
@@ -37,7 +38,7 @@ import { TimesheetRegisterService } from '../../core/services/timesheet-register
 import { downloadTextFile } from '../../core/utils/browser-file.util';
 import { EmployeeImportRow, stageEmployeeCsv } from '../../core/import/employee-import';
 
-type AdminTab = 'overview' | 'users' | 'people' | 'workforce' | 'timesheets' | 'sites' | 'issues' | 'assets' | 'vendors' | 'costs' | 'approvals' | 'recovery' | 'activity' | 'settings' | 'account';
+type AdminTab = 'overview' | 'dashboards' | 'users' | 'people' | 'workforce' | 'timesheets' | 'sites' | 'issues' | 'assets' | 'vendors' | 'costs' | 'approvals' | 'recovery' | 'activity' | 'settings' | 'account';
 export type PrimaryTab = 'workspace' | 'workforce' | 'administration' | 'operations' | 'finance' | 'system';
 
 interface PrimaryTabDefinition {
@@ -56,7 +57,7 @@ const COST_PERIOD_END_EXCLUSIVE = new Date(new Date().getFullYear(), new Date().
   templateUrl: './office-admin.component.html',
   styleUrls: ['./office-admin.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe, DecimalPipe, RouterLink, UiButtonComponent, UiFeedbackComponent, UiTabNavComponent, AdminOverviewComponent, AdminUsersComponent, AdminWorkforceComponent, AdminTimesheetsComponent, AdminSitesComponent, AdminIssuesComponent, AdminVendorsComponent, AdminGovernanceComponent],
+  imports: [CommonModule, FormsModule, DatePipe, DecimalPipe, RouterLink, UiButtonComponent, UiFeedbackComponent, UiTabNavComponent, AdminOverviewComponent, AdminUsersComponent, AdminWorkforceComponent, AdminTimesheetsComponent, AdminSitesComponent, AdminIssuesComponent, AdminVendorsComponent, AdminGovernanceComponent, MultiDomainDashboardComponent],
 })
 export class OfficeAdminComponent {
   readonly service = inject(OfficeAdminService);
@@ -81,6 +82,7 @@ export class OfficeAdminComponent {
       icon: 'dashboard',
       subTabs: [
         { id: 'overview', label: 'Executive Pulse & Audit', icon: 'speed' },
+        { id: 'dashboards', label: 'Domain Dashboards', icon: 'bar_chart' },
       ],
     },
     {
@@ -141,6 +143,7 @@ export class OfficeAdminComponent {
 
   readonly tabs: { id: AdminTab; label: string; group: string }[] = [
     { id: 'overview', label: 'Overview', group: 'Workspace' },
+    { id: 'dashboards', label: 'Domain Dashboards', group: 'Workspace' },
     { id: 'people', label: 'Current', group: 'Workforce' },
     { id: 'workforce', label: 'New Hires & PPE', group: 'Workforce' },
     { id: 'timesheets', label: 'Timesheets', group: 'Workforce' },

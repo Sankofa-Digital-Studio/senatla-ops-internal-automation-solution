@@ -28,6 +28,10 @@
         }
       }
 
+      @if (activeTab() === 'dashboards') {
+        <app-multi-domain-dashboard></app-multi-domain-dashboard>
+      }
+
       @if (activeTab() === 'users') {
         @defer (on idle) {
           <app-admin-users></app-admin-users>

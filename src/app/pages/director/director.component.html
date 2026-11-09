@@ -31,6 +31,24 @@
       <button type="button" (click)="feedback.set('')" aria-label="Dismiss notification" class="min-h-11 min-w-11 text-yellow-400 hover:text-white">&times;</button>
     </div>
 
+    <!-- Multi-Domain Operational Dashboards -->
+    <section data-tour="director-multi-domain-dashboards" class="space-y-4">
+      <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+        <div>
+          <span class="rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest">
+            Multi-Domain Operations
+          </span>
+          <h2 class="text-lg font-bold text-white tracking-tight mt-1">
+            Domain Dashboards &amp; Profit Engine
+          </h2>
+          <p class="text-xs text-gray-400">
+            Real-time operational scopes: Engineering 70:30 Profit Engine, Demolition &amp; Rehabilitation, and Macro Rollup.
+          </p>
+        </div>
+      </div>
+      <app-multi-domain-dashboard></app-multi-domain-dashboard>
+    </section>
+
     <!-- ACTIONABLE DECISION CENTER & INBOX: Awaiting Director Review Packs -->
     <section data-tour="director-review-queue" class="rounded-2xl border border-emerald-500/30 bg-gray-900 p-6 shadow-xl space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-800 pb-4">

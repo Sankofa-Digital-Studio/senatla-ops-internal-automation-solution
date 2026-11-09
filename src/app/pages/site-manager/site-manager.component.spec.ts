@@ -64,6 +64,7 @@ describe('SiteManagerComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Recent Audit Evidence');
     expect(fixture.nativeElement.textContent).toContain('attendance_marked_absent');
   });
+
   it('fails closed when live readiness is blocked', async () => {
     component.readiness.state.set('blocked');
     component.plannedTargets = 'Authorized work';
@@ -136,5 +137,95 @@ describe('SiteManagerComponent', () => {
     expect(text).toContain('Ask Office Admin to schedule renewal.');
     expect(text).not.toContain('medical_status');
     expect(text).not.toContain('id_number');
+  });
+
+  it('navigates through workflow steps using the workflow stepper', () => {
+    expect(component.activeTab()).toBe('attendance');
+    expect(component.activeStepIndex()).toBe(2);
+
+    component.selectTab('operations');
+    expect(component.activeTab()).toBe('operations');
+    expect(component.activeStepIndex()).toBe(3);
+
+    component.setStep(1);
+    expect(component.activeTab()).toBe('safety');
+    expect(component.activeStepIndex()).toBe(1);
+
+    component.setStep(4);
+    expect(component.activeTab()).toBe('signoff');
+    expect(component.activeStepIndex()).toBe(4);
+  });
+
+  it('records field fuel telemetry with cost calculation for site machinery (ISSUE-11)', () => {
+    const assetId = '64000000-0000-4000-8000-000000000001';
+    component.fuelAssetId = assetId;
+    component.fuelType = 'Diesel 50ppm';
+    component.fuelLitres = 80;
+    component.fuelUnitCost = 25.00;
+    component.fuelReading = 1450;
+    component.fuelSlipNumber = 'SLIP-9901';
+
+    component.logFuel();
+
+    expect(component.fuelLogs.length).toBe(1);
+    const entry = component.fuelLogs[0];
+    expect(entry.assetId).toBe(assetId);
+    expect(entry.litres).toBe(80);
+    expect(entry.totalCost).toBe(2000.00);
+    expect(entry.engineHours).toBe(1450);
+    expect(entry.referenceNumber).toBe('SLIP-9901');
+    expect(component.fuelSuccessMessage).toContain('Logged 80L');
+  });
+
+  it('reports equipment breakdown and flags downtime (ISSUE-10)', () => {
+    const assetId = '64000000-0000-4000-8000-000000000001';
+    component.breakdownAssetId = assetId;
+    component.breakdownPriority = 'critical';
+    component.breakdownCategory = 'Hydraulics';
+    component.breakdownDescription = 'Hydraulic hose rupture on excavator arm';
+
+    component.reportBreakdown();
+
+    expect(component.breakdownLogs.length).toBe(1);
+    const log = component.breakdownLogs[0];
+    expect(log.assetId).toBe(assetId);
+    expect(log.priority).toBe('critical');
+    expect(log.category).toBe('Hydraulics');
+    expect(log.description).toBe('Hydraulic hose rupture on excavator arm');
+    expect(component.breakdownSuccessMessage).toContain('CRITICAL breakdown');
+  });
+
+  it('executes gate dwell verification for scrap material transit (ISSUE-12)', () => {
+    component.gateDwellWaybill = 'WB-HMY-2026-991';
+    component.gateDwellDriver = 'Sipho Zulu';
+    component.gateDwellVehicle = 'FS 44 HMY';
+
+    component.startGateDwell();
+
+    expect(component.gateDwellActive).toBeTrue();
+    expect(component.gateDwellRemaining).toBe(150);
+
+    component.finishGateDwell();
+
+    expect(component.gateDwellActive).toBeFalse();
+    expect(component.gateDwellLogs.length).toBe(1);
+    expect(component.gateDwellLogs[0].waybill).toBe('WB-HMY-2026-991');
+    expect(component.gateDwellLogs[0].driver).toBe('Sipho Zulu');
+  });
+
+  it('rapidly marks all pending crew members as present', () => {
+    component.service.setTime(10, 0);
+    const employees = component.service.employees();
+    for (const emp of employees) {
+      component.setAttendanceStatus(emp, 'pending');
+    }
+    const initialSummary = component.registerSummary();
+    expect(initialSummary.pending).toBe(employees.length);
+
+    component.markAllPendingPresent();
+
+    const updatedSummary = component.registerSummary();
+    expect(updatedSummary.pending).toBe(0);
+    expect(updatedSummary.present).toBe(employees.length);
   });
 });

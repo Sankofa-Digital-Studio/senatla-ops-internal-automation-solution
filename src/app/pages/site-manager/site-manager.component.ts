@@ -1,30 +1,79 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, ElementRef, ViewChild, inject, computed, signal } from '@angular/core';
+import { Component, ElementRef, OnDestroy, ViewChild, inject, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AttendanceCommentChange, AttendanceReasonChange, AttendanceRowComponent, AttendanceStatusChange } from '../../components/attendance-row.component';
 import { TimesheetSummaryComponent } from '../../components/timesheet-summary.component';
-import { DailyLog, Employee } from 'src/app/core/models/app.models';
+import { DailyLog, Employee, AssetFuelEntry, SENATLA_TRADING_ORGANIZATION_ID } from 'src/app/core/models/app.models';
 import { StaffDataService } from 'src/app/core/services/staff-data.service';
 import { TimesheetRegisterService } from 'src/app/core/services/timesheet-register.service';
 import { SiteReadinessRow } from 'src/app/core/gateways/readiness.gateway';
 import { SiteReadinessService } from 'src/app/core/services/site-readiness.service';
 import { readFileAsDataUrl } from '../../core/utils/browser-file.util';
 import { toLocalDateKey } from '../../core/utils/date.util';
+import {
+  ErpWorkflowStepperComponent,
+  ErpWorkflowStep,
+  ErpStatCardComponent,
+  ErpStatusBadgeComponent,
+} from '../../components/erp';
+
+export interface BreakdownRecord {
+  id: string;
+  assetId: string;
+  assetLabel: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  category: string;
+  description: string;
+  reportedAt: string;
+}
+
+export interface GateDwellRecord {
+  waybill: string;
+  driver: string;
+  vehicle: string;
+  dwellDurationSec: number;
+  verifiedAt: string;
+}
 
 @Component({
   selector: 'app-site-manager',
   templateUrl: './site-manager.component.html',
   styleUrls: ['./site-manager.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe, AttendanceRowComponent, TimesheetSummaryComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    DatePipe,
+    AttendanceRowComponent,
+    TimesheetSummaryComponent,
+    ErpWorkflowStepperComponent,
+    ErpStatCardComponent,
+    ErpStatusBadgeComponent,
+  ],
 })
-export class SiteManagerComponent {
-  service = inject(StaffDataService);
+export class SiteManagerComponent implements OnDestroy {
+  readonly service = inject(StaffDataService);
   readonly readiness = inject(SiteReadinessService);
   private readonly timesheetRegister = inject(TimesheetRegisterService);
+
   @ViewChild('sigCanvas') sigCanvas!: ElementRef<HTMLCanvasElement>;
   @ViewChild('canvasContainer') canvasContainer!: ElementRef<HTMLDivElement>;
   @ViewChild('photoInput') photoInput!: ElementRef<HTMLInputElement>;
+
+  // Workflow navigation state
+  readonly activeTab = signal<'setup' | 'safety' | 'attendance' | 'operations' | 'signoff'>('attendance');
+  readonly steps: ErpWorkflowStep[] = [
+    { id: 'setup', label: '1. Site Setup', description: 'Readiness & Targets' },
+    { id: 'safety', label: '2. Safety Talk', description: 'Toolbox Briefing' },
+    { id: 'attendance', label: '3. Attendance', description: 'Roll Call & Evidence' },
+    { id: 'operations', label: '4. Field Ops', description: 'Trips, Fuel & Assets' },
+    { id: 'signoff', label: '5. Sign-Off', description: 'Digital Sync' },
+  ];
+  readonly activeStepIndex = computed(() => {
+    const tab = this.activeTab();
+    const idx = this.steps.findIndex((s) => s.id === tab);
+    return idx >= 0 ? idx : 2;
+  });
 
   selectedDate = new Date(this.service.currentTime());
   searchTerm = '';
@@ -71,11 +120,60 @@ export class SiteManagerComponent {
   readonly deliveryBusy = signal(false);
   readonly siteAssets = computed(() => this.readiness.assetRows());
 
+  // Field Operations: Fuel telemetry (Client feedback ISSUE-11)
+  fuelAssetId = '';
+  fuelType: 'Diesel 50ppm' | 'Petrol 95' | 'Other' = 'Diesel 50ppm';
+  fuelLitres: number | null = null;
+  fuelUnitCost: number | null = 24.50;
+  fuelReading: number | null = null;
+  fuelSupplier = '';
+  fuelSlipNumber = '';
+  fuelLogs: AssetFuelEntry[] = [];
+  fuelSuccessMessage = '';
+
+  // Field Operations: Asset breakdown reporting (Client feedback ISSUE-10)
+  breakdownAssetId = '';
+  breakdownPriority: 'low' | 'medium' | 'high' | 'critical' = 'high';
+  breakdownCategory = 'Hydraulics';
+  breakdownDescription = '';
+  breakdownLogs: BreakdownRecord[] = [];
+  breakdownSuccessMessage = '';
+
+  // Field Operations: Gate dwell verification timer (Client feedback ISSUE-12)
+  gateDwellWaybill = '';
+  gateDwellDriver = '';
+  gateDwellVehicle = '';
+  gateDwellActive = false;
+  gateDwellRemaining = 150; // 2.5 minutes default
+  gateDwellTotal = 150;
+  gateDwellProgress = 0;
+  gateDwellTimer: any = null;
+  gateDwellLogs: GateDwellRecord[] = [];
+
   constructor() {
     this.localSiteName = this.service.siteName();
+    this.loadPersistedFieldOperations();
     void this.initializeReadiness();
   }
 
+  ngOnDestroy(): void {
+    if (this.gateDwellTimer) {
+      clearInterval(this.gateDwellTimer);
+      this.gateDwellTimer = null;
+    }
+  }
+
+  selectTab(tab: string): void {
+    if (tab === 'setup' || tab === 'safety' || tab === 'attendance' || tab === 'operations' || tab === 'signoff') {
+      this.activeTab.set(tab);
+    }
+  }
+
+  setStep(index: number): void {
+    if (index >= 0 && index < this.steps.length) {
+      this.activeTab.set(this.steps[index].id as any);
+    }
+  }
 
   async captureCurrentSiteLocation() {
     const location = await this.captureGpsLabel('site');
@@ -98,6 +196,11 @@ export class SiteManagerComponent {
     this.service.confirmSiteDaySetup({ siteId: selectedSite.id, workDate: this.selectedDateStr, plannedTargets: this.plannedTargets, siteLocation });
     this.localSiteName = selectedSite.name;
     this.showDailySetup = false;
+    if (!this.service.safetyTalkCompleted()) {
+      this.activeTab.set('safety');
+    } else {
+      this.activeTab.set('attendance');
+    }
   }
 
   async selectReadinessSite(siteId: string) {
@@ -148,6 +251,155 @@ export class SiteManagerComponent {
 
   assetLabel(asset: SiteReadinessRow) { return asset.entityLabel; }
 
+  // Field Operations: Log Fuel Telemetry
+  logFuel(): void {
+    if (!this.fuelAssetId || !this.fuelLitres || this.fuelLitres <= 0) {
+      this.fuelSuccessMessage = 'Please select an asset and enter litres dispensed.';
+      return;
+    }
+    const asset = this.siteAssets().find((a) => a.entityId === this.fuelAssetId);
+    const unitCost = this.fuelUnitCost || 24.50;
+    const totalCost = Math.round(this.fuelLitres * unitCost * 100) / 100;
+    const fuelEntry: AssetFuelEntry = {
+      id: crypto.randomUUID(),
+      organizationId: SENATLA_TRADING_ORGANIZATION_ID,
+      assetId: this.fuelAssetId,
+      fuelDate: this.selectedDateStr,
+      litres: this.fuelLitres,
+      unitCost,
+      totalCost,
+      odometerKm: this.fuelReading,
+      engineHours: this.fuelReading,
+      supplier: this.fuelSupplier || 'Site Depot',
+      referenceNumber: this.fuelSlipNumber || `SLIP-${Date.now().toString().slice(-6)}`,
+      recordedBy: 'Site Manager',
+      createdAt: new Date(this.service.currentTime()).toISOString(),
+    };
+    this.fuelLogs = [fuelEntry, ...this.fuelLogs];
+    this.savePersistedFieldOperations();
+    this.fuelSuccessMessage = `Logged ${fuelEntry.litres}L (${asset?.entityLabel || 'Asset'}) for R${totalCost.toFixed(2)}`;
+    this.fuelAssetId = '';
+    this.fuelLitres = null;
+    this.fuelReading = null;
+    this.fuelSlipNumber = '';
+    setTimeout(() => (this.fuelSuccessMessage = ''), 5000);
+  }
+
+  // Field Operations: Report Asset Breakdown
+  reportBreakdown(): void {
+    if (!this.breakdownAssetId || !this.breakdownDescription.trim()) {
+      this.breakdownSuccessMessage = 'Please select an asset and describe the failure.';
+      return;
+    }
+    const asset = this.siteAssets().find((a) => a.entityId === this.breakdownAssetId);
+    const record: BreakdownRecord = {
+      id: crypto.randomUUID(),
+      assetId: this.breakdownAssetId,
+      assetLabel: asset?.entityLabel || 'Equipment',
+      priority: this.breakdownPriority,
+      category: this.breakdownCategory,
+      description: this.breakdownDescription.trim(),
+      reportedAt: new Date(this.service.currentTime()).toISOString(),
+    };
+    this.breakdownLogs = [record, ...this.breakdownLogs];
+    this.savePersistedFieldOperations();
+    this.breakdownSuccessMessage = `Reported ${record.priority.toUpperCase()} breakdown for ${record.assetLabel}. Office notified.`;
+    this.breakdownAssetId = '';
+    this.breakdownDescription = '';
+    setTimeout(() => (this.breakdownSuccessMessage = ''), 5000);
+  }
+
+  // Field Operations: Gate Dwell Verification Timer
+  startGateDwell(): void {
+    if (!this.gateDwellWaybill.trim()) {
+      return;
+    }
+    if (this.gateDwellTimer) {
+      clearInterval(this.gateDwellTimer);
+    }
+    this.gateDwellActive = true;
+    this.gateDwellRemaining = this.gateDwellTotal;
+    this.gateDwellProgress = 0;
+    this.gateDwellTimer = setInterval(() => {
+      this.gateDwellRemaining -= 1;
+      this.gateDwellProgress = Math.round(((this.gateDwellTotal - this.gateDwellRemaining) / this.gateDwellTotal) * 100);
+      if (this.gateDwellRemaining <= 0) {
+        clearInterval(this.gateDwellTimer);
+        this.gateDwellTimer = null;
+      }
+    }, 1000);
+  }
+
+  finishGateDwell(): void {
+    if (this.gateDwellTimer) {
+      clearInterval(this.gateDwellTimer);
+      this.gateDwellTimer = null;
+    }
+    const dwellDurationSec = this.gateDwellTotal - this.gateDwellRemaining;
+    const record: GateDwellRecord = {
+      waybill: this.gateDwellWaybill.trim(),
+      driver: this.gateDwellDriver.trim() || 'Driver',
+      vehicle: this.gateDwellVehicle.trim() || 'Scrap Truck',
+      dwellDurationSec,
+      verifiedAt: new Date(this.service.currentTime()).toISOString(),
+    };
+    this.gateDwellLogs = [record, ...this.gateDwellLogs];
+    this.savePersistedFieldOperations();
+    this.gateDwellActive = false;
+    this.gateDwellWaybill = '';
+    this.gateDwellDriver = '';
+    this.gateDwellVehicle = '';
+    this.gateDwellRemaining = this.gateDwellTotal;
+    this.gateDwellProgress = 0;
+  }
+
+  cancelGateDwell(): void {
+    if (this.gateDwellTimer) {
+      clearInterval(this.gateDwellTimer);
+      this.gateDwellTimer = null;
+    }
+    this.gateDwellActive = false;
+    this.gateDwellRemaining = this.gateDwellTotal;
+    this.gateDwellProgress = 0;
+  }
+
+  // Quick action: Mark all remaining pending employees as Present
+  markAllPendingPresent(): void {
+    if (this.isFuture || this.service.timeStatus() === 'blocked') return;
+    const dateStr = this.selectedDateStr;
+    const pendingList = this.filteredEmployees().filter((e) => this.getLog(e).status === 'pending');
+    for (const emp of pendingList) {
+      this.service.updateStatus(emp.id, dateStr, 'present', {
+        photoDataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCI+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMTY2NTM0Ii8+PC9zdmc+',
+        capturedAt: new Date(this.service.currentTime()),
+        location: this.parseCoordinateLabel(this.siteLocationLabel) || undefined,
+      });
+    }
+  }
+
+  private loadPersistedFieldOperations(): void {
+    try {
+      const fuelRaw = localStorage.getItem('senatla_site_fuel_logs');
+      if (fuelRaw) this.fuelLogs = JSON.parse(fuelRaw);
+      const breakdownRaw = localStorage.getItem('senatla_site_breakdown_logs');
+      if (breakdownRaw) this.breakdownLogs = JSON.parse(breakdownRaw);
+      const dwellRaw = localStorage.getItem('senatla_site_dwell_logs');
+      if (dwellRaw) this.gateDwellLogs = JSON.parse(dwellRaw);
+    } catch {
+      // Storage unavailable or invalid JSON
+    }
+  }
+
+  private savePersistedFieldOperations(): void {
+    try {
+      localStorage.setItem('senatla_site_fuel_logs', JSON.stringify(this.fuelLogs.slice(0, 50)));
+      localStorage.setItem('senatla_site_breakdown_logs', JSON.stringify(this.breakdownLogs.slice(0, 50)));
+      localStorage.setItem('senatla_site_dwell_logs', JSON.stringify(this.gateDwellLogs.slice(0, 50)));
+    } catch {
+      // Storage quota or error
+    }
+  }
+
   private async captureGpsLabel(context: 'site' | 'trip') {
     if (!navigator.geolocation) {
       return { label: context === 'site' ? 'Proceeding without GPS fix.' : 'Trip GPS unavailable.', warning: 'Browser geolocation is unavailable on this device.' };
@@ -163,6 +415,7 @@ export class SiteManagerComponent {
       return { label: context === 'site' ? 'No GPS fix captured.' : 'Trip GPS not captured.', warning: 'Location capture failed. Check location permissions and try again.' };
     }
   }
+
   handleAttendanceToggle(emp: Employee) {
     if (this.isFuture || this.service.timeStatus() === 'blocked') return;
 
@@ -257,6 +510,7 @@ export class SiteManagerComponent {
   confirmSafetyTalk() {
     if (this.selectedSafetyTopic) {
       this.service.completeSafetyTalk(this.selectedSafetyTopic);
+      this.activeTab.set('attendance');
     }
   }
 
@@ -286,9 +540,14 @@ export class SiteManagerComponent {
   setupCanvas() {
     if (!this.sigCanvas) return;
     const canvas = this.sigCanvas.nativeElement;
-    const container = this.canvasContainer.nativeElement;
-    canvas.width = container.offsetWidth;
-    canvas.height = container.offsetHeight;
+    const container = this.canvasContainer?.nativeElement;
+    if (container) {
+      canvas.width = container.offsetWidth || 340;
+      canvas.height = container.offsetHeight || 192;
+    } else {
+      canvas.width = 340;
+      canvas.height = 192;
+    }
     this.ctx = canvas.getContext('2d')!;
     this.ctx.lineWidth = 3;
     this.ctx.lineCap = 'round';
@@ -423,5 +682,4 @@ export class SiteManagerComponent {
     }
     return null;
   }
-
 }

@@ -6,10 +6,11 @@ import { OfficeAdminService } from 'src/app/core/services/office-admin.service';
 import { CostAttributionService } from 'src/app/core/services/cost-attribution.service';
 import { AccessibleDialogDirective } from 'src/app/core/accessibility/accessible-dialog.directive';
 import { AuthService } from 'src/app/core/services/auth.service';
+import { MultiDomainDashboardComponent } from '../dashboards/multi-domain-dashboard.component';
 
 @Component({
   selector: 'app-director', templateUrl: './director.component.html', styleUrls: ['./director.component.scss'], standalone: true,
-  imports: [CommonModule, DecimalPipe, DatePipe, RouterLink, AccessibleDialogDirective],
+  imports: [CommonModule, DecimalPipe, DatePipe, RouterLink, AccessibleDialogDirective, MultiDomainDashboardComponent],
 })
 export class DirectorComponent {
   readonly auth = inject(AuthService);
