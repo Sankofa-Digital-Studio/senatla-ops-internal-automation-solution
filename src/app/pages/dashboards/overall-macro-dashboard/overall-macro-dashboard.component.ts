@@ -1,13 +1,16 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { DomainDashboardService } from '../../../core/services/domain-dashboard.service';
 import { ErpStatCardComponent } from '../../../components/erp/erp-stat-card.component';
 import { ErpStatusBadgeComponent } from '../../../components/erp/erp-status-badge.component';
+import { ErpModalComponent } from '../../../components/erp/erp-modal.component';
+
+export type MacroStatType = 'revenue' | 'costs' | 'profit' | 'cashflow';
 
 @Component({
   selector: 'app-overall-macro-dashboard',
   standalone: true,
-  imports: [CommonModule, DecimalPipe, ErpStatCardComponent, ErpStatusBadgeComponent],
+  imports: [CommonModule, DecimalPipe, ErpStatCardComponent, ErpStatusBadgeComponent, ErpModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="space-y-6" id="panel-overall_macro" role="tabpanel" aria-labelledby="tab-overall_macro">
@@ -46,13 +49,16 @@ import { ErpStatusBadgeComponent } from '../../../components/erp/erp-status-badg
         </div>
       </div>
 
-      <!-- 4 Top Executive Rollup Stat Cards -->
+      <!-- 4 Top Executive Rollup Stat Cards (Interactive Drilldowns) -->
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <app-erp-stat-card
           title="Consolidated Revenue"
           [value]="'R ' + (macro().consolidatedRevenue | number:'1.2-2')"
           subtext="Engineering + Demolition certified billings"
           tone="accent"
+          [interactive]="true"
+          drilldownHint="Audit Rollup &rarr;"
+          (cardClick)="statModal.set('revenue')"
         ></app-erp-stat-card>
 
         <app-erp-stat-card
@@ -60,6 +66,9 @@ import { ErpStatusBadgeComponent } from '../../../components/erp/erp-status-badg
           [value]="'R ' + (macro().consolidatedOperatingCosts | number:'1.2-2')"
           subtext="Materials, direct labour & workshop overheads"
           tone="default"
+          [interactive]="true"
+          drilldownHint="Audit Rollup &rarr;"
+          (cardClick)="statModal.set('costs')"
         ></app-erp-stat-card>
 
         <app-erp-stat-card
@@ -68,6 +77,9 @@ import { ErpStatusBadgeComponent } from '../../../components/erp/erp-status-badg
           [subtext]="macro().consolidatedMarginPercent + '% Blended Margin'"
           badge="High Margin"
           tone="success"
+          [interactive]="true"
+          drilldownHint="Audit Rollup &rarr;"
+          (cardClick)="statModal.set('profit')"
         ></app-erp-stat-card>
 
         <app-erp-stat-card
@@ -76,6 +88,9 @@ import { ErpStatusBadgeComponent } from '../../../components/erp/erp-status-badg
           [subtext]="'Working Capital Ratio: ' + workingCapital().workingCapitalRatio + 'x'"
           badge="Liquid"
           tone="success"
+          [interactive]="true"
+          drilldownHint="Audit Cash Flow &rarr;"
+          (cardClick)="statModal.set('cashflow')"
         ></app-erp-stat-card>
       </div>
 
@@ -86,7 +101,7 @@ import { ErpStatusBadgeComponent } from '../../../components/erp/erp-status-badg
             <h3 class="text-sm font-bold uppercase tracking-wider text-white">
               Domain Financial Contribution &amp; P&amp;L Rollup
             </h3>
-            <p class="text-xs text-gray-400">Direct comparison across Engineering, Demolition &amp; Rehabilitation, and Underground Works.</p>
+            <p class="text-xs text-gray-400">Direct comparison across Engineering, Demolition &amp; Rehabilitation, and Underground Works. Click any row to switch domain.</p>
           </div>
           <span class="text-xs font-semibold text-gray-400">
             Total Multi-Domain Headcount: 147 Active Personnel
@@ -109,15 +124,16 @@ import { ErpStatusBadgeComponent } from '../../../components/erp/erp-status-badg
             <tbody class="divide-y divide-gray-800">
               @for (item of macro().domainContributions; track item.domain) {
                 <tr
-                  class="hover:bg-gray-950/60 transition cursor-pointer"
+                  class="hover:bg-gray-950/60 transition cursor-pointer group"
                   (click)="item.domain !== 'underground_works' ? service.selectDomain(item.domain) : null"
                 >
-                  <td class="p-3 font-semibold text-white flex items-center gap-2">
+                  <td class="p-3 font-semibold text-white flex items-center gap-2 group-hover:text-yellow-400 transition-colors">
                     <span
                       class="w-2 h-2 rounded-full"
                       [ngClass]="item.domain === 'engineering' ? 'bg-yellow-400' : item.domain === 'demolition_rehabilitation' ? 'bg-amber-400' : 'bg-gray-500'"
                     ></span>
                     {{ item.label }}
+                    <span class="text-[10px] text-gray-500 font-normal">(&rarr;)</span>
                   </td>
                   <td class="p-3 text-center font-bold text-gray-300">
                     {{ item.activeProjectsCount }}
@@ -275,6 +291,99 @@ import { ErpStatusBadgeComponent } from '../../../components/erp/erp-status-badg
         </div>
       </div>
     </section>
+
+    <!-- Macro Stat Drilldown Modal -->
+    <app-erp-modal
+      [isOpen]="statModal() !== null"
+      [title]="statModalTitle()"
+      size="lg"
+      (closed)="statModal.set(null)"
+    >
+      <div class="space-y-4 text-xs text-gray-200">
+        @if (statModal() === 'revenue') {
+          <div class="rounded-xl border border-yellow-500/30 bg-yellow-950/20 p-4">
+            <span class="text-xs font-bold uppercase text-yellow-400">Consolidated Recognized Revenue</span>
+            <h3 class="text-xl font-mono font-bold text-white mt-1">R {{ macro().consolidatedRevenue | number:'1.2-2' }}</h3>
+            <p class="text-xs text-gray-300 mt-1">Consolidation across all active operational divisions.</p>
+          </div>
+          <div class="overflow-x-auto rounded-xl border border-gray-800 bg-gray-950">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-gray-900 text-gray-400 uppercase font-bold text-[11px]">
+                <tr>
+                  <th class="p-3">Domain</th>
+                  <th class="p-3 text-right">Revenue</th>
+                  <th class="p-3 text-right">Share %</th>
+                  <th class="p-3 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-800">
+                @for (d of macro().domainContributions; track d.domain) {
+                  @if (d.revenue > 0) {
+                    <tr>
+                      <td class="p-3 font-semibold text-white">{{ d.label }}</td>
+                      <td class="p-3 text-right font-mono font-bold text-white">R {{ d.revenue | number:'1.2-2' }}</td>
+                      <td class="p-3 text-right font-mono text-emerald-400">{{ ((d.revenue / macro().consolidatedRevenue) * 100) | number:'1.1-1' }}%</td>
+                      <td class="p-3 text-center">
+                        <button type="button" (click)="statModal.set(null); service.selectDomain(d.domain)" class="rounded bg-yellow-500 text-black px-2 py-1 text-[11px] font-bold">
+                          Go to {{ d.label }} &rarr;
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        @if (statModal() === 'costs') {
+          <div class="rounded-xl border border-gray-800 bg-gray-950 p-4">
+            <span class="text-xs font-bold uppercase text-gray-400">Consolidated Operating Costs</span>
+            <h3 class="text-xl font-mono font-bold text-white mt-1">R {{ macro().consolidatedOperatingCosts | number:'1.2-2' }}</h3>
+            <p class="text-xs text-gray-300 mt-1">Total operational expenditure incurred in delivery across workshops and decommissioning sites.</p>
+          </div>
+          <div class="overflow-x-auto rounded-xl border border-gray-800 bg-gray-950">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-gray-900 text-gray-400 uppercase font-bold text-[11px]">
+                <tr>
+                  <th class="p-3">Domain</th>
+                  <th class="p-3 text-right">Incurred Operating Cost</th>
+                  <th class="p-3 text-right">Cost Share</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-800">
+                @for (d of macro().domainContributions; track d.domain) {
+                  @if (d.costs > 0) {
+                    <tr>
+                      <td class="p-3 font-semibold text-white">{{ d.label }}</td>
+                      <td class="p-3 text-right font-mono font-bold text-rose-400">R {{ d.costs | number:'1.2-2' }}</td>
+                      <td class="p-3 text-right font-mono text-gray-400">{{ ((d.costs / macro().consolidatedOperatingCosts) * 100) | number:'1.1-1' }}%</td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        @if (statModal() === 'profit') {
+          <div class="rounded-xl border border-emerald-500/40 bg-emerald-950/20 p-4">
+            <span class="text-xs font-bold uppercase text-emerald-400">Consolidated Net Profit</span>
+            <h3 class="text-xl font-mono font-bold text-white mt-1">R {{ macro().consolidatedNetProfit | number:'1.2-2' }}</h3>
+            <p class="text-xs text-emerald-300 font-semibold mt-0.5">{{ macro().consolidatedMarginPercent }}% Consolidated Blended Margin</p>
+            <p class="text-xs text-gray-300 mt-2">Combined net operating margin after audited material costs, workshop overhead absorption, and salvage credits.</p>
+          </div>
+        }
+
+        @if (statModal() === 'cashflow') {
+          <div class="rounded-xl border border-gray-800 bg-gray-950 p-4 space-y-2">
+            <span class="text-xs font-bold uppercase text-gray-400">Cash Flow &amp; Free Capital Audit</span>
+            <h3 class="text-xl font-mono font-bold text-white">R {{ workingCapital().netFreeCashFlow | number:'1.2-2' }} Free Cash Flow</h3>
+            <p class="text-xs text-gray-300">Working Capital Ratio: {{ workingCapital().workingCapitalRatio }}x. Total unallocated cash reserve held: R {{ workingCapital().unallocatedReserve | number:'1.2-2' }}.</p>
+          </div>
+        }
+      </div>
+    </app-erp-modal>
   `,
 })
 export class OverallMacroDashboardComponent {
@@ -282,4 +391,21 @@ export class OverallMacroDashboardComponent {
   readonly macro = this.service.macroFinancialRollup;
   readonly workingCapital = this.service.workingCapital;
   readonly fleet = this.service.fleetTelemetry;
+
+  readonly statModal = signal<MacroStatType | null>(null);
+
+  statModalTitle(): string {
+    switch (this.statModal()) {
+      case 'revenue':
+        return 'Consolidated Revenue Rollup Audit';
+      case 'costs':
+        return 'Consolidated Operating Costs Audit';
+      case 'profit':
+        return 'Consolidated Net Profit Audit';
+      case 'cashflow':
+        return 'Working Capital & Free Cash Flow Audit';
+      default:
+        return 'Macro Rollup Audit';
+    }
+  }
 }
