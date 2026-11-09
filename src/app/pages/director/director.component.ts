@@ -25,7 +25,7 @@ export class DirectorComponent {
   readonly costAttribution = inject(CostAttributionService);
 
   readonly viewMode = signal<'day' | 'month' | 'year'>('day');
-  readonly activeTab = signal<DirectorViewTab>('approvals');
+  readonly activeTab = signal<DirectorViewTab>('all');
   readonly showMobileActions = signal<boolean>(false);
 
   readonly staff = computed(() => this.office.employees());

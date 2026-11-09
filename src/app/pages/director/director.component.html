@@ -465,6 +465,7 @@
           <div class="grid grid-cols-2 gap-2 mt-2 text-xs text-gray-400">
             <div>Shift Date: <strong class="text-gray-200">{{ activeReportModal()?.records?.timesheet?.date }}</strong></div>
             <div>Overtime: <strong class="text-gray-200">{{ activeReportModal()?.records?.timesheet?.overtimeHours }} hrs</strong></div>
+            <div>Supervisor sign-off: <strong class="text-emerald-400">{{ activeReportModal()?.records?.timesheet?.supervisorSigned ? 'Confirmed' : 'Pending' }}</strong></div>
           </div>
         </div>
 

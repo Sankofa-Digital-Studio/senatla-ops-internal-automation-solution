@@ -269,6 +269,62 @@
 
       
 
+      @if (activeTab() === 'recovery') {
+        <section class="rounded-2xl border border-gray-800 bg-gray-900 p-4 mb-4">
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">Attendance delivery queue</h2>
+              <p class="mt-2 text-xs leading-5 text-gray-400">Authoritative Site Manager submissions, scoped to this organization. Rejected records retain diagnostics; only retryable outcomes can be retried.</p>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center text-xs">
+              <div class="rounded-lg bg-gray-950 px-3 py-2"><strong class="block text-lg text-yellow-300">{{ attendanceDeliverySummary().pending }}</strong>Pending</div>
+              <div class="rounded-lg bg-gray-950 px-3 py-2"><strong class="block text-lg text-red-300">{{ attendanceDeliverySummary().failed }}</strong>Failed</div>
+              <div class="rounded-lg bg-gray-950 px-3 py-2"><strong class="block text-lg text-emerald-300">{{ attendanceDeliverySummary().completed }}</strong>Completed</div>
+            </div>
+          </div>
+          <div class="delivery-cards mt-4 space-y-3 lg:hidden">
+            <article *ngFor="let delivery of service.attendanceQueue()" class="rounded-xl border border-gray-800 bg-gray-950 p-3">
+              <div class="flex justify-between gap-3">
+                <div>
+                  <p class="font-semibold">{{ service.getSiteName(delivery.siteId) }}</p>
+                  <p class="text-xs text-gray-500">{{ delivery.workDate }} · attempt {{ delivery.attempts }}</p>
+                </div>
+                <span class="text-xs font-bold uppercase" [class.text-emerald-300]="delivery.outcome === 'accepted'" [class.text-red-300]="delivery.outcome === 'rejected'" [class.text-yellow-300]="delivery.outcome === 'retryable'">{{ delivery.outcome }}</span>
+              </div>
+              <p *ngIf="delivery.lastError" class="mt-2 text-xs text-red-200">{{ delivery.lastError }}</p>
+              <button *ngIf="delivery.outcome === 'retryable'" type="button" (click)="retryAttendanceSubmission(delivery.id)" [disabled]="busy()" class="mt-3 rounded-lg border border-yellow-700 px-3 py-2 text-xs font-bold uppercase text-yellow-200 disabled:opacity-50">Retry</button>
+            </article>
+          </div>
+          <div class="delivery-table mt-4 hidden overflow-x-auto lg:block">
+            <table class="w-full min-w-[900px] text-left text-xs">
+              <thead class="bg-gray-950 uppercase tracking-wider text-gray-500">
+                <tr>
+                  <th class="px-3 py-3">Site/date</th>
+                  <th class="px-3 py-3">Submitter</th>
+                  <th class="px-3 py-3">Status</th>
+                  <th class="px-3 py-3">Outcome</th>
+                  <th class="px-3 py-3">Attempts</th>
+                  <th class="px-3 py-3">Diagnostic</th>
+                  <th class="px-3 py-3">Action</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-800">
+                <tr *ngFor="let delivery of service.attendanceQueue()">
+                  <td class="px-3 py-3"><strong class="block text-white">{{ service.getSiteName(delivery.siteId) }}</strong><span class="text-gray-500">{{ delivery.workDate }}</span></td>
+                  <td class="px-3 py-3 font-mono text-gray-400">{{ delivery.submittedBy }}</td>
+                  <td class="px-3 py-3 uppercase">{{ delivery.status }}</td>
+                  <td class="px-3 py-3 font-bold uppercase" [class.text-emerald-300]="delivery.outcome === 'accepted'" [class.text-red-300]="delivery.outcome === 'rejected'" [class.text-yellow-300]="delivery.outcome === 'retryable'">{{ delivery.outcome }}</td>
+                  <td class="px-3 py-3">{{ delivery.attempts }}</td>
+                  <td class="max-w-[280px] px-3 py-3 text-gray-400">{{ delivery.lastError || '—' }}</td>
+                  <td class="px-3 py-3"><button *ngIf="delivery.outcome === 'retryable'" type="button" (click)="retryAttendanceSubmission(delivery.id)" [disabled]="busy()" class="rounded border border-yellow-700 px-3 py-2 font-bold uppercase text-yellow-200 disabled:opacity-50">Retry</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p *ngIf="!service.attendanceQueue().length" class="mt-4 rounded-xl border border-gray-800 bg-gray-950 px-4 py-8 text-center text-sm text-gray-500">No attendance submissions are visible for this organization.</p>
+        </section>
+      }
+
       @if (activeTab() === 'recovery' || activeTab() === 'activity' || activeTab() === 'settings') {
         @defer (on idle) {
           <app-admin-governance [subTab]="activeTab()"></app-admin-governance>
