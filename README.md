@@ -4,7 +4,7 @@
 [![Native platform gates](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/actions/workflows/native-platforms.yml/badge.svg?branch=main)](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/actions/workflows/native-platforms.yml)
 [![Hosted smoke preflight](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/actions/workflows/hosted-smoke.yml/badge.svg?branch=main)](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/actions/workflows/hosted-smoke.yml)
 [![Documentation Portal](https://img.shields.io/badge/Docs-GitHub%20Pages-155780?logo=github&logoColor=white)](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/)
-[![Latest Release](https://img.shields.io/github/v/release/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution?color=007ec6&label=release)](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.4)
+[![Latest Release](https://img.shields.io/github/v/release/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution?color=007ec6&label=release)](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.5)
 [![Angular](https://img.shields.io/badge/Angular-22-DD0031?logo=angular&logoColor=white)](https://angular.dev/)
 [![Ionic](https://img.shields.io/badge/Ionic-8-3880FF?logo=ionic&logoColor=white)](https://ionicframework.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com/)
@@ -23,7 +23,7 @@ The public Senatla Trading website is maintained outside this repository and rem
 - Plus-address aliases, including `thosontula+tag@gmail.com`, are ordinary accounts and do not inherit the developer override.
 - New users receive a temporary password and must replace it before opening a workspace.
 
-Current production release: [v0.5.4](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.4) ([Release notes](docs/release-notes-0.5.4.md) · [Release guide](docs/v0.5.4-release-guide.md) · [Interactive HTML guide](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/v0.5.4-release-guide.html)). Prior releases: [v0.5.3](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.3), [v0.5.2](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.2), [v0.5.1](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.1). Hosted production target: [senatla-ops.vercel.app](https://senatla-ops.vercel.app). Public landing page: [senatla-ops.vercel.app/landing](https://senatla-ops.vercel.app/landing). Documentation portal: [GitHub Pages](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/).
+Current production release: [v0.5.5](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.5) ([Release notes](docs/release-notes-0.5.5.md)). Prior releases: [v0.5.4](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.4) ([Release notes](docs/release-notes-0.5.4.md) · [Release guide](docs/v0.5.4-release-guide.md) · [Interactive HTML guide](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/v0.5.4-release-guide.html)), [v0.5.3](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.3), [v0.5.2](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.2), [v0.5.1](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.1). Hosted production target: [senatla-ops.vercel.app](https://senatla-ops.vercel.app). Public landing page: [senatla-ops.vercel.app/landing](https://senatla-ops.vercel.app/landing). Documentation portal: [GitHub Pages](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/).
 
 ## Product outcome
 
@@ -171,6 +171,7 @@ See [Contributing](CONTRIBUTING.md), [Changelog](CHANGELOG.md), and the [GitHub 
 Access the live [Senatla Ops Documentation Portal on GitHub Pages](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/).
 
 ### Release management & guides
+- [v0.5.5 Release Notes](docs/release-notes-0.5.5.md)
 - [v0.5.4 Release & Support Guide](docs/v0.5.4-release-guide.md) ([HTML](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/v0.5.4-release-guide.html))
 - [v0.5.4 Release Notes](docs/release-notes-0.5.4.md)
 - [v0.5.3 Release Notes](docs/release-notes-0.5.3.md)
