@@ -8,6 +8,7 @@ import { AuthService } from 'src/app/core/services/auth.service';
 import { AuthRequestError } from 'src/app/core/gateways/auth.gateway';
 import { OnboardingFeature, OnboardingService } from 'src/app/core/services/onboarding.service';
 import { evaluatePassword, PasswordValidationResult } from 'src/app/core/auth/password-policy';
+import { isUatEmail, UAT_LANDING_URL } from 'src/app/core/auth/access-email-policy';
 
 const LOGIN_PREF_KEY = 'senatla_ops_login_pref_v1';
 const RECOVERY_ROUTE = '/login/recovery';
@@ -63,6 +64,19 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   get isRecoveryPinHidden(): boolean {
     return !this.passwordStrength().acceptable;
+  }
+
+  readonly uatLandingUrl = UAT_LANDING_URL;
+
+  get isUatUser(): boolean {
+    return isUatEmail(this.username);
+  }
+
+  get requiresUatRedirect(): boolean {
+    if (!this.isUatUser) return false;
+    if (typeof window === 'undefined') return false;
+    const hostname = window.location.hostname || '';
+    return !hostname.includes('uat') && hostname !== 'localhost' && hostname !== '127.0.0.1';
   }
 
   // Onboarding wizard state
@@ -174,6 +188,12 @@ export class LoginComponent implements OnInit, OnDestroy {
       this.recoveryUsernameHint = query.get('mock_user')?.trim().toLowerCase() || '';
       this.recoveryMsg = '';
       if (this.recoveryUsernameHint) this.username = this.recoveryUsernameHint;
+      if (this.requiresUatRedirect) {
+        if (typeof window !== 'undefined') {
+          window.location.href = this.uatLandingUrl;
+        }
+        return;
+      }
       if (this.forcedPasswordChange) void this.prepareForcedPasswordChange();
 
       if (query.get('onboarding') === '1') {
@@ -198,6 +218,12 @@ export class LoginComponent implements OnInit, OnDestroy {
   async handleLogin() {
     if (this.recoveryMode) {
       await this.handlePasswordUpdate();
+      return;
+    }
+    if (this.requiresUatRedirect) {
+      if (typeof window !== 'undefined') {
+        window.location.href = this.uatLandingUrl;
+      }
       return;
     }
     if (this.isSubmitting) return;

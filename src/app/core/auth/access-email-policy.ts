@@ -7,6 +7,13 @@ const DEVELOPER_ALIAS_PATTERN = /^thosontula\+[a-z0-9._-]+@gmail\.com$/;
 export const ACCESS_EMAIL_ERROR =
   'Access is restricted to provisioned @senatlatrading.com accounts and the authorised developer mailbox.';
 
+export const UAT_EMAIL_PATTERN = /\+uat@/i;
+export const UAT_LANDING_URL = 'https://senatla-ops-uat.vercel.app/landing';
+
+export function isUatEmail(value: string): boolean {
+  return UAT_EMAIL_PATTERN.test(normalizeAccessEmail(value));
+}
+
 export function normalizeAccessEmail(value: string): string {
   return value.trim().toLowerCase();
 }

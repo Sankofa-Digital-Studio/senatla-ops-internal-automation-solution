@@ -67,6 +67,11 @@
           <div>
             <label for="login-username" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">{{ usernameLabel }}</label>
             <input id="login-username" type="email" [(ngModel)]="username" name="username" [readonly]="recoveryMode && !!recoveryUsernameHint" autocomplete="username" class="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm text-white focus:border-lime-300 focus:outline-none" [placeholder]="usernamePlaceholder">
+            <div *ngIf="requiresUatRedirect" class="mt-2 rounded-xl border border-lime-500/40 bg-lime-500/10 p-3 text-xs text-lime-200 space-y-1">
+              <p class="font-bold">UAT Account Detected</p>
+              <p class="text-lime-200/80">All UAT users are directed to the dedicated testing environment.</p>
+              <a [href]="uatLandingUrl" class="inline-block pt-1 font-black text-lime-300 underline hover:text-white">Proceed to Senatla Ops UAT Landing &rarr;</a>
+            </div>
           </div>
           <div *ngIf="!recoveryMode">
             <label for="login-password" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">Password</label>

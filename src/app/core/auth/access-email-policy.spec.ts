@@ -1,8 +1,10 @@
 import {
   ACCESS_EMAIL_ERROR,
+  UAT_LANDING_URL,
   isAllowedAccessEmail,
   isDeveloperDirectorEmail,
   isPermanentDeveloperEmail,
+  isUatEmail,
   normalizeAccessEmail,
   requireAllowedAccessEmail,
 } from './access-email-policy';
@@ -16,6 +18,15 @@ describe('access email policy', () => {
     expect(isAllowedAccessEmail('thosontula@gmail.com')).toBeTrue();
     expect(isAllowedAccessEmail('thosontula+site@gmail.com')).toBeTrue();
     expect(isAllowedAccessEmail('thosontula+release-2026.11@gmail.com')).toBeTrue();
+  });
+
+  it('identifies UAT alias emails for routing to the UAT environment', () => {
+    expect(isUatEmail('maggie+UAT@senatlatrading.com')).toBeTrue();
+    expect(isUatEmail('user+uat@senatlatrading.com')).toBeTrue();
+    expect(isUatEmail('thosontula+uat@gmail.com')).toBeTrue();
+    expect(isUatEmail('maggie@senatlatrading.com')).toBeFalse();
+    expect(isUatEmail('thosontula@gmail.com')).toBeFalse();
+    expect(UAT_LANDING_URL).toBe('https://senatla-ops-uat.vercel.app/landing');
   });
 
   it('grants permanent developer identity only to the exact base address', () => {
