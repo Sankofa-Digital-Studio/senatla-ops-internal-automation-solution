@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Senatla Ops must not leave a person's name or protected workspace visible after the application session has expired. The browser applies a ten-minute maximum session window and redirects a protected route to login once that limit is reached.
+Senatla Ops must not leave a person's name or protected workspace visible after the application session has expired. The browser applies a 2-hour-and-30-minute (150-minute / 9,000,000 ms) inactivity session window and redirects a protected route to login once that limit of user inactivity is reached.
 
 ## Identity and provisioning boundary
 
@@ -16,21 +16,22 @@ Senatla Ops must not leave a person's name or protected workspace visible after 
 
 ## What the application enforces
 
-- A newly created local-review or Supabase-backed application session expires no later than ten minutes after sign-in.
+- A newly created local-review or Supabase-backed application session expires after 2 hours and 30 minutes of inactivity.
+- User activity (clicks, keypresses, touches, scrolls) refreshes the inactivity timer and extends the active session window.
 - An earlier upstream expiry always wins.
-- At expiry, the application clears its session state, calls the configured auth gateway's sign-out path, removes the local-review session storage record, and redirects protected routes to login.
+- At expiry (after 2 hours and 30 minutes of inactivity), the application clears its session state, calls the configured auth gateway's sign-out path, removes the local-review session storage record, and redirects protected routes to login.
 - The public landing, registration, and login routes never render the signed-in utility header or display name.
 - The app checks expiry on its timer, when the browser becomes visible, and when a route guard evaluates access. These three checks mitigate background-tab timer throttling.
 
 ## Required Supabase dashboard action
 
-Client code cannot revoke an already-issued JWT at the authentication server by itself. A project administrator must configure Supabase Auth session controls to match this ten-minute policy:
+Client code cannot revoke an already-issued JWT at the authentication server by itself. A project administrator must configure Supabase Auth session controls to match this 2-hour-and-30-minute policy:
 
 1. Open the Supabase project dashboard.
 2. Go to **Authentication** and open the session controls for the project.
-3. Set the maximum session lifetime (time-boxed session) and inactivity timeout to **10 minutes**, where the current project plan exposes those controls.
-4. Set the JWT expiry at or below the same window, but not below Supabase's documented five-minute minimum recommendation.
-5. Save the changes, then sign in with a non-production account and verify that a protected route requires a fresh login after ten minutes.
+3. Set the maximum session lifetime (time-boxed session) and inactivity timeout to **2 hours and 30 minutes** (9000 seconds), matching `supabase/config.toml` (`jwt_expiry = 9000`).
+4. Set the JWT expiry at or below the same window.
+5. Save the changes, then sign in with a non-production account and verify that an inactive protected route requires a fresh login after 2 hours and 30 minutes.
 
 ## Verification
 
@@ -40,4 +41,4 @@ Client code cannot revoke an already-issued JWT at the authentication server by 
 
 ## Do not weaken this boundary
 
-Do not extend expiry in the browser on token refresh, do not restore expired session storage records, and do not make the display name depend solely on a persisted browser value. Any request to lengthen the session must change this document, the server configuration, unit tests, and the security review together.
+Do not restore expired session storage records, and do not make the display name depend solely on a persisted browser value. Any request to lengthen or shorten the session must change this document, the server configuration, unit tests, and the security review together.

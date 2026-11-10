@@ -1,6 +1,10 @@
 import { AuthSession } from '../models/app.models';
 
-export const SESSION_MAX_AGE_MS = 10 * 60 * 1000;
+/**
+ * Auth token inactivity timeout: 2 hours and 30 minutes (150 minutes = 9,000,000 ms).
+ */
+export const SESSION_MAX_AGE_MS = (2 * 60 + 30) * 60 * 1000;
+export const INACTIVITY_TIMEOUT_MS = SESSION_MAX_AGE_MS;
 
 export function cappedSessionExpiry(issuedAt: string, upstreamExpiry?: string): string {
   const issuedAtMs = Date.parse(issuedAt);

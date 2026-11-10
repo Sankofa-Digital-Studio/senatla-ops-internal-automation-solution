@@ -1,21 +1,38 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, NgZone, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AppRole, AuthSession } from '../models/app.models';
 import { AUTH_GATEWAY, AuthGateway, PasswordResetRequestResult } from '../gateways/auth.gateway';
 import { SESSION_EXPIRY_SCHEDULER } from '../auth/session-expiry.scheduler';
-import { cappedSessionExpiry, sessionHasExpired } from '../auth/session-policy';
-import { isAllowedAccessEmail, isDeveloperDirectorEmail, isPermanentDeveloperEmail, normalizeAccessEmail, requireAllowedAccessEmail } from '../auth/access-email-policy';
+import { SESSION_MAX_AGE_MS, sessionHasExpired } from '../auth/session-policy';
+import {
+  isAllowedAccessEmail,
+  isDeveloperDirectorEmail,
+  isPermanentDeveloperEmail,
+  normalizeAccessEmail,
+  requireAllowedAccessEmail,
+} from '../auth/access-email-policy';
+
+const LAST_ACTIVITY_KEY = 'senatla_ops_last_activity';
+const LOCAL_SESSION_KEY = 'senatla_ops_local_review_session_v2';
+const ACTIVITY_THROTTLE_MS = 15_000;
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly authGateway = inject<AuthGateway>(AUTH_GATEWAY);
   private readonly router = inject(Router);
   private readonly expiryScheduler = inject(SESSION_EXPIRY_SCHEDULER);
+  private readonly zone = inject(NgZone);
+
   private readonly sessionState = signal<AuthSession | null>(null);
   private readonly readyState = signal(false);
   private readonly switchedRoleState = signal<AppRole | null>(null);
+
   private restorePromise: Promise<void> | null = null;
   private cancelExpiryTimer: (() => void) | null = null;
+  private removeActivityListeners: (() => void) | null = null;
+
+  private lastActivityTimestamp = Date.now();
+  private lastActivityRecordedTime = 0;
 
   readonly session = computed(() => this.currentSession());
   readonly isReady = this.readyState.asReadonly();
@@ -100,13 +117,48 @@ export class AuthService {
   validateSession() {
     const session = this.sessionState();
     if (!session) return false;
-    if (!sessionHasExpired(session)) return true;
-    void this.expireIfNeeded();
-    return false;
+    const isInactive = Date.now() - this.lastActivityTimestamp >= SESSION_MAX_AGE_MS;
+    if (isInactive || sessionHasExpired(session)) {
+      void this.expireIfNeeded();
+      return false;
+    }
+    return true;
   }
 
   currentSession() {
     return this.validateSession() ? this.sessionState() : null;
+  }
+
+  /**
+   * Resets the inactivity countdown when the user interacts with the application.
+   */
+  recordActivity(): void {
+    const now = Date.now();
+    if (now - this.lastActivityRecordedTime < ACTIVITY_THROTTLE_MS) return;
+    this.lastActivityRecordedTime = now;
+    this.lastActivityTimestamp = now;
+
+    const session = this.sessionState();
+    if (!session) return;
+
+    const nextExpiry = new Date(now + SESSION_MAX_AGE_MS).toISOString();
+    this.zone.run(() => {
+      this.sessionState.set({ ...session, expiresAt: nextExpiry });
+    });
+
+    this.scheduleExpiryTimer();
+
+    try {
+      sessionStorage.setItem(LAST_ACTIVITY_KEY, String(now));
+      const rawLocalSession = sessionStorage.getItem(LOCAL_SESSION_KEY);
+      if (rawLocalSession) {
+        const parsed = JSON.parse(rawLocalSession) as AuthSession;
+        parsed.expiresAt = nextExpiry;
+        sessionStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(parsed));
+      }
+    } catch {
+      // Storage access may fail in sandboxed or non-browser environments
+    }
   }
 
   private setSession(session: AuthSession | null) {
@@ -114,15 +166,43 @@ export class AuthService {
     this.sessionState.set(session);
     if (!session) {
       this.switchedRoleState.set(null);
+      this.teardownActivityTracking();
+      try {
+        sessionStorage.removeItem(LAST_ACTIVITY_KEY);
+      } catch {
+        // Ignore
+      }
       return;
     }
 
-    const delay = new Date(session.expiresAt).getTime() - Date.now();
-    if (delay <= 0) {
+    let storedLastActivity = Number.NaN;
+    try {
+      const raw = sessionStorage.getItem(LAST_ACTIVITY_KEY);
+      if (raw) storedLastActivity = Number(raw);
+    } catch {
+      // Ignore
+    }
+
+    const now = Date.now();
+    this.lastActivityTimestamp =
+      Number.isFinite(storedLastActivity) && storedLastActivity > 0 ? storedLastActivity : now;
+    this.lastActivityRecordedTime = this.lastActivityTimestamp;
+
+    this.setupActivityTracking();
+    this.scheduleExpiryTimer();
+  }
+
+  private scheduleExpiryTimer() {
+    this.clearExpiryTimer();
+    const session = this.sessionState();
+    if (!session) return;
+
+    const remaining = Math.max(0, this.lastActivityTimestamp + SESSION_MAX_AGE_MS - Date.now());
+    if (remaining <= 0) {
       void this.expireIfNeeded();
       return;
     }
-    this.cancelExpiryTimer = this.expiryScheduler.schedule(() => void this.expireIfNeeded(), delay);
+    this.cancelExpiryTimer = this.expiryScheduler.schedule(() => void this.expireIfNeeded(), remaining);
   }
 
   private clearExpiryTimer() {
@@ -130,9 +210,40 @@ export class AuthService {
     this.cancelExpiryTimer = null;
   }
 
+  private setupActivityTracking() {
+    if (typeof window === 'undefined') return;
+    this.teardownActivityTracking();
+
+    const activityHandler = () => {
+      this.recordActivity();
+    };
+
+    this.zone.runOutsideAngular(() => {
+      const options: AddEventListenerOptions = { passive: true, capture: true };
+      window.addEventListener('mousedown', activityHandler, options);
+      window.addEventListener('keydown', activityHandler, options);
+      window.addEventListener('touchstart', activityHandler, options);
+      window.addEventListener('scroll', activityHandler, options);
+
+      this.removeActivityListeners = () => {
+        window.removeEventListener('mousedown', activityHandler, options);
+        window.removeEventListener('keydown', activityHandler, options);
+        window.removeEventListener('touchstart', activityHandler, options);
+        window.removeEventListener('scroll', activityHandler, options);
+      };
+    });
+  }
+
+  private teardownActivityTracking() {
+    this.removeActivityListeners?.();
+    this.removeActivityListeners = null;
+  }
+
   private async expireIfNeeded() {
     const session = this.sessionState();
-    if (!session || !sessionHasExpired(session)) return;
+    if (!session) return;
+    const isInactive = Date.now() - this.lastActivityTimestamp >= SESSION_MAX_AGE_MS;
+    if (!isInactive && !sessionHasExpired(session)) return;
     const currentUrl = this.router.url;
     await this.logout();
     if (!this.isPublicRoute(currentUrl)) {

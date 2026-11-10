@@ -20,10 +20,9 @@ port = 54323
 enabled = true
 site_url = "http://127.0.0.1:4200"
 additional_redirect_urls = ["http://localhost:4200"]
-jwt_expiry = 3600
+jwt_expiry = 9000
 enable_signup = false
 
 [storage]
 enabled = true
 file_size_limit = "20MiB"
-
