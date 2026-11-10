@@ -8,6 +8,9 @@ import {
   EngineeringOrderRecord,
   EngineeringProfitSummary,
   FleetUtilizationRollup,
+  JobCardDetail,
+  JobCardLabourItem,
+  JobCardMaterialItem,
   MacroFinancialRollup,
   OperationalDomain,
   UndergroundWorksSummary,
@@ -118,8 +121,100 @@ export class DomainDashboardService {
       value: 1250000,
       materialsCost: 380000,
       labourHours: 184,
+      labourCost: 69600,
       workshop: 'Workshop 2 (Train Wheels)',
       deliveryDate: '2026-11-24',
+      jobCardDetails: {
+        id: 'JC-ENG-204',
+        jobCardNumber: 'JC-ENG-204',
+        purchaseOrderNumber: 'HAR-PO-2026-8812',
+        client: 'Harmony Gold Mining Co.',
+        quoteNumber: 'QUO-26-0941',
+        invoiceNumber: 'INV-26-0412',
+        scopeDescription: 'Heavy underground locomotive train wheel re-profiling and axle balancing (x16 sets)',
+        workshop: 'Workshop 2 (Train Wheels)',
+        assignedSupervisor: 'D. Venter (Foreman / Wheel Specialist)',
+        dateIssued: '2026-10-18',
+        targetDeliveryDate: '2026-11-24',
+        status: 'in_progress',
+        materials: [
+          {
+            id: 'MAT-204-1',
+            vendorName: 'Scaw Metals Group',
+            vendorPoOrInvoice: 'VND-PO-8812 / INV-9021',
+            itemDescription: 'Forged Steel Locomotive Wheel Billets (Grade B, Dia 920mm)',
+            quantity: 16,
+            unitOfMeasure: 'units',
+            unitRate: 15500,
+            totalCost: 248000,
+            deliveryNoteNumber: 'DN-SCAW-4410',
+            procuredDate: '2026-10-22',
+          },
+          {
+            id: 'MAT-204-2',
+            vendorName: 'Timken South Africa',
+            vendorPoOrInvoice: 'VND-PO-8815 / INV-1104',
+            itemDescription: 'Heavy Haul Axle Tapered Roller Bearings & Seal Assemblies',
+            quantity: 32,
+            unitOfMeasure: 'units',
+            unitRate: 2500,
+            totalCost: 80000,
+            deliveryNoteNumber: 'DN-TMK-881',
+            procuredDate: '2026-10-25',
+          },
+          {
+            id: 'MAT-204-3',
+            vendorName: 'Lincoln Electric SA',
+            vendorPoOrInvoice: 'VND-PO-8819 / INV-5521',
+            itemDescription: 'Lincolnweld Submerged Arc Wire & Agglomerated Flux 25kg Drums',
+            quantity: 26,
+            unitOfMeasure: 'drums',
+            unitRate: 2000,
+            totalCost: 52000,
+            deliveryNoteNumber: 'DN-LE-219',
+            procuredDate: '2026-10-27',
+          },
+        ],
+        labour: [
+          {
+            id: 'LAB-204-1',
+            artisanName: 'J. Mthembu',
+            role: 'Boilermaker (Red Seal)',
+            hoursWorked: 64,
+            hourlyRate: 350,
+            totalLabourCost: 22400,
+            shiftDate: '2026-10-24',
+            timesheetReference: 'TS-BOIL-441',
+          },
+          {
+            id: 'LAB-204-2',
+            artisanName: 'D. Venter',
+            role: 'Wheel Lathe Turner & Axle Balancing Machinist',
+            hoursWorked: 80,
+            hourlyRate: 380,
+            totalLabourCost: 30400,
+            shiftDate: '2026-10-28',
+            timesheetReference: 'TS-MACH-812',
+          },
+          {
+            id: 'LAB-204-3',
+            artisanName: 'K. Nkosi',
+            role: 'Ultrasonic NDT Inspector & Certified QA',
+            hoursWorked: 40,
+            hourlyRate: 420,
+            totalLabourCost: 16800,
+            shiftDate: '2026-11-02',
+            timesheetReference: 'TS-NDT-339',
+          },
+        ],
+        totalMaterialsCost: 380000,
+        totalLabourHours: 184,
+        totalLabourCost: 69600,
+        totalDirectCost: 449600,
+        linkedPoValue: 1250000,
+        recognizedProfit: 800400,
+        marginPercent: 64.0,
+      },
     },
     {
       id: 'EOR-102',
@@ -133,8 +228,100 @@ export class DomainDashboardService {
       value: 1680000,
       materialsCost: 620000,
       labourHours: 240,
+      labourCost: 77400,
       workshop: 'Workshop 1 (Boilermaking)',
       deliveryDate: '2026-11-18',
+      jobCardDetails: {
+        id: 'JC-ENG-199',
+        jobCardNumber: 'JC-ENG-199',
+        purchaseOrderNumber: 'HAR-PO-2026-8799',
+        client: 'Harmony Gold Mining Co.',
+        quoteNumber: 'QUO-26-0925',
+        invoiceNumber: 'INV-26-0398',
+        scopeDescription: 'Structural boilermaking: Headgear chute liner fabrication & Hardox wear plates',
+        workshop: 'Workshop 1 (Boilermaking)',
+        assignedSupervisor: 'M. Sithole (Boilermaker Master Lead)',
+        dateIssued: '2026-10-12',
+        targetDeliveryDate: '2026-11-18',
+        status: 'in_progress',
+        materials: [
+          {
+            id: 'MAT-199-1',
+            vendorName: 'Macsteel Trading (Pty) Ltd',
+            vendorPoOrInvoice: 'VND-PO-8790 / INV-MAC-4190',
+            itemDescription: 'Hardox 500 Wear Resistant Steel Plates 16mm (6000x2000)',
+            quantity: 8,
+            unitOfMeasure: 'sheets',
+            unitRate: 45000,
+            totalCost: 360000,
+            deliveryNoteNumber: 'DN-MAC-9921',
+            procuredDate: '2026-10-14',
+          },
+          {
+            id: 'MAT-199-2',
+            vendorName: 'Columbus Stainless',
+            vendorPoOrInvoice: 'VND-PO-8794 / INV-CS-3312',
+            itemDescription: '3CR12 Stainless Steel Heavy Flange Rings & Stiffeners',
+            quantity: 24,
+            unitOfMeasure: 'lengths',
+            unitRate: 6500,
+            totalCost: 156000,
+            deliveryNoteNumber: 'DN-CS-781',
+            procuredDate: '2026-10-18',
+          },
+          {
+            id: 'MAT-199-3',
+            vendorName: 'Afrox South Africa',
+            vendorPoOrInvoice: 'VND-PO-8798 / INV-AFX-8820',
+            itemDescription: 'Bulk Shielding Gas Argon/CO2 & Heavy Gouging Electrodes',
+            quantity: 12,
+            unitOfMeasure: 'packs',
+            unitRate: 8666.67,
+            totalCost: 104000,
+            deliveryNoteNumber: 'DN-AFX-440',
+            procuredDate: '2026-10-20',
+          },
+        ],
+        labour: [
+          {
+            id: 'LAB-199-1',
+            artisanName: 'M. Sithole',
+            role: 'Master Boilermaker (Red Seal)',
+            hoursWorked: 110,
+            hourlyRate: 360,
+            totalLabourCost: 39600,
+            shiftDate: '2026-10-19',
+            timesheetReference: 'TS-BOIL-419',
+          },
+          {
+            id: 'LAB-199-2',
+            artisanName: 'S. Dlamini',
+            role: 'Coded Flux-Core Welder',
+            hoursWorked: 90,
+            hourlyRate: 340,
+            totalLabourCost: 30600,
+            shiftDate: '2026-10-23',
+            timesheetReference: 'TS-WELD-221',
+          },
+          {
+            id: 'LAB-199-3',
+            artisanName: 'L. Mokoena',
+            role: 'Artisan Assistant & Grinder',
+            hoursWorked: 40,
+            hourlyRate: 180,
+            totalLabourCost: 7200,
+            shiftDate: '2026-10-26',
+            timesheetReference: 'TS-ASST-104',
+          },
+        ],
+        totalMaterialsCost: 620000,
+        totalLabourHours: 240,
+        totalLabourCost: 77400,
+        totalDirectCost: 697400,
+        linkedPoValue: 1680000,
+        recognizedProfit: 982600,
+        marginPercent: 58.5,
+      },
     },
     {
       id: 'EOR-103',
@@ -148,8 +335,78 @@ export class DomainDashboardService {
       value: 845000,
       materialsCost: 245000,
       labourHours: 110,
+      labourCost: 40200,
       workshop: 'Workshop 3 (Assembly)',
       deliveryDate: '2026-11-04',
+      jobCardDetails: {
+        id: 'JC-ENG-192',
+        jobCardNumber: 'JC-ENG-192',
+        purchaseOrderNumber: 'HAR-PO-2026-8750',
+        client: 'Harmony Gold Mining Co.',
+        quoteNumber: 'QUO-26-0880',
+        invoiceNumber: 'INV-26-0371',
+        scopeDescription: 'Sub-assembly conveyor pulleys and bearing housing re-machining',
+        workshop: 'Workshop 3 (Assembly)',
+        assignedSupervisor: 'P. Van Zyl (Assembly Lead)',
+        dateIssued: '2026-09-24',
+        targetDeliveryDate: '2026-11-04',
+        status: 'completed',
+        materials: [
+          {
+            id: 'MAT-192-1',
+            vendorName: 'SKF South Africa',
+            vendorPoOrInvoice: 'VND-PO-8744 / INV-SKF-0091',
+            itemDescription: 'Spherical Roller Bearings & Split Plummer Block Housings',
+            quantity: 6,
+            unitOfMeasure: 'sets',
+            unitRate: 25000,
+            totalCost: 150000,
+            deliveryNoteNumber: 'DN-SKF-812',
+            procuredDate: '2026-09-28',
+          },
+          {
+            id: 'MAT-192-2',
+            vendorName: 'Macsteel Trading (Pty) Ltd',
+            vendorPoOrInvoice: 'VND-PO-8748 / INV-MAC-3890',
+            itemDescription: 'EN8 Solid Shaft Round Bar Dia 180mm (6000mm)',
+            quantity: 4,
+            unitOfMeasure: 'lengths',
+            unitRate: 23750,
+            totalCost: 95000,
+            deliveryNoteNumber: 'DN-MAC-9120',
+            procuredDate: '2026-10-02',
+          },
+        ],
+        labour: [
+          {
+            id: 'LAB-192-1',
+            artisanName: 'P. Van Zyl',
+            role: 'Precision CNC & Conventional Turner',
+            hoursWorked: 70,
+            hourlyRate: 380,
+            totalLabourCost: 26600,
+            shiftDate: '2026-10-06',
+            timesheetReference: 'TS-TURN-661',
+          },
+          {
+            id: 'LAB-192-2',
+            artisanName: 'T. Khumalo',
+            role: 'Mechanical Fitter & Alignment Specialist',
+            hoursWorked: 40,
+            hourlyRate: 340,
+            totalLabourCost: 13600,
+            shiftDate: '2026-10-11',
+            timesheetReference: 'TS-FIT-302',
+          },
+        ],
+        totalMaterialsCost: 245000,
+        totalLabourHours: 110,
+        totalLabourCost: 40200,
+        totalDirectCost: 285200,
+        linkedPoValue: 845000,
+        recognizedProfit: 559800,
+        marginPercent: 66.2,
+      },
     },
     {
       id: 'EOR-104',
@@ -163,8 +420,78 @@ export class DomainDashboardService {
       value: 510000,
       materialsCost: 175000,
       labourHours: 65,
+      labourCost: 19800,
       workshop: 'Workshop 1 (Boilermaking)',
       deliveryDate: '2026-12-02',
+      jobCardDetails: {
+        id: 'JC-ENG-210',
+        jobCardNumber: 'JC-ENG-210',
+        purchaseOrderNumber: 'HAR-PO-2026-8845',
+        client: 'Harmony Gold Mining Co.',
+        quoteNumber: 'QUO-26-0955',
+        invoiceNumber: 'INV-PENDING',
+        scopeDescription: 'High-pressure slurry pipeline manifold bend re-lining',
+        workshop: 'Workshop 1 (Boilermaking)',
+        assignedSupervisor: 'M. Sithole (Boilermaker Master)',
+        dateIssued: '2026-10-30',
+        targetDeliveryDate: '2026-12-02',
+        status: 'pending_materials',
+        materials: [
+          {
+            id: 'MAT-210-1',
+            vendorName: 'Scaw Metals Group',
+            vendorPoOrInvoice: 'VND-PO-8840 / INV-SCAW-9411',
+            itemDescription: 'High-Chrome White Iron Slurry Elbow Liners (Bend 90 deg)',
+            quantity: 4,
+            unitOfMeasure: 'sets',
+            unitRate: 31250,
+            totalCost: 125000,
+            deliveryNoteNumber: 'DN-SCAW-5502',
+            procuredDate: '2026-11-01',
+          },
+          {
+            id: 'MAT-210-2',
+            vendorName: 'Columbus Stainless',
+            vendorPoOrInvoice: 'VND-PO-8842 / INV-CS-3800',
+            itemDescription: 'Flanged Polyurethane Gaskets & Gr 8.8 Fastener Kits',
+            quantity: 10,
+            unitOfMeasure: 'kits',
+            unitRate: 5000,
+            totalCost: 50000,
+            deliveryNoteNumber: 'DN-CS-890',
+            procuredDate: '2026-11-04',
+          },
+        ],
+        labour: [
+          {
+            id: 'LAB-210-1',
+            artisanName: 'M. Sithole',
+            role: 'Master Boilermaker (Red Seal)',
+            hoursWorked: 45,
+            hourlyRate: 360,
+            totalLabourCost: 16200,
+            shiftDate: '2026-11-05',
+            timesheetReference: 'TS-BOIL-490',
+          },
+          {
+            id: 'LAB-210-2',
+            artisanName: 'L. Mokoena',
+            role: 'Artisan Assistant',
+            hoursWorked: 20,
+            hourlyRate: 180,
+            totalLabourCost: 3600,
+            shiftDate: '2026-11-06',
+            timesheetReference: 'TS-ASST-145',
+          },
+        ],
+        totalMaterialsCost: 175000,
+        totalLabourHours: 65,
+        totalLabourCost: 19800,
+        totalDirectCost: 194800,
+        linkedPoValue: 510000,
+        recognizedProfit: 315200,
+        marginPercent: 61.8,
+      },
     },
   ]);
 
@@ -893,4 +1220,290 @@ export class DomainDashboardService {
       // Use defaults
     }
   }
+  // =========================================================================
+  // JOB CARD & PURCHASE ORDER TRACEABILITY METHODS
+  // =========================================================================
+
+  private createDefaultJobCardDetails(order: EngineeringOrderRecord): JobCardDetail {
+    const totalMat = order.materialsCost || 0;
+    const totalLabHours = order.labourHours || 0;
+    const totalLabCost = order.labourCost || totalLabHours * 350;
+    const directCost = totalMat + totalLabCost;
+    const val = order.value || 0;
+    const profit = Math.max(0, val - directCost);
+    const margin = val > 0 ? Number(((profit / val) * 100).toFixed(1)) : 0;
+
+    return {
+      id: order.jobCardNumber,
+      jobCardNumber: order.jobCardNumber,
+      purchaseOrderNumber: order.poNumber,
+      client: order.client,
+      quoteNumber: order.quoteNumber,
+      invoiceNumber: order.invoiceNumber,
+      scopeDescription: order.scopeDescription,
+      workshop: order.workshop,
+      assignedSupervisor: 'Workshop Supervisor',
+      dateIssued: new Date().toISOString().slice(0, 10),
+      targetDeliveryDate: order.deliveryDate,
+      status: order.status,
+      materials: [],
+      labour: [],
+      totalMaterialsCost: totalMat,
+      totalLabourHours: totalLabHours,
+      totalLabourCost: totalLabCost,
+      totalDirectCost: directCost,
+      linkedPoValue: val,
+      recognizedProfit: profit,
+      marginPercent: margin,
+    };
+  }
+
+  private recalculateEngineeringTotals(): void {
+    const orders = this.engineeringOrders();
+    const totalRev = orders.reduce((sum, o) => sum + o.value, 0);
+    const totalMat = orders.reduce((sum, o) => sum + o.materialsCost, 0);
+    const totalLab = orders.reduce((sum, o) => sum + (o.labourCost || o.labourHours * 350), 0);
+
+    this.engineeringRevenue.set(totalRev);
+    this.engineeringMaterials.set(totalMat);
+    this.engineeringLabour.set(totalLab);
+  }
+
+  addMaterialToJobCard(
+    jobCardNumber: string,
+    material: Omit<JobCardMaterialItem, 'id' | 'totalCost'>
+  ): void {
+    const totalCost = Number((material.quantity * material.unitRate).toFixed(2));
+    const newItem: JobCardMaterialItem = {
+      ...material,
+      id: 'MAT-' + Math.random().toString(36).substring(2, 9).toUpperCase(),
+      totalCost,
+    };
+
+    this.engineeringOrders.update((orders) =>
+      orders.map((order) => {
+        if (order.jobCardNumber !== jobCardNumber) return order;
+        const details = order.jobCardDetails || this.createDefaultJobCardDetails(order);
+        const updatedMaterials = [...details.materials, newItem];
+        const totalMaterialsCost = updatedMaterials.reduce((sum, m) => sum + m.totalCost, 0);
+        const totalDirectCost = totalMaterialsCost + details.totalLabourCost;
+        const recognizedProfit = details.linkedPoValue - totalDirectCost;
+        const marginPercent =
+          details.linkedPoValue > 0
+            ? Number(((recognizedProfit / details.linkedPoValue) * 100).toFixed(1))
+            : 0;
+
+        const updatedDetails: JobCardDetail = {
+          ...details,
+          materials: updatedMaterials,
+          totalMaterialsCost,
+          totalDirectCost,
+          recognizedProfit,
+          marginPercent,
+        };
+
+        return {
+          ...order,
+          materialsCost: totalMaterialsCost,
+          jobCardDetails: updatedDetails,
+        };
+      })
+    );
+    this.recalculateEngineeringTotals();
+    this.persistToStorage();
+  }
+
+  removeMaterialFromJobCard(jobCardNumber: string, materialId: string): void {
+    this.engineeringOrders.update((orders) =>
+      orders.map((order) => {
+        if (order.jobCardNumber !== jobCardNumber) return order;
+        const details = order.jobCardDetails || this.createDefaultJobCardDetails(order);
+        const updatedMaterials = details.materials.filter((m) => m.id !== materialId);
+        const totalMaterialsCost = updatedMaterials.reduce((sum, m) => sum + m.totalCost, 0);
+        const totalDirectCost = totalMaterialsCost + details.totalLabourCost;
+        const recognizedProfit = details.linkedPoValue - totalDirectCost;
+        const marginPercent =
+          details.linkedPoValue > 0
+            ? Number(((recognizedProfit / details.linkedPoValue) * 100).toFixed(1))
+            : 0;
+
+        const updatedDetails: JobCardDetail = {
+          ...details,
+          materials: updatedMaterials,
+          totalMaterialsCost,
+          totalDirectCost,
+          recognizedProfit,
+          marginPercent,
+        };
+
+        return {
+          ...order,
+          materialsCost: totalMaterialsCost,
+          jobCardDetails: updatedDetails,
+        };
+      })
+    );
+    this.recalculateEngineeringTotals();
+    this.persistToStorage();
+  }
+
+  addLabourToJobCard(
+    jobCardNumber: string,
+    labour: Omit<JobCardLabourItem, 'id' | 'totalLabourCost'>
+  ): void {
+    const totalLabourCost = Number((labour.hoursWorked * labour.hourlyRate).toFixed(2));
+    const newItem: JobCardLabourItem = {
+      ...labour,
+      id: 'LAB-' + Math.random().toString(36).substring(2, 9).toUpperCase(),
+      totalLabourCost,
+    };
+
+    this.engineeringOrders.update((orders) =>
+      orders.map((order) => {
+        if (order.jobCardNumber !== jobCardNumber) return order;
+        const details = order.jobCardDetails || this.createDefaultJobCardDetails(order);
+        const updatedLabour = [...details.labour, newItem];
+        const totalLabourHours = updatedLabour.reduce((sum, l) => sum + l.hoursWorked, 0);
+        const totalLabourCost = updatedLabour.reduce((sum, l) => sum + l.totalLabourCost, 0);
+        const totalDirectCost = details.totalMaterialsCost + totalLabourCost;
+        const recognizedProfit = details.linkedPoValue - totalDirectCost;
+        const marginPercent =
+          details.linkedPoValue > 0
+            ? Number(((recognizedProfit / details.linkedPoValue) * 100).toFixed(1))
+            : 0;
+
+        const updatedDetails: JobCardDetail = {
+          ...details,
+          labour: updatedLabour,
+          totalLabourHours,
+          totalLabourCost,
+          totalDirectCost,
+          recognizedProfit,
+          marginPercent,
+        };
+
+        return {
+          ...order,
+          labourHours: totalLabourHours,
+          labourCost: totalLabourCost,
+          jobCardDetails: updatedDetails,
+        };
+      })
+    );
+    this.recalculateEngineeringTotals();
+    this.persistToStorage();
+  }
+
+  removeLabourFromJobCard(jobCardNumber: string, labourId: string): void {
+    this.engineeringOrders.update((orders) =>
+      orders.map((order) => {
+        if (order.jobCardNumber !== jobCardNumber) return order;
+        const details = order.jobCardDetails || this.createDefaultJobCardDetails(order);
+        const updatedLabour = details.labour.filter((l) => l.id !== labourId);
+        const totalLabourHours = updatedLabour.reduce((sum, l) => sum + l.hoursWorked, 0);
+        const totalLabourCost = updatedLabour.reduce((sum, l) => sum + l.totalLabourCost, 0);
+        const totalDirectCost = details.totalMaterialsCost + totalLabourCost;
+        const recognizedProfit = details.linkedPoValue - totalDirectCost;
+        const marginPercent =
+          details.linkedPoValue > 0
+            ? Number(((recognizedProfit / details.linkedPoValue) * 100).toFixed(1))
+            : 0;
+
+        const updatedDetails: JobCardDetail = {
+          ...details,
+          labour: updatedLabour,
+          totalLabourHours,
+          totalLabourCost,
+          totalDirectCost,
+          recognizedProfit,
+          marginPercent,
+        };
+
+        return {
+          ...order,
+          labourHours: totalLabourHours,
+          labourCost: totalLabourCost,
+          jobCardDetails: updatedDetails,
+        };
+      })
+    );
+    this.recalculateEngineeringTotals();
+    this.persistToStorage();
+  }
+
+  updateJobCardDetails(updated: JobCardDetail): void {
+    this.engineeringOrders.update((orders) =>
+      orders.map((order) => {
+        if (order.jobCardNumber !== updated.jobCardNumber) return order;
+        return {
+          ...order,
+          poNumber: updated.purchaseOrderNumber,
+          client: updated.client,
+          scopeDescription: updated.scopeDescription,
+          workshop: updated.workshop,
+          deliveryDate: updated.targetDeliveryDate,
+          materialsCost: updated.totalMaterialsCost,
+          labourHours: updated.totalLabourHours,
+          labourCost: updated.totalLabourCost,
+          value: updated.linkedPoValue,
+          jobCardDetails: updated,
+        };
+      })
+    );
+    this.recalculateEngineeringTotals();
+    this.persistToStorage();
+  }
+
+  createJobCard(data: Partial<EngineeringOrderRecord>): EngineeringOrderRecord {
+    const jobCardNum = data.jobCardNumber || ('JC-ENG-' + Math.floor(215 + Math.random() * 50));
+    const poNum = data.poNumber || ('HAR-PO-2026-' + Math.floor(8850 + Math.random() * 100));
+    const val = data.value || 500000;
+
+    const newOrder: EngineeringOrderRecord = {
+      id: 'EOR-' + Math.floor(105 + Math.random() * 50),
+      poNumber: poNum,
+      client: data.client || 'Harmony Gold Mining Co.',
+      quoteNumber: data.quoteNumber || ('QUO-26-' + Math.floor(960 + Math.random() * 40)),
+      invoiceNumber: data.invoiceNumber || 'INV-PENDING',
+      jobCardNumber: jobCardNum,
+      scopeDescription: data.scopeDescription || 'New engineering fabrication scope',
+      status: (data.status as any) || 'in_progress',
+      value: val,
+      materialsCost: 0,
+      labourHours: 0,
+      labourCost: 0,
+      workshop: data.workshop || 'Workshop 1 (Boilermaking)',
+      deliveryDate: data.deliveryDate || '2026-12-15',
+    };
+
+    newOrder.jobCardDetails = {
+      id: jobCardNum,
+      jobCardNumber: jobCardNum,
+      purchaseOrderNumber: poNum,
+      client: newOrder.client,
+      quoteNumber: newOrder.quoteNumber,
+      invoiceNumber: newOrder.invoiceNumber,
+      scopeDescription: newOrder.scopeDescription,
+      workshop: newOrder.workshop,
+      assignedSupervisor: 'Senior Workshop Lead',
+      dateIssued: new Date().toISOString().slice(0, 10),
+      targetDeliveryDate: newOrder.deliveryDate,
+      status: newOrder.status,
+      materials: [],
+      labour: [],
+      totalMaterialsCost: 0,
+      totalLabourHours: 0,
+      totalLabourCost: 0,
+      totalDirectCost: 0,
+      linkedPoValue: val,
+      recognizedProfit: val,
+      marginPercent: 100,
+    };
+
+    this.engineeringOrders.update((orders) => [newOrder, ...orders]);
+    this.recalculateEngineeringTotals();
+    this.persistToStorage();
+    return newOrder;
+  }
+
 }
