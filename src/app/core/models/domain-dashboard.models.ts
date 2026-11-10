@@ -42,6 +42,54 @@ export interface EngineeringProfitSummary {
   wastedExpenditureAlerts: WastedExpenditureAlert[];
 }
 
+export interface JobCardMaterialItem {
+  id: string;
+  vendorName: string;
+  vendorPoOrInvoice?: string;
+  itemDescription: string;
+  quantity: number;
+  unitOfMeasure: string;
+  unitRate: number;
+  totalCost: number;
+  deliveryNoteNumber?: string;
+  procuredDate?: string;
+}
+
+export interface JobCardLabourItem {
+  id: string;
+  artisanName: string;
+  role: string;
+  hoursWorked: number;
+  hourlyRate: number;
+  totalLabourCost: number;
+  shiftDate?: string;
+  timesheetReference?: string;
+}
+
+export interface JobCardDetail {
+  id: string;
+  jobCardNumber: string;
+  purchaseOrderNumber: string;
+  client: string;
+  quoteNumber?: string;
+  invoiceNumber?: string;
+  scopeDescription: string;
+  workshop: string;
+  assignedSupervisor: string;
+  dateIssued: string;
+  targetDeliveryDate: string;
+  status: 'draft' | 'in_progress' | 'completed' | 'pending_materials';
+  materials: JobCardMaterialItem[];
+  labour: JobCardLabourItem[];
+  totalMaterialsCost: number;
+  totalLabourHours: number;
+  totalLabourCost: number;
+  totalDirectCost: number;
+  linkedPoValue: number;
+  recognizedProfit: number;
+  marginPercent: number;
+}
+
 export interface EngineeringOrderRecord {
   id: string;
   poNumber: string;
@@ -54,8 +102,10 @@ export interface EngineeringOrderRecord {
   value: number;
   materialsCost: number;
   labourHours: number;
+  labourCost?: number;
   workshop: string;
   deliveryDate: string;
+  jobCardDetails?: JobCardDetail;
 }
 
 export interface WorkshopActivityMetric {
