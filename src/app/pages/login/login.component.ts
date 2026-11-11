@@ -8,7 +8,11 @@ import { AuthService } from 'src/app/core/services/auth.service';
 import { AuthRequestError } from 'src/app/core/gateways/auth.gateway';
 import { OnboardingFeature, OnboardingService } from 'src/app/core/services/onboarding.service';
 import { evaluatePassword, PasswordValidationResult } from 'src/app/core/auth/password-policy';
-import { isUatEmail, UAT_LANDING_URL } from 'src/app/core/auth/access-email-policy';
+import {
+  isUatEmail,
+  isUatEmailAllowedOnOrigin,
+  UAT_LANDING_URL,
+} from 'src/app/core/auth/access-email-policy';
 
 const LOGIN_PREF_KEY = 'senatla_ops_login_pref_v1';
 const RECOVERY_ROUTE = '/login/recovery';
@@ -75,8 +79,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   get requiresUatRedirect(): boolean {
     if (!this.isUatUser) return false;
     if (typeof window === 'undefined') return false;
-    const hostname = window.location.hostname || '';
-    return !hostname.includes('uat') && hostname !== 'localhost' && hostname !== '127.0.0.1';
+    return !isUatEmailAllowedOnOrigin(this.username, window.location.origin);
   }
 
   // Onboarding wizard state

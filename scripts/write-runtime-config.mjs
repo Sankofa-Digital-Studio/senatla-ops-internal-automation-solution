@@ -4,6 +4,8 @@ import { dirname, resolve } from 'node:path';
 const outputPath = resolve('src/assets/runtime-config.json');
 const canonicalOrigin = (process.env.SENATLA_CANONICAL_ORIGIN || 'https://senatla-ops.vercel.app').trim().replace(/\/$/, '');
 const envPaths = [resolve('.env'), resolve('.env.local')];
+const productionOrigin = 'https://senatla-ops.vercel.app';
+const uatOrigin = 'https://senatla-ops-uat.vercel.app';
 
 for (const envPath of envPaths) {
   loadEnvFile(envPath);
@@ -22,7 +24,8 @@ const config = {
   },
   build: {
     commitSha: firstEnvValue('VERCEL_GIT_COMMIT_SHA', 'GITHUB_SHA'),
-    environment: firstEnvValue('VERCEL_ENV', 'SENATLA_DEPLOYMENT_ENV'),
+    environment: firstEnvValue('SENATLA_DEPLOYMENT_ENV', 'VERCEL_ENV'),
+    projectRef: '',
   },
   seo: { canonicalOrigin },
   analytics: { measurementId: (process.env.SENATLA_GA4_MEASUREMENT_ID || '').trim() },
@@ -54,6 +57,31 @@ if (
       'Common Vercel aliases SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL and ' +
       'SUPABASE_ANON_KEY/NEXT_PUBLIC_SUPABASE_ANON_KEY are also supported.',
   );
+}
+
+const projectRef = process.env.VERCEL === '1' ? extractSupabaseProjectRef(config.api.supabaseUrl) : '';
+config.build.projectRef = projectRef;
+
+if (process.env.VERCEL === '1') {
+  const deploymentEnvironment = config.build.environment;
+  const approvedProjectRef = firstEnvValue('SENATLA_APPROVED_SUPABASE_PROJECT_REF');
+
+  if (!['production', 'preview'].includes(deploymentEnvironment)) {
+    throw new Error('Hosted deployments require SENATLA_DEPLOYMENT_ENV to be production or preview.');
+  }
+  if (!approvedProjectRef) {
+    throw new Error('Hosted deployments require SENATLA_APPROVED_SUPABASE_PROJECT_REF.');
+  }
+  if (!/^[a-z0-9]{20}$/.test(approvedProjectRef)) {
+    throw new Error('SENATLA_APPROVED_SUPABASE_PROJECT_REF must be a 20-character Supabase project ref.');
+  }
+  if (projectRef !== approvedProjectRef) {
+    throw new Error('Hosted Supabase URL does not match SENATLA_APPROVED_SUPABASE_PROJECT_REF.');
+  }
+  const expectedOrigin = deploymentEnvironment === 'preview' ? uatOrigin : productionOrigin;
+  if (canonicalOrigin !== expectedOrigin) {
+    throw new Error(`Hosted ${deploymentEnvironment} deployments must use ${expectedOrigin} as SENATLA_CANONICAL_ORIGIN.`);
+  }
 }
 
 mkdirSync(dirname(outputPath), { recursive: true });
@@ -100,4 +128,19 @@ function loadEnvFile(filePath) {
 
 function requireText(filePath) {
   return readFileSync(filePath, 'utf8');
+}
+
+function extractSupabaseProjectRef(value) {
+  if (!value) return '';
+  try {
+    const parsed = new URL(value);
+    const match = parsed.hostname.match(/^([a-z0-9]{20})\.supabase\.co$/i);
+    if (!match || parsed.protocol !== 'https:' || parsed.pathname !== '/' || parsed.search || parsed.hash) {
+      throw new Error('SENATLA_SUPABASE_URL must be an HTTPS Supabase project URL without a path, query, or fragment.');
+    }
+    return match[1].toLowerCase();
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith('SENATLA_SUPABASE_URL')) throw error;
+    throw new Error('SENATLA_SUPABASE_URL must be an HTTPS Supabase project URL.');
+  }
 }

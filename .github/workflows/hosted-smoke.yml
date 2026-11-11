@@ -41,10 +41,25 @@ jobs:
         run: |
           test -n "$BYPASS_SECRET" || { echo "Canonical project automation bypass secret is required for protected preview smoke." >&2; exit 1; }
           body=$(mktemp)
+          headers=$(mktemp)
           status=$(curl --silent --show-error --location --cookie "" --max-time 20 \
             --header "x-vercel-protection-bypass: $BYPASS_SECRET" \
+            --header "x-vercel-set-bypass-cookie: true" \
+            --dump-header "$headers" \
             --output "$body" --write-out '%{http_code}' \
             "${DEPLOYMENT_URL%/}/assets/runtime-config.json")
+          mkdir -p output/deployment-evidence
+          location_present=false
+          grep -Eiq '^location:' "$headers" && location_present=true
+          set_cookie_names=$(awk 'BEGIN { IGNORECASE=1 } /^set-cookie:/ { sub(/^[^:]+:[[:space:]]*/, ""); sub(/=.*/, ""); print }' "$headers" | jq -Rsc 'split("\n") | map(select(length > 0)) | .[0:16]')
+          jq -n \
+            --arg deploymentUrl "${DEPLOYMENT_URL%/}" \
+            --arg status "$status" \
+            --argjson locationPresent "$location_present" \
+            --argjson setCookieNames "${set_cookie_names:-[]}" \
+            --arg bypassHeaderSent "true" \
+            '{deploymentUrl:$deploymentUrl,status:($status|tonumber),locationPresent:$locationPresent,setCookieNames:$setCookieNames,bypassHeaderSent:($bypassHeaderSent == "true"),redirectsFollowedByCurl:true}' \
+            > output/deployment-evidence/runtime-preflight.json
           if [ "$status" != 200 ] || ! jq -e '.api.mode == "supabase" and (.api.supabaseUrl | length > 0) and (.api.supabaseAnonKey | length > 0)' "$body" >/dev/null 2>&1; then
             echo "Protected runtime preflight failed (HTTP $status). Check the bypass secret for the exact Vercel project and deployment; no application content or secret was logged." >&2
             exit 1

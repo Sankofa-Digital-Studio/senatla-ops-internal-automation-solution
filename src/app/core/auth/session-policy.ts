@@ -14,6 +14,12 @@ export function cappedSessionExpiry(issuedAt: string, upstreamExpiry?: string): 
   return new Date(Number.isFinite(upstream) ? Math.min(cap, upstream) : cap).toISOString();
 }
 
+/** Preserve the refreshable provider deadline; inactivity is tracked separately. */
+export function upstreamSessionExpiry(upstreamExpiry?: string, fallbackMs = 60_000): string {
+  const upstream = upstreamExpiry ? Date.parse(upstreamExpiry) : Number.NaN;
+  return new Date(Number.isFinite(upstream) ? upstream : Date.now() + fallbackMs).toISOString();
+}
+
 export function sessionHasExpired(session: Pick<AuthSession, 'expiresAt'>, now = Date.now()): boolean {
   const expiry = Date.parse(session.expiresAt);
   return !Number.isFinite(expiry) || expiry <= now;

@@ -10,6 +10,12 @@ export default defineConfig({
   expect: { timeout: 20_000 },
   retries: process.env.CI ? 1 : 0,
   reporter: [['list']],
+  metadata: {
+    hostedEvidence: {
+      maxRedirectHops: 8,
+      bypassHeaderNames: ['x-vercel-protection-bypass', 'x-vercel-set-bypass-cookie'],
+    },
+  },
   use: {
     baseURL,
     viewport: { width: 1440, height: 900 },

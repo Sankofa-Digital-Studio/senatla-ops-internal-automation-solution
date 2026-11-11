@@ -33,6 +33,7 @@ export class AuthService {
 
   private lastActivityTimestamp = Date.now();
   private lastActivityRecordedTime = 0;
+  private activityDeadline = 0;
 
   readonly session = computed(() => this.currentSession());
   readonly isReady = this.readyState.asReadonly();
@@ -117,7 +118,7 @@ export class AuthService {
   validateSession() {
     const session = this.sessionState();
     if (!session) return false;
-    const isInactive = Date.now() - this.lastActivityTimestamp >= SESSION_MAX_AGE_MS;
+    const isInactive = Date.now() >= this.activityDeadline;
     if (isInactive || sessionHasExpired(session)) {
       void this.expireIfNeeded();
       return false;
@@ -141,9 +142,9 @@ export class AuthService {
     const session = this.sessionState();
     if (!session) return;
 
-    const nextExpiry = new Date(now + SESSION_MAX_AGE_MS).toISOString();
+    this.activityDeadline = now + SESSION_MAX_AGE_MS;
     this.zone.run(() => {
-      this.sessionState.set({ ...session, expiresAt: nextExpiry });
+      this.sessionState.set(session);
     });
 
     this.scheduleExpiryTimer();
@@ -153,7 +154,7 @@ export class AuthService {
       const rawLocalSession = sessionStorage.getItem(LOCAL_SESSION_KEY);
       if (rawLocalSession) {
         const parsed = JSON.parse(rawLocalSession) as AuthSession;
-        parsed.expiresAt = nextExpiry;
+        parsed.expiresAt = new Date(this.activityDeadline).toISOString();
         sessionStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(parsed));
       }
     } catch {
@@ -167,6 +168,7 @@ export class AuthService {
     if (!session) {
       this.switchedRoleState.set(null);
       this.teardownActivityTracking();
+      this.activityDeadline = 0;
       try {
         sessionStorage.removeItem(LAST_ACTIVITY_KEY);
       } catch {
@@ -187,6 +189,7 @@ export class AuthService {
     this.lastActivityTimestamp =
       Number.isFinite(storedLastActivity) && storedLastActivity > 0 ? storedLastActivity : now;
     this.lastActivityRecordedTime = this.lastActivityTimestamp;
+    this.activityDeadline = this.lastActivityTimestamp + SESSION_MAX_AGE_MS;
 
     this.setupActivityTracking();
     this.scheduleExpiryTimer();
@@ -197,7 +200,7 @@ export class AuthService {
     const session = this.sessionState();
     if (!session) return;
 
-    const remaining = Math.max(0, this.lastActivityTimestamp + SESSION_MAX_AGE_MS - Date.now());
+    const remaining = Math.max(0, this.activityDeadline - Date.now());
     if (remaining <= 0) {
       void this.expireIfNeeded();
       return;
@@ -242,7 +245,7 @@ export class AuthService {
   private async expireIfNeeded() {
     const session = this.sessionState();
     if (!session) return;
-    const isInactive = Date.now() - this.lastActivityTimestamp >= SESSION_MAX_AGE_MS;
+    const isInactive = Date.now() >= this.activityDeadline;
     if (!isInactive && !sessionHasExpired(session)) return;
     const currentUrl = this.router.url;
     await this.logout();

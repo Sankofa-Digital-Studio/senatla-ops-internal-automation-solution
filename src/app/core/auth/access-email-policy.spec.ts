@@ -4,7 +4,9 @@ import {
   isAllowedAccessEmail,
   isDeveloperDirectorEmail,
   isPermanentDeveloperEmail,
+  isApprovedUatOrigin,
   isUatEmail,
+  isUatEmailAllowedOnOrigin,
   normalizeAccessEmail,
   requireAllowedAccessEmail,
 } from './access-email-policy';
@@ -27,6 +29,17 @@ describe('access email policy', () => {
     expect(isUatEmail('maggie@senatlatrading.com')).toBeFalse();
     expect(isUatEmail('thosontula@gmail.com')).toBeFalse();
     expect(UAT_LANDING_URL).toBe('https://senatla-ops-uat.vercel.app/landing');
+  });
+
+  it('binds UAT aliases to the exact approved hosted origin', () => {
+    expect(isApprovedUatOrigin('https://senatla-ops-uat.vercel.app')).toBeTrue();
+    expect(isApprovedUatOrigin('https://senatla-ops-uat.vercel.app/landing')).toBeFalse();
+    expect(isApprovedUatOrigin('https://uat.attacker.example')).toBeFalse();
+    expect(isUatEmailAllowedOnOrigin('maggie+uat@senatlatrading.com', 'https://senatla-ops-uat.vercel.app')).toBeTrue();
+    expect(isUatEmailAllowedOnOrigin('maggie+uat@senatlatrading.com', 'https://senatla-ops.vercel.app')).toBeFalse();
+    expect(isUatEmailAllowedOnOrigin('maggie+uat@senatlatrading.com', 'https://uat.attacker.example')).toBeFalse();
+    expect(isUatEmailAllowedOnOrigin('manager@senatlatrading.com', 'https://senatla-ops.vercel.app')).toBeTrue();
+    expect(isUatEmailAllowedOnOrigin('maggie+uat@senatlatrading.com', 'http://localhost:4200')).toBeTrue();
   });
 
   it('grants permanent developer identity only to the exact base address', () => {

@@ -44,11 +44,14 @@ async function runGenerator(env) {
 
 test('runtime config generator and Vercel rewrites stay aligned', async () => {
   const supabaseAliasResult = await runGenerator({
+    VERCEL: '1',
     SENATLA_API_MODE: 'supabase',
-    NEXT_PUBLIC_SUPABASE_URL: ' https://example.supabase.co ',
+    NEXT_PUBLIC_SUPABASE_URL: ' https://abcdefghijklmnopqrst.supabase.co ',
     NEXT_PUBLIC_SUPABASE_ANON_KEY: ' anon-key ',
     VERCEL_GIT_COMMIT_SHA: 'abc123',
-    VERCEL_ENV: 'preview',
+    SENATLA_DEPLOYMENT_ENV: 'preview',
+    SENATLA_APPROVED_SUPABASE_PROJECT_REF: 'abcdefghijklmnopqrst',
+    SENATLA_CANONICAL_ORIGIN: 'https://senatla-ops-uat.vercel.app',
   });
 
   try {
@@ -56,11 +59,12 @@ test('runtime config generator and Vercel rewrites stay aligned', async () => {
     const contents = await readFile(resolve(supabaseAliasResult.cwd, 'src/assets/runtime-config.json'), 'utf8');
     const parsed = JSON.parse(contents);
     assert.equal(parsed.api.mode, 'supabase');
-    assert.equal(parsed.api.supabaseUrl, 'https://example.supabase.co');
+    assert.equal(parsed.api.supabaseUrl, 'https://abcdefghijklmnopqrst.supabase.co');
     assert.equal(parsed.api.supabaseAnonKey, 'anon-key');
     assert.equal(parsed.build.commitSha, 'abc123');
     assert.equal(parsed.build.environment, 'preview');
-    assert.equal(parsed.seo.canonicalOrigin, 'https://senatla-ops.vercel.app');
+    assert.equal(parsed.build.projectRef, 'abcdefghijklmnopqrst');
+    assert.equal(parsed.seo.canonicalOrigin, 'https://senatla-ops-uat.vercel.app');
     assert.equal(parsed.analytics.measurementId, '');
   } finally {
     await rm(supabaseAliasResult.cwd, { recursive: true, force: true });
@@ -78,6 +82,20 @@ test('runtime config generator and Vercel rewrites stay aligned', async () => {
     await rm(localModeResult.cwd, { recursive: true, force: true });
   }
 
+  const localSupabaseResult = await runGenerator({
+    SENATLA_API_MODE: 'local',
+    SENATLA_SUPABASE_URL: 'http://127.0.0.1:54321',
+    SENATLA_SUPABASE_ANON_KEY: 'local-anon-key',
+  });
+  try {
+    assert.equal(localSupabaseResult.code, 0, localSupabaseResult.stderr);
+    const parsed = JSON.parse(await readFile(resolve(localSupabaseResult.cwd, 'src/assets/runtime-config.json'), 'utf8'));
+    assert.equal(parsed.api.supabaseUrl, 'http://127.0.0.1:54321');
+    assert.equal(parsed.build.projectRef, '');
+  } finally {
+    await rm(localSupabaseResult.cwd, { recursive: true, force: true });
+  }
+
   const hostedBuildResult = await runGenerator({ VERCEL: '1' });
   try {
     assert.notEqual(hostedBuildResult.code, 0);
@@ -88,6 +106,37 @@ test('runtime config generator and Vercel rewrites stay aligned', async () => {
     );
   } finally {
     await rm(hostedBuildResult.cwd, { recursive: true, force: true });
+  }
+
+  const hostedMissingBindingResult = await runGenerator({
+    VERCEL: '1',
+    SENATLA_API_MODE: 'supabase',
+    SENATLA_SUPABASE_URL: 'https://abcdefghijklmnopqrst.supabase.co',
+    SENATLA_SUPABASE_ANON_KEY: 'anon-key',
+    SENATLA_DEPLOYMENT_ENV: 'preview',
+    SENATLA_CANONICAL_ORIGIN: 'https://senatla-ops-uat.vercel.app',
+  });
+  try {
+    assert.notEqual(hostedMissingBindingResult.code, 0);
+    assert.match(hostedMissingBindingResult.stderr, /SENATLA_APPROVED_SUPABASE_PROJECT_REF/);
+  } finally {
+    await rm(hostedMissingBindingResult.cwd, { recursive: true, force: true });
+  }
+
+  const hostedMismatchedBindingResult = await runGenerator({
+    VERCEL: '1',
+    SENATLA_API_MODE: 'supabase',
+    SENATLA_SUPABASE_URL: 'https://abcdefghijklmnopqrst.supabase.co',
+    SENATLA_SUPABASE_ANON_KEY: 'anon-key',
+    SENATLA_DEPLOYMENT_ENV: 'preview',
+    SENATLA_APPROVED_SUPABASE_PROJECT_REF: 'zyxwvutsrqponmlkjihg',
+    SENATLA_CANONICAL_ORIGIN: 'https://senatla-ops-uat.vercel.app',
+  });
+  try {
+    assert.notEqual(hostedMismatchedBindingResult.code, 0);
+    assert.match(hostedMismatchedBindingResult.stderr, /does not match/);
+  } finally {
+    await rm(hostedMismatchedBindingResult.cwd, { recursive: true, force: true });
   }
 
   const hostedMissingCredentialsResult = await runGenerator({

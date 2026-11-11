@@ -9,6 +9,8 @@ Senatla Ops keeps browser configuration separate from privileged server configur
 | `SENATLA_API_MODE` | Yes | Use `supabase` for hosted environments and `local` only for controlled local review. |
 | `SENATLA_SUPABASE_URL` | Hosted | Supabase project URL. Server code and runtime-config generation consume it. |
 | `SENATLA_SUPABASE_ANON_KEY` | Hosted | Publishable browser key. This is not the service-role key. |
+| `SENATLA_DEPLOYMENT_ENV` | Hosted | Required binding: `production` for the production origin or `preview` for the exact UAT origin. |
+| `SENATLA_APPROVED_SUPABASE_PROJECT_REF` | Hosted | Required 20-character approved Supabase project ref. Generation fails if the URL ref differs. |
 | `SENATLA_API_BASE_URL` | No | Optional API origin when serverless APIs are hosted separately. |
 
 ## Server-only provisioning

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { AppRole, AuthSession } from '../models/app.models';
-import { cappedSessionExpiry } from '../auth/session-policy';
+import { upstreamSessionExpiry } from '../auth/session-policy';
 import { isAllowedAccessEmail, normalizeAccessEmail, requireAllowedAccessEmail } from '../auth/access-email-policy';
 import { AuthGateway, AuthRequestError, PasswordResetRequestResult } from './auth.gateway';
 import { injectSupabaseClient } from './supabase.client';
@@ -147,10 +147,10 @@ export class SupabaseAuthGateway implements AuthGateway {
       organizationId: profile.organization_id,
       permittedSiteIds: (siteAccess as SiteAccessRow[] | null)?.map((entry) => entry.site_id) || [],
       issuedAt: session.user.last_sign_in_at || session.user.created_at,
-      expiresAt: cappedSessionExpiry(
-        session.user.last_sign_in_at || session.user.created_at,
-        session.expires_at ? new Date(session.expires_at * 1000).toISOString() : undefined,
-      ),
+      // Keep Supabase's refreshable token deadline here. The application-level
+      // inactivity deadline is tracked separately by AuthService; basing it on
+      // last_sign_in_at makes a refreshed session look expired after 150 minutes.
+      expiresAt: upstreamSessionExpiry(session.expires_at ? new Date(session.expires_at * 1000).toISOString() : undefined),
       mustChangePassword: session.user.app_metadata?.['must_change_password'] === true,
     };
   }
