@@ -82,7 +82,7 @@ describe('EngineeringDashboardComponent', () => {
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Procured Materials & Vendors');
     expect(text).toContain('Scaw Metals');
-    expect(text).toContain('En8 Forged Round Bar 180mm');
+    expect(text).toContain('Forged Steel Locomotive Wheel Billets');
   });
 
   it('should display direct artisan labour and hours worked in job card detail', () => {
@@ -93,9 +93,9 @@ describe('EngineeringDashboardComponent', () => {
 
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Artisan Labour & Hours Worked');
-    expect(text).toContain('Kobus Van Der Merwe');
-    expect(text).toContain('Master Boilermaker');
-    expect(text).toContain('36 hrs');
+    expect(text).toContain('J. Mthembu');
+    expect(text).toContain('Boilermaker (Red Seal)');
+    expect(text).toContain('64 hrs');
   });
 
   it('should allow capturing a new procured material item for a job card', () => {
