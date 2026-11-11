@@ -4,6 +4,24 @@ All notable Senatla Ops changes are recorded here. Versions follow semantic vers
 
 ## [Unreleased]
 
+## [0.5.6] - 2026-11-12
+
+Director-flow usability and evidence association patch release.
+
+### Added
+
+- Unified Director decision summary for operational packs, approvals, and linked pending invoices.
+- Data-freshness state beside the Director source timestamp.
+- Direct navigation from approval, asset-readiness, cost, invoice, and operational-risk indicators to the responsible review tab.
+- Director-flow component coverage for decision summary and cross-section navigation.
+
+### Verification
+
+- `npm run typecheck` passed.
+- `npm run build` passed.
+- `npm run lint` passed.
+- Targeted Karma execution was attempted but stalled during local browser launch; hosted CI remains authoritative for browser verification.
+
 ## [0.5.5] - 2026-11-09
 
 Multi-domain operational dashboards, Site Manager guided workflow overhaul, field telemetry & security dwell timer, Office Admin modularization, reusable ERP UI library, and asset payload optimization.

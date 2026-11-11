@@ -1,5 +1,5 @@
 # Senatla Ops GitHub Delivery Backlog
-Updated 9 November 2026
+Updated 12 November 2026
 
 This backlog converts the repository audit, client feedback, and release cycles into an authoritative, implementation-ready delivery register. All broad issues serve as outcome epics; tasks define precise delivery boundaries with acceptance criteria, dependencies, estimates, owners, milestones, and board fields.
 
@@ -19,6 +19,7 @@ This backlog converts the repository audit, client feedback, and release cycles 
 - **Foundations & Core Operations Epics Closeout:** **COMPLETE**. Sprints M0 through M3 are fully closed across issues #9 through #17, #86, #88, #90, #91, #92, #93, #94, #96, #104 with complete acceptance verification, test suites, and executive audit restriction.
 - **Executive Audit Boundary:** Activity log viewing and root traceability are restricted strictly and exclusively to `rubinthoso@senatlatrading.com` and `thosontula@gmail.com` / `thosontula+*@gmail.com`.
 - **Current Development Focus:** Client Feedback Phase 2 & 3 — Harmony P/O hierarchy (`ISSUE-06`), Supplier & Vendor sourcing audit with job-card line linkage (`ISSUE-07`), Workshops 1–3 full CRUD activities (`ISSUE-08`), and Monthly utility overhead capture forms (`ISSUE-09`).
+- **v0.5.6 Director Flow Status:** **IMPLEMENTED LOCALLY / RELEASE CANDIDATE.** Director review queue, decision counts, data freshness, risk routing, cost/invoice association, and workforce navigation were improved in the current working tree. Typecheck, production build, and lint pass; browser execution remains a CI/hosted verification gate.
 
 ---
 
@@ -48,6 +49,7 @@ This backlog converts the repository audit, client feedback, and release cycles 
 | 20 | v0.5.5 | Overall Macro Scope Dashboard | OhhttooeXCIV | **COMPLETE** | Consolidated multi-domain P&L rollup, cash flow meters, fleet telemetry, bottleneck radar | Delivered under `ISSUE-05` (`afc525c`); verified in `overall-macro-dashboard.component.spec.ts` |
 | 21 | v0.5.5 | Workspace & Route Integration | OhhttooeXCIV | **COMPLETE** | Embed multi-domain dashboard into Director workspace, Office Admin tabs, and `/dashboards` route | Verified in `director.component.spec.ts` (6 specs PASS) and `office-admin.component.spec.ts` (14 specs PASS) |
 | 22 | v0.5.5 | Site Manager Field Modules | OhhttooeXCIV | **COMPLETE** | 5-step guided shift, breakdown downtime logging (`ISSUE-10`), fuel telemetry (`ISSUE-11`), scrap gate dwell timer (`ISSUE-12`) | Verified in `site-manager.component.spec.ts` (12 specs PASS); field capture operational |
+| 23 | v0.5.6 | Director Flow Associations | OhhttooeXCIV | **RELEASE CANDIDATE** | Unified decisions, freshness state, KPI-to-tab routing, risk routing, and cost/invoice evidence association | `npm run typecheck`, `npm run build`, and `npm run lint` PASS; targeted Karma browser launch stalled locally |
 
 ---
 
