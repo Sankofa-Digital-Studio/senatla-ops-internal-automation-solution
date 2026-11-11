@@ -6,7 +6,7 @@
           <span class="rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-3 py-0.5 text-[10px] font-bold tracking-widest uppercase">Director workspace</span>
         </div>
         <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-white mt-1">Director operations review</h1>
-        <p class="mt-0.5 text-[11px] sm:text-xs font-bold uppercase tracking-widest text-yellow-500">Source-backed operations · data as of {{ dataAsOf() | date:'medium' }}</p>
+        <p class="mt-0.5 text-[11px] sm:text-xs font-bold uppercase tracking-widest text-yellow-500">Source-backed operations · data as of {{ dataAsOf() | date:'medium' }} · {{ dataFreshness() }}</p>
       </div>
 
       <!-- Desktop/Tablet Pill Navigation -->
@@ -143,8 +143,11 @@
         </div>
         <div class="flex items-center gap-2">
           <span class="rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 px-3 py-1 text-xs font-bold">
-            {{ pendingExecutiveReports().length }} Pack(s) Awaiting Sign-off
+            {{ decisionSummary().total }} decision(s) awaiting review
           </span>
+        <span *ngIf="decisionSummary().invoices" class="rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 px-3 py-1 text-xs font-bold">
+          {{ decisionSummary().invoices }} invoice(s) linked
+        </span>
         </div>
       </div>
 
@@ -247,8 +250,9 @@
         </article>
         <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm">
           <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Pending approvals</p>
-          <p class="mt-2 text-2xl font-bold text-white">{{ pendingApprovals().length + pendingExecutiveReports().length }}</p>
-          <p class="text-sm text-gray-400 mt-1">Recorded decisions awaiting review</p>
+          <p class="mt-2 text-2xl font-bold text-white">{{ decisionSummary().total }}</p>
+          <p class="text-sm text-gray-400 mt-1">{{ decisionSummary().reports }} packs · {{ decisionSummary().approvals }} approvals</p>
+          <button type="button" (click)="setTab('approvals')" class="mt-2 text-xs font-bold text-emerald-300 underline underline-offset-2">Open review queue</button>
         </article>
         <article class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm">
           <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Recognized operating cost</p>
@@ -259,6 +263,7 @@
           <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Asset readiness</p>
           <p class="mt-2 text-2xl font-bold text-white">{{ assetSummary().ready }} / {{ assetSummary().total }}</p>
           <p class="text-sm text-amber-300 mt-1">{{ assetSummary().attention }} attention · {{ assetSummary().blocked }} blocked</p>
+          <button type="button" (click)="setTab('workforce')" class="mt-2 text-xs font-bold text-amber-300 underline underline-offset-2">Inspect workforce &amp; risks</button>
         </article>
       </div>
     </section>
@@ -266,7 +271,10 @@
     <!-- Operating Costs Breakdown -->
     <section [class.hidden]="activeTab() !== 'all' && activeTab() !== 'costs'" class="space-y-3" aria-labelledby="recognized-costs-heading">
       <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-        <h2 id="recognized-costs-heading" class="text-sm font-bold uppercase tracking-widest text-white">Recognized operating costs</h2>
+        <div>
+          <h2 id="recognized-costs-heading" class="text-sm font-bold uppercase tracking-widest text-white">Recognized operating costs</h2>
+          <button type="button" (click)="setTab('costs')" class="mt-1 text-xs font-bold text-yellow-300 underline underline-offset-2">Keep costs and invoice evidence together</button>
+        </div>
         <p class="text-xs text-gray-400">Only values recognized by the costing service are included.</p>
       </div>
       <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -331,6 +339,7 @@
           <div *ngFor="let risk of risks()" class="rounded-lg border border-gray-800 bg-gray-950 p-3">
             <strong class="text-white">{{ risk.label }}</strong>
             <p class="text-sm" [class.text-red-300]="risk.severity === 'blocked'" [class.text-amber-300]="risk.severity !== 'blocked'">{{ risk.detail }}</p>
+            <button type="button" (click)="setTab(risk.destination)" class="mt-2 text-xs font-bold text-cyan-300 underline underline-offset-2">Open {{ risk.destination === 'approvals' ? 'review queue' : 'workforce risks' }}</button>
           </div>
           <p *ngIf="!risks().length" class="rounded-lg bg-gray-950 p-3 text-sm text-green-300">No unresolved operational risks in the stored records.</p>
         </div>
@@ -340,7 +349,10 @@
     <!-- Invoice Traceability Table & Mobile Cards -->
     <section [class.hidden]="activeTab() !== 'all' && activeTab() !== 'costs'" class="rounded-xl border border-gray-800 bg-gray-900 p-4 sm:p-5 shadow-sm">
       <div class="flex items-baseline justify-between gap-3 border-b border-gray-800 pb-3">
-        <h2 class="text-sm font-bold uppercase tracking-widest text-white">Invoice traceability</h2>
+        <div>
+          <h2 class="text-sm font-bold uppercase tracking-widest text-white">Invoice traceability</h2>
+          <p class="mt-1 text-xs text-gray-500">Pending invoices are included in the Director decision queue.</p>
+        </div>
         <p class="font-mono text-sm text-yellow-300">R {{ periodInvoiceAmount() | number:'1.2-2' }} in selected period</p>
       </div>
 
