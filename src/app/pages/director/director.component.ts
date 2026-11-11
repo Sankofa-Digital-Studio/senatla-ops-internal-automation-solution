@@ -37,6 +37,12 @@ export class DirectorComponent {
   readonly periodInvoiceAmount = computed(() => this.office.vendorInvoices().filter((invoice) => this.inPeriod(invoice.invoiceDate)).reduce((total, invoice) => total + invoice.total, 0));
   readonly pendingApprovals = computed(() => this.office.approvals().filter((request) => request.status === 'pending' && request.requestType !== 'full_id_payroll_export'));
   readonly pendingExecutiveReports = computed(() => this.office.directorReports().filter((r) => r.status === 'pending_director'));
+  readonly decisionSummary = computed(() => ({
+    reports: this.pendingExecutiveReports().length,
+    approvals: this.pendingApprovals().length,
+    invoices: this.pendingInvoices().length,
+    total: this.pendingExecutiveReports().length + this.pendingApprovals().length,
+  }));
   readonly approvedExecutiveReports = computed(() => this.office.directorReports().filter((r) => r.status === 'approved'));
   readonly activeReportModal = signal<any | null>(null);
   readonly directorNotes = signal<string>('');
@@ -101,9 +107,15 @@ export class DirectorComponent {
   }));
 
   readonly risks = computed(() => [
-    ...this.office.assets().filter((asset) => this.assetState(asset) !== 'ready').map((asset) => ({ label: `${asset.make} ${asset.model}`, detail: this.assetState(asset) === 'blocked' ? 'Out of service' : 'Needs attention', severity: this.assetState(asset) })),
-    ...this.office.integrationOutbox().filter((event) => event.status === 'failed').map((event) => ({ label: 'Integration delivery', detail: `${event.eventType} failed`, severity: 'blocked' })),
+    ...this.office.assets().filter((asset) => this.assetState(asset) !== 'ready').map((asset) => ({ label: `${asset.make} ${asset.model}`, detail: this.assetState(asset) === 'blocked' ? 'Out of service' : 'Needs attention', severity: this.assetState(asset), destination: 'workforce' as DirectorViewTab })),
+    ...this.office.integrationOutbox().filter((event) => event.status === 'failed').map((event) => ({ label: 'Integration delivery', detail: `${event.eventType} failed`, severity: 'blocked', destination: 'approvals' as DirectorViewTab })),
   ].slice(0, 6));
+
+  readonly dataFreshness = computed(() => {
+    const ageMs = Math.max(0, this.service.currentTime().getTime() - this.dataAsOf().getTime());
+    const ageMinutes = Math.floor(ageMs / 60000);
+    return ageMinutes < 5 ? 'Current' : ageMinutes < 60 ? `${ageMinutes} min old` : 'Needs refresh';
+  });
 
   readonly dataAsOf = computed(() => {
     const dates = [this.service.currentTime(), ...this.office.activity().map((item) => new Date(item.occurredAt)), ...this.office.vendorInvoices().map((item) => new Date(item.updatedAt))]

@@ -74,4 +74,14 @@ describe('DirectorComponent', () => {
     expect(dialog.getAttribute('aria-labelledby')).toBe('director-report-dialog-title');
     expect(dialog.textContent).toContain('Pending');
   });
+
+  it('associates decision counts with the review queue and exposes navigation actions', () => {
+    expect(component.decisionSummary().total).toBe(component.pendingApprovals().length + component.pendingExecutiveReports().length);
+    component.setTab('approvals');
+    expect(component.activeTab()).toBe('approvals');
+    component.setTab('workforce');
+    expect(component.activeTab()).toBe('workforce');
+    expect(fixture.nativeElement.textContent).toContain('Open review queue');
+    expect(fixture.nativeElement.textContent).toContain('Inspect workforce & risks');
+  });
 });

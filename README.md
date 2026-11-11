@@ -23,7 +23,7 @@ The public Senatla Trading website is maintained outside this repository and rem
 - Plus-address aliases, including `thosontula+tag@gmail.com`, are ordinary accounts and do not inherit the developer override.
 - New users receive a temporary password and must replace it before opening a workspace.
 
-Current production release: [v0.5.5](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.5) ([Release notes](docs/release-notes-0.5.5.md)). Prior releases: [v0.5.4](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.4) ([Release notes](docs/release-notes-0.5.4.md) · [Release guide](docs/v0.5.4-release-guide.md) · [Interactive HTML guide](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/v0.5.4-release-guide.html)), [v0.5.3](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.3), [v0.5.2](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.2), [v0.5.1](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.1). Hosted production target: [senatla-ops.vercel.app](https://senatla-ops.vercel.app). Public landing page: [senatla-ops.vercel.app/landing](https://senatla-ops.vercel.app/landing). Documentation portal: [GitHub Pages](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/).
+Current release candidate: [v0.5.6](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.6) ([Release notes](docs/release-notes-0.5.6.md) · [Director flow](docs/director-flow-v0.5.6.md)). Previous release: [v0.5.5](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.5) ([Release notes](docs/release-notes-0.5.5.md)). Hosted production target: [senatla-ops.vercel.app](https://senatla-ops.vercel.app). Public landing page: [senatla-ops.vercel.app/landing](https://senatla-ops.vercel.app/landing). Documentation portal: [GitHub Pages](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/).
 
 ## Product outcome
 
@@ -172,6 +172,8 @@ Access the live [Senatla Ops Documentation Portal on GitHub Pages](https://sanko
 
 ### Release management & guides
 - [v0.5.5 Release Notes](docs/release-notes-0.5.5.md)
+- [v0.5.6 Release Notes](docs/release-notes-0.5.6.md)
+- [Director Flow v0.5.6](docs/director-flow-v0.5.6.md)
 - [v0.5.4 Release & Support Guide](docs/v0.5.4-release-guide.md) ([HTML](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/v0.5.4-release-guide.html))
 - [v0.5.4 Release Notes](docs/release-notes-0.5.4.md)
 - [v0.5.3 Release Notes](docs/release-notes-0.5.3.md)
