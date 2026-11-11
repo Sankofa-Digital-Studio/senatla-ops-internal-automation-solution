@@ -383,6 +383,9 @@ export type JobCardTabType = 'materials' | 'labour' | 'commercial';
                   <span class="font-mono text-xs font-bold text-yellow-400 bg-yellow-950/60 border border-yellow-800/60 px-2 py-0.5 rounded">
                     Linked P/O: {{ card.purchaseOrderNumber }}
                   </span>
+                  <span class="font-mono text-xs font-bold text-violet-300 bg-violet-950/60 border border-violet-800/60 px-2 py-0.5 rounded">
+                    Quote: {{ card.quoteNumber || 'Pending quote' }}
+                  </span>
                   <span class="text-gray-400">· Client: <strong class="text-white">{{ card.client }}</strong></span>
                 </div>
                 <h3 class="text-base font-bold text-white mt-1.5">{{ card.scopeDescription }}</h3>
@@ -1175,7 +1178,7 @@ export class EngineeringDashboardComponent {
   selectedJobCardTitle(): string {
     const order = this.selectedOrder();
     if (!order) return 'Job Card Traceability';
-    return `[${order.jobCardNumber}] Job Card & P/O Traceability`;
+    return `[${order.jobCardNumber}] Job Card & Purchase Order Traceability`;
   }
 
   openJobCardDetail(order: EngineeringOrderRecord): void {
