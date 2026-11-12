@@ -94,7 +94,7 @@ describe('DirectorComponent', () => {
     component.office.vendorInvoices.set([{ updatedAt: '2026-11-10T08:00:00.000Z' } as any]);
 
     expect(component.dataAsOf()?.toISOString()).toBe('2026-11-10T08:00:00.000Z');
-    expect(component.dataFreshness()).toBe('4 hr old');
+    expect(component.dataFreshness()).toBe('Needs refresh');
   });
 
   it('keeps the visual decision hierarchy and mobile navigation hooks discoverable', () => {
