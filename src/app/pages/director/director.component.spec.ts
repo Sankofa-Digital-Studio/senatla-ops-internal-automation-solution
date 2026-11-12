@@ -65,7 +65,7 @@ describe('DirectorComponent', () => {
         timesheet: { date: '2026-11-04', status: 'present', hoursWorked: 8, overtimeHours: 0, supervisorSigned: false },
         invoice: { internalOrderNumber: 'INT-1', total: 100, itemsPurchased: 'Fuel', orderNumber: 'PO-1', invoiceNumber: 'INV-1', responsiblePerson: 'Requester' },
       },
-    });
+    } as any);
     fixture.detectChanges();
 
     const dialog = fixture.nativeElement.querySelector('[role="dialog"]');
@@ -76,12 +76,43 @@ describe('DirectorComponent', () => {
   });
 
   it('associates decision counts with the review queue and exposes navigation actions', () => {
-    expect(component.decisionSummary().total).toBe(component.pendingApprovals().length + component.pendingExecutiveReports().length);
+    expect(component.decisionSummary().total).toBe(component.decisionQueueItems().length);
+    expect(component.decisionSummary().reports).toBe(component.pendingExecutiveReports().length);
+    expect(component.decisionSummary().approvals).toBe(component.pendingApprovals().length);
+    expect(component.decisionSummary().invoices).toBe(component.pendingInvoices().length);
     component.setTab('approvals');
     expect(component.activeTab()).toBe('approvals');
     component.setTab('workforce');
     expect(component.activeTab()).toBe('workforce');
     expect(fixture.nativeElement.textContent).toContain('Open review queue');
     expect(fixture.nativeElement.textContent).toContain('Inspect workforce & risks');
+  });
+
+  it('reports freshness from source timestamps rather than the injected clock', () => {
+    component.service.currentTime.set(new Date('2026-11-10T12:00:00.000Z'));
+    component.office.activity.set([{ occurredAt: '2026-11-10T08:00:00.000Z' } as any]);
+    component.office.vendorInvoices.set([{ updatedAt: '2026-11-10T08:00:00.000Z' } as any]);
+
+    expect(component.dataAsOf()?.toISOString()).toBe('2026-11-10T08:00:00.000Z');
+    expect(component.dataFreshness()).toBe('4 hr old');
+  });
+
+  it('keeps the visual decision hierarchy and mobile navigation hooks discoverable', () => {
+    const header = fixture.nativeElement.querySelector('header[data-tour="director-overview"]');
+    expect(header.classList.contains('sticky')).toBeTrue();
+    expect(header.classList.contains('top-0')).toBeTrue();
+
+    const queue = fixture.nativeElement.querySelector('[data-tour="director-review-queue"]');
+    expect(queue.textContent.toLowerCase()).toContain('normalized review items');
+
+    const mobileToggle = fixture.nativeElement.querySelector('button[aria-expanded]');
+    expect(mobileToggle).not.toBeNull();
+    expect(mobileToggle.textContent).toContain('Quick links');
+
+    const tabButtons = fixture.nativeElement.querySelectorAll('nav[aria-label="Director View Modes"] button[aria-selected]');
+    expect(tabButtons.length).toBe(5);
+    for (const button of Array.from(tabButtons) as HTMLButtonElement[]) {
+      expect(button.classList.contains('min-h-11')).toBeTrue();
+    }
   });
 });
