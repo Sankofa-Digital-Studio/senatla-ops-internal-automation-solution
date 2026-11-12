@@ -1,6 +1,67 @@
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out;
 }
+
+.director-decision-kpi {
+  scroll-margin-top: 5rem;
+}
+
+@media (max-width: 639px) {
+  .director-tab-nav {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgb(3 7 18 / 0.96);
+    padding-top: 0.5rem;
+  }
+}
+
+.director-decision-kpi {
+  position: relative;
+  overflow: hidden;
+}
+
+.director-decision-kpi::after {
+  content: '';
+  position: absolute;
+  inset: auto -4rem -5rem auto;
+  width: 12rem;
+  height: 12rem;
+  border-radius: 9999px;
+  background: rgba(52, 211, 153, 0.12);
+  pointer-events: none;
+}
+
+.director-queue-card {
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.director-queue-card:hover {
+  border-color: rgba(52, 211, 153, 0.45);
+  transform: translateY(-1px);
+}
+
+.director-tab-nav {
+  scrollbar-width: none;
+}
+
+.director-tab-nav::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  .director-tab-nav {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    margin-inline: -1rem;
+    padding-inline: 1rem;
+    padding-block: 0.5rem;
+    background: rgba(3, 7, 18, 0.96);
+    backdrop-filter: blur(12px);
+  }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

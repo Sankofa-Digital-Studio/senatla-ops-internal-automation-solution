@@ -6,7 +6,7 @@
           <span class="rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-3 py-0.5 text-[10px] font-bold tracking-widest uppercase">Director workspace</span>
         </div>
         <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-white mt-1">Director operations review</h1>
-        <p class="mt-0.5 text-[11px] sm:text-xs font-bold uppercase tracking-widest text-yellow-500">Source-backed operations · data as of {{ dataAsOf() | date:'medium' }} · {{ dataFreshness() }}</p>
+        <p class="mt-0.5 text-[11px] sm:text-xs font-bold uppercase tracking-widest text-yellow-500">Source-backed operations · data as of {{ dataAsOf() ? (dataAsOf() | date:'medium') : 'No source timestamp' }} · {{ dataFreshness() }}</p>
       </div>
 
       <!-- Desktop/Tablet Pill Navigation -->
@@ -57,9 +57,9 @@
     </div>
 
     <!-- Executive De-Congestion Tab Switcher -->
-    <nav aria-label="Director View Modes" class="flex items-center gap-1.5 overflow-x-auto pb-2 no-scrollbar border-b border-gray-800">
+    <nav role="tablist" aria-label="Director View Modes" class="director-tab-nav flex items-center gap-1.5 overflow-x-auto pb-2 no-scrollbar border-b border-gray-800">
       <button
-        type="button"
+        type="button" role="tab"
         (click)="setTab('approvals')"
         [class]="activeTab() === 'approvals' ? 'bg-emerald-500 text-black font-black shadow-lg shadow-emerald-950/30' : 'bg-gray-900 text-gray-300 hover:bg-gray-800 hover:text-white border border-gray-800'"
         class="rounded-xl px-3.5 py-2 text-xs font-bold transition flex items-center gap-2 shrink-0 min-h-11"
@@ -73,7 +73,7 @@
       </button>
 
       <button
-        type="button"
+        type="button" role="tab"
         (click)="setTab('domains')"
         [class]="activeTab() === 'domains' ? 'bg-yellow-500 text-black font-black shadow-lg shadow-yellow-950/30' : 'bg-gray-900 text-gray-300 hover:bg-gray-800 hover:text-white border border-gray-800'"
         class="rounded-xl px-3.5 py-2 text-xs font-bold transition flex items-center gap-1.5 shrink-0 min-h-11"
@@ -83,7 +83,7 @@
       </button>
 
       <button
-        type="button"
+        type="button" role="tab"
         (click)="setTab('costs')"
         [class]="activeTab() === 'costs' ? 'bg-yellow-500 text-black font-black shadow-lg shadow-yellow-950/30' : 'bg-gray-900 text-gray-300 hover:bg-gray-800 hover:text-white border border-gray-800'"
         class="rounded-xl px-3.5 py-2 text-xs font-bold transition flex items-center gap-1.5 shrink-0 min-h-11"
@@ -93,7 +93,7 @@
       </button>
 
       <button
-        type="button"
+        type="button" role="tab"
         (click)="setTab('workforce')"
         [class]="activeTab() === 'workforce' ? 'bg-yellow-500 text-black font-black shadow-lg shadow-yellow-950/30' : 'bg-gray-900 text-gray-300 hover:bg-gray-800 hover:text-white border border-gray-800'"
         class="rounded-xl px-3.5 py-2 text-xs font-bold transition flex items-center gap-1.5 shrink-0 min-h-11"
@@ -103,7 +103,7 @@
       </button>
 
       <button
-        type="button"
+        type="button" role="tab"
         (click)="setTab('all')"
         [class]="activeTab() === 'all' ? 'bg-gray-700 text-white font-bold' : 'bg-gray-900 text-gray-400 hover:bg-gray-800 hover:text-white border border-gray-800'"
         class="hidden lg:inline-flex rounded-xl px-3.5 py-2 text-xs font-bold transition items-center gap-1.5 shrink-0 min-h-11"
@@ -112,6 +112,18 @@
         <span>All Sections</span>
       </button>
     </nav>
+
+    <section data-testid="director-primary-decision-kpi" class="director-decision-kpi rounded-2xl border border-emerald-400/50 bg-gradient-to-br from-emerald-950 via-gray-900 to-gray-900 p-5 sm:p-6 shadow-xl shadow-emerald-950/20" aria-labelledby="director-primary-kpi-title">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-300">Primary decision KPI</p>
+          <h2 id="director-primary-kpi-title" class="mt-1 text-sm font-bold uppercase tracking-widest text-white">Items requiring attention</h2>
+          <p class="mt-2 text-5xl font-black leading-none text-white">{{ decisionSummary().total }}</p>
+          <p class="mt-2 text-xs text-emerald-100">{{ decisionSummary().reports }} reports · {{ decisionSummary().approvals }} approvals · {{ decisionSummary().invoices }} invoices · {{ decisionSummary().failedIntegrations }} failed integrations</p>
+        </div>
+        <button type="button" (click)="setTab('approvals')" class="min-h-11 rounded-xl bg-emerald-400 px-4 py-2.5 text-xs font-black text-gray-950 shadow-lg hover:bg-emerald-300">Open decision queue</button>
+      </div>
+    </section>
 
     <!-- Multi-Domain Operational Dashboards -->
     <section [class.hidden]="activeTab() !== 'all' && activeTab() !== 'domains'" data-tour="director-multi-domain-dashboards" class="space-y-4">
@@ -139,16 +151,41 @@
             <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
             <h2 class="text-base font-bold uppercase tracking-wider text-white">Director review queue</h2>
           </div>
-          <p class="text-xs text-gray-400 mt-0.5">Automated 5-record operational packs awaiting executive review and decision sign-off.</p>
+          <p class="text-xs text-gray-400 mt-0.5">Automated 5-record operational packs plus normalized review items with status, age, evidence, and a routed next action.</p>
         </div>
         <div class="flex items-center gap-2">
           <span class="rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 px-3 py-1 text-xs font-bold">
-            {{ decisionSummary().total }} decision(s) awaiting review
+            {{ decisionSummary().total }} item(s) requiring attention
           </span>
-        <span *ngIf="decisionSummary().invoices" class="rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 px-3 py-1 text-xs font-bold">
-          {{ decisionSummary().invoices }} invoice(s) linked
+        <span *ngIf="decisionSummary().invoices || decisionSummary().failedIntegrations" class="rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 px-3 py-1 text-xs font-bold">
+          {{ decisionSummary().invoices }} invoice(s) · {{ decisionSummary().failedIntegrations }} failed integration(s)
         </span>
         </div>
+      </div>
+
+      <div data-testid="director-decision-queue-items" class="grid gap-3 md:grid-cols-2">
+        <article *ngFor="let item of decisionQueueItems()" class="director-queue-card rounded-xl border border-gray-800 bg-gray-950 p-4 shadow-sm">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="text-sm font-bold text-white">{{ item.label }}</p>
+              <p class="mt-1 text-xs text-gray-400">{{ item.detail }}</p>
+            </div>
+            <span class="shrink-0 rounded-full px-2 py-1 text-[10px] font-black uppercase" [class.bg-red-500/20]="item.status === 'failed'" [class.text-red-300]="item.status === 'failed'" [class.bg-amber-500/20]="item.status === 'pending'" [class.text-amber-300]="item.status === 'pending'">{{ item.status }}</span>
+          </div>
+          <div class="mt-3 flex flex-wrap gap-1.5 text-[11px]">
+            <span class="rounded-md border border-gray-700 bg-gray-900 px-2 py-1 text-gray-400">{{ queueAge(item.createdAt) }}</span>
+            <span *ngFor="let evidence of item.evidence" class="rounded-md border border-gray-800 bg-gray-900 px-2 py-1 text-gray-300">{{ evidence }}</span>
+          </div>
+          <div class="mt-3 flex justify-end">
+            <ng-container *ngIf="item.report as report; else routedQueueAction">
+              <button type="button" (click)="openReportModal(report)" class="min-h-11 rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold text-gray-200 hover:bg-gray-800">Inspect and decide</button>
+            </ng-container>
+            <ng-template #routedQueueAction>
+              <button type="button" (click)="setTab(item.destination)" class="min-h-11 rounded-lg border border-cyan-500/40 px-3 py-2 text-xs font-bold text-cyan-200 hover:bg-cyan-950/50">Open {{ item.destination === 'costs' ? 'costs & invoices' : 'approvals' }}</button>
+            </ng-template>
+          </div>
+        </article>
+        <p *ngIf="!decisionQueueItems().length" class="rounded-xl border border-gray-800 bg-gray-950 p-5 text-center text-xs text-gray-400 md:col-span-2">No decisions or failed integrations require attention.</p>
       </div>
 
       <!-- Pending Reports List -->
@@ -197,11 +234,11 @@
               <button type="button" (click)="openReportModal(report)" class="rounded-lg border border-gray-700 bg-gray-900 px-4 py-2.5 text-xs font-bold text-gray-200 hover:bg-gray-800 transition min-h-11">
                 Inspect 5 Records
               </button>
-              <button type="button" (click)="approveReport(report.id)" class="rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs px-4 py-2.5 transition shadow min-h-11">
-                Executive Sign-off &amp; Approve
+              <button type="button" (click)="approveReport(report.id)" [disabled]="reportActionState().status === 'saving'" [attr.aria-busy]="reportActionState().status === 'saving'" class="rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:cursor-wait disabled:opacity-60 text-black font-bold text-xs px-4 py-2.5 transition shadow min-h-11">
+                {{ reportActionState().status === 'saving' && reportActionState().action === 'approve' ? 'Saving decision…' : 'Executive Sign-off &amp; Approve' }}
               </button>
-              <button type="button" (click)="rejectReport(report.id)" class="rounded-lg border border-red-800/60 text-red-300 hover:bg-red-950/50 text-xs font-bold px-4 py-2 transition min-h-11">
-                Request Revisions
+              <button type="button" (click)="rejectReport(report.id)" [disabled]="reportActionState().status === 'saving'" [attr.aria-busy]="reportActionState().status === 'saving'" class="rounded-lg border border-red-800/60 text-red-300 hover:bg-red-950/50 disabled:cursor-wait disabled:opacity-60 text-xs font-bold px-4 py-2 transition min-h-11">
+                {{ reportActionState().status === 'saving' && reportActionState().action === 'reject' ? 'Saving decision…' : 'Request Revisions' }}
               </button>
             </div>
           </div>
@@ -449,7 +486,7 @@
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 text-xs text-gray-400">
             <div>Role: <strong class="text-gray-200">{{ activeReportModal()?.records?.employee?.role }}</strong></div>
             <div>Designation: <strong class="text-gray-200">{{ activeReportModal()?.records?.employee?.designation }}</strong></div>
-            <div>Status: <strong class="text-yellow-400">{{ activeReportModal()?.records?.employee?.isActive ? 'Active' : 'Inactive' }}</strong></div>
+            <div>Status: <strong class="text-yellow-400">{{ activeReportModal()?.records?.employee?.employmentStatus === 'active' ? 'Active' : 'Inactive' }}</strong></div>
           </div>
         </div>
 
@@ -520,14 +557,14 @@
           </button>
           <button
             type="button"
-            (click)="rejectReport(activeReportModal()?.id)"
+            (click)="rejectReport(activeReportModal()?.id || '')"
             class="rounded-xl border border-red-800/80 bg-red-950/40 text-red-300 hover:bg-red-900/60 px-4 py-2.5 text-xs font-bold transition min-h-11"
           >
             Reject &amp; Request Revisions
           </button>
           <button
             type="button"
-            (click)="approveReport(activeReportModal()?.id)"
+            (click)="approveReport(activeReportModal()?.id || '')"
             class="rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black px-6 py-2.5 text-xs font-black transition shadow-lg shadow-emerald-950/30 min-h-11"
           >
             Executive Sign-off &amp; Approve
