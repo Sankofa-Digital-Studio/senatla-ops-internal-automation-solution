@@ -486,7 +486,7 @@
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 text-xs text-gray-400">
             <div>Role: <strong class="text-gray-200">{{ activeReportModal()?.records?.employee?.role }}</strong></div>
             <div>Designation: <strong class="text-gray-200">{{ activeReportModal()?.records?.employee?.designation }}</strong></div>
-            <div>Status: <strong class="text-yellow-400">{{ activeReportModal()?.records?.employee?.isActive ? 'Active' : 'Inactive' }}</strong></div>
+            <div>Status: <strong class="text-yellow-400">{{ activeReportModal()?.records?.employee?.employmentStatus === 'active' ? 'Active' : 'Inactive' }}</strong></div>
           </div>
         </div>
 
@@ -557,14 +557,14 @@
           </button>
           <button
             type="button"
-            (click)="rejectReport(activeReportModal()?.id)"
+            (click)="rejectReport(activeReportModal()?.id || '')"
             class="rounded-xl border border-red-800/80 bg-red-950/40 text-red-300 hover:bg-red-900/60 px-4 py-2.5 text-xs font-bold transition min-h-11"
           >
             Reject &amp; Request Revisions
           </button>
           <button
             type="button"
-            (click)="approveReport(activeReportModal()?.id)"
+            (click)="approveReport(activeReportModal()?.id || '')"
             class="rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black px-6 py-2.5 text-xs font-black transition shadow-lg shadow-emerald-950/30 min-h-11"
           >
             Executive Sign-off &amp; Approve
