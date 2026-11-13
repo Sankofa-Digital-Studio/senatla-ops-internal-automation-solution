@@ -31,13 +31,13 @@
           class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-yellow-500"
         />
         <select
-          [ngModel]="selectedSiteId()"
-          (ngModelChange)="selectedSiteId.set($event)"
+          [ngModel]="selectedScope()"
+          (ngModelChange)="selectedScope.set($event)"
           class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-500"
         >
-          <option value="">All sites</option>
-          @for (site of service.activeSites(); track site.id) {
-            <option [value]="site.id">{{ site.name }}</option>
+          <option value="">All dashboard scopes</option>
+          @for (scope of dashboardScopes; track scope.id) {
+            <option [value]="scope.id">{{ scope.label }}</option>
           }
         </select>
       </div>

@@ -6,6 +6,7 @@ import { Employee, EmployeeOnboardingRecord, EmploymentStatus, PpeIssueRecord } 
 import { ErpStatusBadgeComponent, ErpStatusVariant } from '../../../../components/erp/erp-status-badge.component';
 import { ErpWorkflowStepperComponent, ErpWorkflowStep } from '../../../../components/erp/erp-workflow-stepper.component';
 import { ErpModalComponent } from '../../../../components/erp/erp-modal.component';
+import { DASHBOARD_SCOPE_OPTIONS, DashboardScopeId } from '../../../../core/models/dashboard-scope.models';
 
 @Component({
   selector: 'app-admin-workforce',
@@ -19,6 +20,8 @@ export class AdminWorkforceComponent {
 
   readonly searchTerm = signal<string>('');
   readonly selectedSiteId = signal<string>('');
+  readonly selectedScope = signal<DashboardScopeId | ''>('');
+  readonly dashboardScopes = DASHBOARD_SCOPE_OPTIONS;
   readonly selectedEmployeeId = signal<string | null>(null);
   readonly busy = signal<boolean>(false);
   readonly feedback = signal<string>('');
@@ -63,6 +66,7 @@ export class AdminWorkforceComponent {
   readonly filteredEmployees = computed(() => {
     const term = this.searchTerm().trim().toLowerCase();
     const site = this.selectedSiteId();
+    const scope = this.selectedScope();
     return this.service.employees().filter((emp) => {
       const matchSearch =
         !term ||
@@ -70,9 +74,18 @@ export class AdminWorkforceComponent {
         emp.surname.toLowerCase().includes(term) ||
         emp.idNumber.toLowerCase().includes(term);
       const matchSite = !site || emp.siteId === site;
-      return matchSearch && matchSite;
+      const matchScope = !scope || this.siteScope(emp.siteId) === scope;
+      return matchSearch && matchSite && matchScope;
     });
   });
+
+  siteScope(siteId: string): DashboardScopeId {
+    const siteName = this.service.getSiteName(siteId).toLowerCase();
+    if (siteName.includes('head')) return 'head_office';
+    if (siteName.includes('underground')) return 'underground';
+    if (siteName.includes('demo') || siteName.includes('rehab')) return 'demolition_rehab';
+    return 'engineering';
+  }
 
   readonly selectedEmployee = computed(() => {
     const id = this.selectedEmployeeId();

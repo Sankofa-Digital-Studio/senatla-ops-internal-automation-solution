@@ -6,7 +6,8 @@
           <span class="rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-3 py-0.5 text-[10px] font-bold tracking-widest uppercase">Director workspace</span>
         </div>
         <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-white mt-1">Director operations review</h1>
-        <p class="mt-0.5 text-[11px] sm:text-xs font-bold uppercase tracking-widest text-yellow-500">Source-backed operations · data as of {{ dataAsOf() ? (dataAsOf() | date:'medium') : 'No source timestamp' }} · {{ dataFreshness() }}</p>
+        <p class="mt-0.5 text-[11px] sm:text-xs font-bold uppercase tracking-widest text-yellow-500">Source-backed operations</p>
+        <p class="mt-0.5 text-[11px] sm:text-xs font-bold uppercase tracking-widest text-yellow-500">data as of {{ dataAsOf() ? (dataAsOf() | date:'medium') : 'No source timestamp' }} · {{ dataFreshness() }}</p>
       </div>
 
       <!-- Desktop/Tablet Pill Navigation -->

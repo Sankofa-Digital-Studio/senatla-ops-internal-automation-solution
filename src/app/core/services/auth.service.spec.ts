@@ -36,6 +36,8 @@ class RefreshableAuthGateway implements AuthGateway {
 
   async updatePassword() {}
 
+  async updateDisplayName() {}
+
   async logout() {
     this.logoutCount += 1;
     this.session = null;
@@ -76,6 +78,17 @@ describe('AuthService session restore and refresh', () => {
 
     expect(auth.isAuthenticated()).toBeTrue();
     expect(gateway.logoutCount).toBe(0);
+  });
+
+  it('updates the authenticated session display name without changing its role', async () => {
+    gateway.session = baseSession(new Date(Date.now() + 60 * 60 * 1000).toISOString());
+    const auth = TestBed.inject(AuthService);
+    await auth.ensureReady();
+
+    await auth.updateDisplayName('Updated UAT User');
+
+    expect(auth.displayName()).toBe('Updated UAT User');
+    expect(auth.role()).toBe('office');
   });
 
   it('keeps the restored inactivity clock across a provider token refresh', async () => {
