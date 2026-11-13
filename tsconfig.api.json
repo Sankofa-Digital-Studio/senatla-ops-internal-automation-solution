@@ -2,7 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/api",
-    "types": ["node"]
+    "types": ["node", "jasmine"]
   },
   "include": [
     "api/**/*.ts",
