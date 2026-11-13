@@ -9,6 +9,7 @@ describe('EngineeringDashboardComponent', () => {
 
   beforeEach(waitForAsync(() => {
     localStorage.clear();
+    sessionStorage.clear();
     TestBed.configureTestingModule({
       imports: [EngineeringDashboardComponent],
       providers: [DomainDashboardService],
@@ -22,6 +23,7 @@ describe('EngineeringDashboardComponent', () => {
 
   afterEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
   });
 
   it('should create', () => {
