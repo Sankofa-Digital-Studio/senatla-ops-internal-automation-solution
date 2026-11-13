@@ -1,4 +1,4 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import {
   CashFlowWorkingCapital,
   CrossDomainBottleneck,
@@ -17,11 +17,13 @@ import {
   WastedExpenditureAlert,
   WorkshopActivityMetric,
 } from '../models/domain-dashboard.models';
+import { SessionDataCacheService } from './session-data-cache.service';
 
 const STORAGE_KEY = 'senatla_domain_dashboard_v1';
 
 @Injectable({ providedIn: 'root' })
 export class DomainDashboardService {
+  private readonly sessionDataCache = inject(SessionDataCacheService);
   // Domain selection
   readonly activeDomain = signal<OperationalDomain>('overall_macro');
 
@@ -1148,7 +1150,10 @@ export class DomainDashboardService {
   });
 
   constructor() {
+    const cachedOrders = this.sessionDataCache.get<EngineeringOrderRecord[]>('engineering-job-card-orders');
+    if (cachedOrders?.length) this.engineeringOrders.set(cachedOrders);
     this.hydrateFromStorage();
+    this.sessionDataCache.set('engineering-job-card-orders', this.engineeringOrders());
   }
 
   // Domain switcher action
@@ -1197,7 +1202,8 @@ export class DomainDashboardService {
         unbilledVendorOrdersCount: this.unbilledVendorOrdersCount(),
         wastedExpenditures: this.wastedExpenditures(),
       };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      this.sessionDataCache.set('engineering-job-card-orders', this.engineeringOrders());
     } catch {
       // Storage unavailable or quota exceeded; safe to ignore
     }
@@ -1205,7 +1211,7 @@ export class DomainDashboardService {
 
   private hydrateFromStorage(): void {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = sessionStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const parsed = JSON.parse(raw);
       if (parsed.activeDomain) this.activeDomain.set(parsed.activeDomain);

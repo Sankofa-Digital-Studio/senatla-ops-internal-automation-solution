@@ -106,6 +106,21 @@ export class LocalReviewAuthGateway implements AuthGateway {
     this.emit(null);
   }
 
+  async updateDisplayName(displayName: string): Promise<void> {
+    const normalized = displayName.trim();
+    if (normalized.length < 2 || normalized.length > 80) {
+      throw new Error('Display name must be between 2 and 80 characters.');
+    }
+
+    const session = this.readSession();
+    const email = normalizeAccessEmail(session?.username || '');
+    const account = this.credentials.get(email);
+    if (!session || !account) throw new Error('Your local review session is unavailable. Sign in again and try again.');
+
+    this.credentials.set(email, { ...account, displayName: normalized });
+    this.persistSession({ ...session, displayName: normalized });
+  }
+
   async logout(): Promise<void> {
     this.clearSession();
     this.emit(null);

@@ -4,6 +4,29 @@ All notable Senatla Ops changes are recorded here. Versions follow semantic vers
 
 ## [Unreleased]
 
+## [0.5.7] - 2026-11-13
+
+Operational dashboard usability, profile controls, session data handling, and dependency maintenance release.
+
+### Added
+
+- Editable authenticated display name with a Supabase policy that permits only self-updates to `display_name`.
+- Clickable role guidance cards that open the relevant operational section.
+- Dashboard scope filters for Head Office, Engineering, Demo & Rehab, and Underground.
+- Engineering job-card table search, multi-select status filtering, sorting, clear controls, pagination, and non-wrapping headers.
+- Session-scoped dashboard caching with cache clearing on logout.
+
+### Changed
+
+- Director source metadata now renders on its own line for clearer provenance.
+- Accepted Dependabot dependency updates for Zone.js 0.16.3, Playwright 1.65.0, and Karma Jasmine HTML Reporter 2.3.0 while preserving current CI and application configuration.
+
+### Verification
+
+- `npm run typecheck` passed on `dev`.
+- `npm run build` passed on `dev`.
+- `dev` and `preview` were synchronized before promotion.
+
 ## [0.5.6] - 2026-11-12
 
 Director-flow usability and evidence association patch release.

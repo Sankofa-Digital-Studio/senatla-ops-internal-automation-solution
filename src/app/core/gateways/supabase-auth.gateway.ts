@@ -91,6 +91,22 @@ export class SupabaseAuthGateway implements AuthGateway {
     }
   }
 
+  async updateDisplayName(displayName: string): Promise<void> {
+    const normalized = displayName.trim();
+    if (normalized.length < 2 || normalized.length > 80) {
+      throw new Error('Display name must be between 2 and 80 characters.');
+    }
+
+    const { data, error: userError } = await this.supabase.auth.getUser();
+    if (userError || !data.user) throw new Error('Your session could not be verified. Sign in again and try again.');
+
+    const { error } = await this.supabase
+      .from('profiles')
+      .update({ display_name: normalized })
+      .eq('id', data.user.id);
+    if (error) throw error;
+  }
+
   async logout(): Promise<void> {
     void this.recordAuthEvent('logout').catch(() => undefined);
     await this.supabase.auth.signOut();

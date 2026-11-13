@@ -1,5 +1,6 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { Component, ElementRef, OnDestroy, ViewChild, inject, computed, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AttendanceCommentChange, AttendanceReasonChange, AttendanceRowComponent, AttendanceStatusChange } from '../../components/attendance-row.component';
 import { TimesheetSummaryComponent } from '../../components/timesheet-summary.component';
@@ -55,6 +56,7 @@ export class SiteManagerComponent implements OnDestroy {
   readonly service = inject(StaffDataService);
   readonly readiness = inject(SiteReadinessService);
   private readonly timesheetRegister = inject(TimesheetRegisterService);
+  private readonly route = inject(ActivatedRoute);
 
   @ViewChild('sigCanvas') sigCanvas!: ElementRef<HTMLCanvasElement>;
   @ViewChild('canvasContainer') canvasContainer!: ElementRef<HTMLDivElement>;
@@ -151,6 +153,10 @@ export class SiteManagerComponent implements OnDestroy {
   gateDwellLogs: GateDwellRecord[] = [];
 
   constructor() {
+    this.route.queryParamMap.subscribe((params) => {
+      const siteTab = params.get('siteTab');
+      if (siteTab) this.selectTab(siteTab);
+    });
     this.localSiteName = this.service.siteName();
     this.loadPersistedFieldOperations();
     void this.initializeReadiness();

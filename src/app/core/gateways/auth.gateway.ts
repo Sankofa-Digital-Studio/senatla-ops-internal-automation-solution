@@ -18,6 +18,7 @@ export interface AuthGateway {
   login(username: string, password: string): Promise<AuthSession | null>;
   requestPasswordReset(email: string, redirectTo?: string): Promise<PasswordResetRequestResult>;
   updatePassword(nextPassword: string, usernameHint?: string): Promise<void>;
+  updateDisplayName(displayName: string): Promise<void>;
   logout(): Promise<void>;
   subscribeToSession?(listener: (session: AuthSession | null) => void): () => void;
 }
