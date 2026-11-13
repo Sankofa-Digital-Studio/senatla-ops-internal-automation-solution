@@ -53,6 +53,11 @@ export class ProfileSettingsComponent {
     setTimeout(() => document.querySelector(feature.target!)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
   }
 
+  openFeatureFromLink(event: MouseEvent, feature: OnboardingFeature): void {
+    event.preventDefault();
+    void this.openFeature(feature);
+  }
+
   async reviewOnboarding() {
     const role = this.auth.role();
     const userId = this.auth.session()?.userId;

@@ -50,7 +50,7 @@ export type MacroStatType = 'revenue' | 'costs' | 'profit' | 'cashflow';
       </div>
 
       <!-- 4 Top Executive Rollup Stat Cards (Interactive Drilldowns) -->
-      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <app-erp-stat-card
           title="Consolidated Revenue"
           [value]="'R ' + (macro().consolidatedRevenue | number:'1.2-2')"

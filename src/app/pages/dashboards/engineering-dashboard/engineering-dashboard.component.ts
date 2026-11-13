@@ -69,6 +69,8 @@ export type JobCardTabType = 'materials' | 'labour' | 'commercial';
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full lg:w-auto">
             <div
               (click)="selectedProfitMetric.set('senatla')"
+              (keydown.enter)="selectedProfitMetric.set('senatla')"
+              (keydown.space)="$event.preventDefault(); selectedProfitMetric.set('senatla')"
               class="rounded-xl border border-yellow-500/40 bg-gray-950 p-4 cursor-pointer hover:border-yellow-400 hover:ring-1 hover:ring-yellow-400/40 transition group"
               role="button"
               tabindex="0"
@@ -85,6 +87,8 @@ export type JobCardTabType = 'materials' | 'labour' | 'commercial';
 
             <div
               (click)="selectedProfitMetric.set('shareholder')"
+              (keydown.enter)="selectedProfitMetric.set('shareholder')"
+              (keydown.space)="$event.preventDefault(); selectedProfitMetric.set('shareholder')"
               class="rounded-xl border border-emerald-500/40 bg-gray-950 p-4 cursor-pointer hover:border-emerald-400 hover:ring-1 hover:ring-emerald-400/40 transition group"
               role="button"
               tabindex="0"
@@ -105,7 +109,11 @@ export type JobCardTabType = 'materials' | 'labour' | 'commercial';
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-5">
           <div
             (click)="selectedProfitMetric.set('revenue')"
+            (keydown.enter)="selectedProfitMetric.set('revenue')"
+            (keydown.space)="$event.preventDefault(); selectedProfitMetric.set('revenue')"
             class="cursor-pointer hover:bg-gray-800/60 p-2.5 -m-2.5 rounded-lg transition group"
+            role="button"
+            tabindex="0"
           >
             <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-400 group-hover:text-yellow-400">Gross Recognized Revenue &rarr;</p>
             <p class="mt-1 font-mono text-lg font-bold text-white">R {{ profit().totalBilledRevenue | number:'1.2-2' }}</p>
@@ -113,7 +121,11 @@ export type JobCardTabType = 'materials' | 'labour' | 'commercial';
           </div>
           <div
             (click)="selectedProfitMetric.set('materials')"
+            (keydown.enter)="selectedProfitMetric.set('materials')"
+            (keydown.space)="$event.preventDefault(); selectedProfitMetric.set('materials')"
             class="cursor-pointer hover:bg-gray-800/60 p-2.5 -m-2.5 rounded-lg transition group"
+            role="button"
+            tabindex="0"
           >
             <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-400 group-hover:text-yellow-400">Materials Incurred &rarr;</p>
             <p class="mt-1 font-mono text-lg font-bold text-white">R {{ profit().materialsExpense | number:'1.2-2' }}</p>
@@ -121,7 +133,11 @@ export type JobCardTabType = 'materials' | 'labour' | 'commercial';
           </div>
           <div
             (click)="selectedProfitMetric.set('labour')"
+            (keydown.enter)="selectedProfitMetric.set('labour')"
+            (keydown.space)="$event.preventDefault(); selectedProfitMetric.set('labour')"
             class="cursor-pointer hover:bg-gray-800/60 p-2.5 -m-2.5 rounded-lg transition group"
+            role="button"
+            tabindex="0"
           >
             <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-400 group-hover:text-yellow-400">Direct Labour &rarr;</p>
             <p class="mt-1 font-mono text-lg font-bold text-white">R {{ profit().labourExpense | number:'1.2-2' }}</p>
@@ -129,7 +145,11 @@ export type JobCardTabType = 'materials' | 'labour' | 'commercial';
           </div>
           <div
             (click)="selectedProfitMetric.set('overheads')"
+            (keydown.enter)="selectedProfitMetric.set('overheads')"
+            (keydown.space)="$event.preventDefault(); selectedProfitMetric.set('overheads')"
             class="cursor-pointer hover:bg-gray-800/60 p-2.5 -m-2.5 rounded-lg transition group"
+            role="button"
+            tabindex="0"
           >
             <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-400 group-hover:text-yellow-400">Absorbed Overheads &rarr;</p>
             <p class="mt-1 font-mono text-lg font-bold text-white">R {{ profit().absorbedOverheadsExpense | number:'1.2-2' }}</p>
@@ -256,10 +276,10 @@ export type JobCardTabType = 'materials' | 'labour' | 'commercial';
 
         <div class="grid gap-3 rounded-xl border border-gray-800 bg-gray-950/70 p-3 lg:grid-cols-[1.35fr_0.8fr_1.05fr_0.9fr_auto] lg:items-end">
           <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Search records
-            <input [ngModel]="tableSearch()" (ngModelChange)="tableSearch.set($event)" placeholder="PO, job card, client, scope..." class="mt-1 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm font-normal normal-case tracking-normal text-white placeholder-gray-600 focus:border-yellow-500 focus:outline-none" />
+            <input [ngModel]="tableSearch()" (ngModelChange)="tableSearch.set($event); tablePage.set(1)" placeholder="PO, job card, client, scope..." class="mt-1 h-11 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm font-normal normal-case tracking-normal text-white placeholder-gray-600 focus:border-yellow-500 focus:outline-none" />
           </label>
           <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Dashboard scope
-            <select [ngModel]="scopeFilter()" (ngModelChange)="scopeFilter.set($event); tablePage.set(1)" class="mt-1 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm font-normal normal-case tracking-normal text-white focus:border-yellow-500 focus:outline-none">
+            <select [ngModel]="scopeFilter()" (ngModelChange)="scopeFilter.set($event); tablePage.set(1)" class="mt-1 h-11 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm font-normal normal-case tracking-normal text-white focus:border-yellow-500 focus:outline-none">
               <option value="">All scopes</option><option value="engineering">Engineering</option>
             </select>
           </label>
@@ -269,11 +289,11 @@ export type JobCardTabType = 'materials' | 'labour' | 'commercial';
             </select>
           </label>
           <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Sort records
-            <select [ngModel]="sortKey()" (ngModelChange)="sortKey.set($event); tablePage.set(1)" class="mt-1 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm font-normal normal-case tracking-normal text-white focus:border-yellow-500 focus:outline-none">
+            <select [ngModel]="sortKey()" (ngModelChange)="sortKey.set($event); tablePage.set(1)" class="mt-1 h-11 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm font-normal normal-case tracking-normal text-white focus:border-yellow-500 focus:outline-none">
               <option value="updated">Recently updated</option><option value="value_desc">P/O value: high to low</option><option value="value_asc">P/O value: low to high</option><option value="job_card">Job card number</option><option value="status">Status</option>
             </select>
           </label>
-          <button type="button" (click)="clearTableFilters()" class="rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-300 hover:border-yellow-500 hover:text-yellow-300">Clear</button>
+          <button type="button" (click)="clearTableFilters()" class="h-11 rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-300 hover:border-yellow-500 hover:text-yellow-300">Clear</button>
         </div>
         <div class="flex flex-wrap items-center justify-between gap-3 text-xs text-gray-500">
           <span>Showing {{ pageStart() }}–{{ pageEnd() }} of {{ filteredOrders().length }} job cards</span>
@@ -288,11 +308,11 @@ export type JobCardTabType = 'materials' | 'labour' | 'commercial';
           <table class="w-full min-w-[1180px] table-fixed text-left text-xs">
             <thead class="bg-gray-950 uppercase text-gray-500 font-bold">
               <tr>
-                <th class="w-[16%] whitespace-nowrap p-4">Linked Client P/O #</th>
-                <th class="w-[12%] whitespace-nowrap p-4">Job Card #</th>
-                <th class="w-[20%] whitespace-nowrap p-4">Scope &amp; Workshop</th>
-                <th class="w-[14%] whitespace-nowrap p-4 text-right">Procured Materials</th>
-                <th class="w-[14%] whitespace-nowrap p-4 text-right">Labour &amp; Hours</th>
+                <th class="w-[14%] whitespace-nowrap p-4">Linked Client P/O #</th>
+                <th class="w-[10%] whitespace-nowrap p-4">Job Card #</th>
+                <th class="w-[18%] whitespace-nowrap p-4">Scope &amp; Workshop</th>
+                <th class="w-[12%] whitespace-nowrap p-4 text-right">Procured Materials</th>
+                <th class="w-[12%] whitespace-nowrap p-4 text-right">Labour &amp; Hours</th>
                 <th class="w-[12%] whitespace-nowrap p-4 text-right">P/O Value</th>
                 <th class="w-[12%] whitespace-nowrap p-4 text-center">Status</th>
                 <th class="w-[10%] whitespace-nowrap p-4 text-center">Action</th>
@@ -339,7 +359,7 @@ export type JobCardTabType = 'materials' | 'labour' | 'commercial';
                     ></app-erp-status-badge>
                   </td>
                   <td class="whitespace-nowrap p-4 text-center">
-                    <span class="rounded bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 px-2.5 py-1 text-[11px] font-bold group-hover:bg-yellow-500 group-hover:text-black transition">
+                    <span class="inline-flex min-w-[112px] justify-center whitespace-nowrap rounded bg-yellow-500/20 px-2.5 py-1 text-[11px] font-bold text-yellow-300 border border-yellow-500/40 group-hover:bg-yellow-500 group-hover:text-black transition">
                       Trace &amp; Capture &rarr;
                     </span>
                   </td>

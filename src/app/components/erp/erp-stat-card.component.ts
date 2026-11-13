@@ -10,7 +10,7 @@ export type ErpStatTone = 'default' | 'accent' | 'success' | 'warning' | 'danger
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <article
-      class="rounded-xl border p-4 bg-gray-900 transition-all select-none"
+      class="flex h-full min-h-[146px] flex-col justify-between rounded-xl border bg-gray-900 p-4 transition-all select-none"
       [ngClass]="[
         borderClass(),
         interactive()

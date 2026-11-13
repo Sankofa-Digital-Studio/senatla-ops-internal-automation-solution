@@ -44,11 +44,11 @@
       <p class="text-xs font-bold uppercase tracking-[0.24em] text-lime-200">Role guidance</p>
       <h2 id="profile-capabilities-heading" class="mt-2 text-xl font-black tracking-tight sm:text-2xl">Assigned workspace capabilities</h2>
       <div class="mt-6 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-        <article *ngFor="let feature of features()" [class.cursor-pointer]="!!feature.route" [class.hover:border-lime-300/50]="!!feature.route" class="rounded-2xl border border-white/10 bg-slate-950/70 p-5 transition" (click)="openFeature(feature)" (keydown.enter)="openFeature(feature)" (keydown.space)="$event.preventDefault(); openFeature(feature)" [attr.role]="feature.route ? 'link' : null" [attr.tabindex]="feature.route ? 0 : null">
+        <a *ngFor="let feature of features()" [href]="feature.route" [class.cursor-pointer]="!!feature.route" [class.hover:border-lime-300/50]="!!feature.route" class="block rounded-2xl border border-white/10 bg-slate-950/70 p-5 transition" (click)="openFeatureFromLink($event, feature)">
           <h3 class="text-sm font-black text-lime-200">{{ feature.title }}</h3>
           <p class="mt-2 text-xs leading-6 text-slate-300">{{ feature.summary }}</p>
           <p *ngIf="feature.route" class="mt-4 text-[11px] font-black uppercase tracking-[0.16em] text-lime-300">Open this section &rarr;</p>
-        </article>
+        </a>
       </div>
       <div class="mt-6 flex justify-end border-t border-white/10 pt-4">
         <button type="button" (click)="reviewOnboarding()" class="rounded-full bg-lime-300 px-6 py-3 text-xs font-black uppercase tracking-[0.18em] text-slate-950 transition hover:bg-lime-200">
