@@ -146,7 +146,7 @@ export class DirectorComponent {
 
   readonly dataFreshness = computed(() => {
     const sourceTimestamp = this.dataAsOf();
-    if (!sourceTimestamp) return 'No source timestamp';
+    if (!sourceTimestamp) return 'No source';
     const ageMs = this.service.currentTime().getTime() - sourceTimestamp.getTime();
     if (ageMs < 0) return 'Source ahead of clock';
     const ageMinutes = Math.floor(ageMs / 60000);

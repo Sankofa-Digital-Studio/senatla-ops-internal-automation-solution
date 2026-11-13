@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomainDashboardService } from '../../../core/services/domain-dashboard.service';
 import { EngineeringOrderRecord, JobCardDetail, JobCardLabourItem, JobCardMaterialItem } from '../../../core/models/domain-dashboard.models';
 import { ErpStatusBadgeComponent } from '../../../components/erp/erp-status-badge.component';
 import { ErpModalComponent } from '../../../components/erp/erp-modal.component';
+import { DashboardScopeId } from '../../../core/models/dashboard-scope.models';
 
 export type ProfitMetricType = 'senatla' | 'shareholder' | 'revenue' | 'materials' | 'labour' | 'overheads';
 export type JobCardTabType = 'materials' | 'labour' | 'commercial';
@@ -253,61 +254,91 @@ export type JobCardTabType = 'materials' | 'labour' | 'commercial';
           </div>
         </div>
 
-        <div class="overflow-x-auto">
-          <table class="w-full min-w-[780px] text-left text-xs">
+        <div class="grid gap-3 rounded-xl border border-gray-800 bg-gray-950/70 p-3 lg:grid-cols-[1.35fr_0.8fr_1.05fr_0.9fr_auto] lg:items-end">
+          <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Search records
+            <input [ngModel]="tableSearch()" (ngModelChange)="tableSearch.set($event)" placeholder="PO, job card, client, scope..." class="mt-1 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm font-normal normal-case tracking-normal text-white placeholder-gray-600 focus:border-yellow-500 focus:outline-none" />
+          </label>
+          <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Dashboard scope
+            <select [ngModel]="scopeFilter()" (ngModelChange)="scopeFilter.set($event); tablePage.set(1)" class="mt-1 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm font-normal normal-case tracking-normal text-white focus:border-yellow-500 focus:outline-none">
+              <option value="">All scopes</option><option value="engineering">Engineering</option>
+            </select>
+          </label>
+          <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Status (multi-select)
+            <select multiple [ngModel]="statusFilters()" (ngModelChange)="statusFilters.set($event); tablePage.set(1)" class="mt-1 h-[66px] w-full rounded-lg border border-gray-700 bg-gray-900 px-2 py-1 text-xs font-normal normal-case tracking-normal text-white focus:border-yellow-500 focus:outline-none">
+              <option value="in_progress">In fabrication</option><option value="completed">Completed</option><option value="pending_materials">Awaiting parts</option><option value="draft">Draft</option>
+            </select>
+          </label>
+          <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Sort records
+            <select [ngModel]="sortKey()" (ngModelChange)="sortKey.set($event); tablePage.set(1)" class="mt-1 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm font-normal normal-case tracking-normal text-white focus:border-yellow-500 focus:outline-none">
+              <option value="updated">Recently updated</option><option value="value_desc">P/O value: high to low</option><option value="value_asc">P/O value: low to high</option><option value="job_card">Job card number</option><option value="status">Status</option>
+            </select>
+          </label>
+          <button type="button" (click)="clearTableFilters()" class="rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-300 hover:border-yellow-500 hover:text-yellow-300">Clear</button>
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-3 text-xs text-gray-500">
+          <span>Showing {{ pageStart() }}–{{ pageEnd() }} of {{ filteredOrders().length }} job cards</span>
+          <div class="flex items-center gap-2">
+            <label>Rows <select [ngModel]="pageSize()" (ngModelChange)="pageSize.set(+$event); tablePage.set(1)" class="rounded border border-gray-700 bg-gray-950 px-2 py-1 text-white"><option [value]="5">5</option><option [value]="10">10</option><option [value]="25">25</option></select></label>
+            <button type="button" [disabled]="tablePage() <= 1" (click)="tablePage.update((page) => page - 1)" class="rounded border border-gray-700 px-2 py-1 text-white disabled:opacity-30">Previous</button>
+            <span>Page {{ tablePage() }} / {{ totalPages() }}</span>
+            <button type="button" [disabled]="tablePage() >= totalPages()" (click)="tablePage.update((page) => page + 1)" class="rounded border border-gray-700 px-2 py-1 text-white disabled:opacity-30">Next</button>
+          </div>
+        </div>
+        <div class="overflow-x-auto rounded-lg border border-gray-800">
+          <table class="w-full min-w-[1180px] table-fixed text-left text-xs">
             <thead class="bg-gray-950 uppercase text-gray-500 font-bold">
               <tr>
-                <th class="p-3">Linked Client P/O #</th>
-                <th class="p-3">Job Card #</th>
-                <th class="p-3">Scope &amp; Workshop</th>
-                <th class="p-3 text-right">Procured Materials</th>
-                <th class="p-3 text-right">Labour &amp; Hours</th>
-                <th class="p-3 text-right">P/O Value</th>
-                <th class="p-3 text-center">Status</th>
-                <th class="p-3 text-center">Action</th>
+                <th class="w-[16%] whitespace-nowrap p-4">Linked Client P/O #</th>
+                <th class="w-[12%] whitespace-nowrap p-4">Job Card #</th>
+                <th class="w-[20%] whitespace-nowrap p-4">Scope &amp; Workshop</th>
+                <th class="w-[14%] whitespace-nowrap p-4 text-right">Procured Materials</th>
+                <th class="w-[14%] whitespace-nowrap p-4 text-right">Labour &amp; Hours</th>
+                <th class="w-[12%] whitespace-nowrap p-4 text-right">P/O Value</th>
+                <th class="w-[12%] whitespace-nowrap p-4 text-center">Status</th>
+                <th class="w-[10%] whitespace-nowrap p-4 text-center">Action</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-800">
-              @for (order of service.engineeringOrders(); track order.id) {
+              @for (order of paginatedOrders(); track order.id) {
                 <tr
                   class="hover:bg-gray-800/80 transition cursor-pointer group"
                   (click)="openJobCardDetail(order)"
                 >
-                  <td class="p-3">
+                  <td class="whitespace-nowrap p-4">
                     <span class="font-mono font-bold text-yellow-400 group-hover:underline">{{ order.poNumber }}</span>
                     <p class="text-[10px] text-gray-500 mt-0.5">{{ order.client }}</p>
                   </td>
-                  <td class="p-3">
+                  <td class="whitespace-nowrap p-4">
                     <span class="font-mono font-bold text-cyan-300 bg-cyan-950/40 border border-cyan-800/40 px-2 py-0.5 rounded">
                       {{ order.jobCardNumber }}
                     </span>
                   </td>
-                  <td class="p-3 max-w-[220px]">
-                    <p class="font-semibold text-white line-clamp-1">{{ order.scopeDescription }}</p>
+                  <td class="max-w-[240px] p-4">
+                    <p class="truncate font-semibold text-white" [title]="order.scopeDescription">{{ order.scopeDescription }}</p>
                     <p class="text-[11px] text-gray-400">{{ order.workshop }}</p>
                   </td>
-                  <td class="p-3 text-right font-mono">
+                  <td class="whitespace-nowrap p-4 text-right font-mono">
                     <p class="font-bold text-white">R {{ order.materialsCost | number:'1.2-2' }}</p>
                     <p class="text-[10px] text-gray-400">
                       {{ order.jobCardDetails?.materials?.length || 0 }} vendor item(s)
                     </p>
                   </td>
-                  <td class="p-3 text-right font-mono">
+                  <td class="whitespace-nowrap p-4 text-right font-mono">
                     <p class="font-bold text-emerald-400">{{ order.labourHours }} hrs</p>
                     <p class="text-[10px] text-gray-400">
                       R {{ (order.labourCost || order.labourHours * 350) | number:'1.2-2' }}
                     </p>
                   </td>
-                  <td class="p-3 text-right font-mono font-bold text-white">
+                  <td class="whitespace-nowrap p-4 text-right font-mono font-bold text-white">
                     R {{ order.value | number:'1.2-2' }}
                   </td>
-                  <td class="p-3 text-center">
+                  <td class="whitespace-nowrap p-4 text-center">
                     <app-erp-status-badge
                       [status]="order.status === 'completed' ? 'completed' : order.status === 'in_progress' ? 'active' : 'pending'"
                       [label]="order.status === 'completed' ? 'Completed' : order.status === 'in_progress' ? 'In Fabrication' : 'Awaiting Parts'"
                     ></app-erp-status-badge>
                   </td>
-                  <td class="p-3 text-center">
+                  <td class="whitespace-nowrap p-4 text-center">
                     <span class="rounded bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 px-2.5 py-1 text-[11px] font-bold group-hover:bg-yellow-500 group-hover:text-black transition">
                       Trace &amp; Capture &rarr;
                     </span>
@@ -1127,6 +1158,39 @@ export class EngineeringDashboardComponent {
   readonly selectedProfitMetric = signal<ProfitMetricType | null>(null);
   readonly activeJobCardTab = signal<JobCardTabType>('materials');
   readonly showCreateJobCardModal = signal<boolean>(false);
+  readonly tableSearch = signal('');
+  readonly scopeFilter = signal<DashboardScopeId | ''>('');
+  readonly statusFilters = signal<string[]>([]);
+  readonly sortKey = signal('updated');
+  readonly tablePage = signal(1);
+  readonly pageSize = signal(5);
+
+  readonly filteredOrders = computed(() => {
+    const term = this.tableSearch().trim().toLowerCase();
+    const scope = this.scopeFilter();
+    const statuses = this.statusFilters();
+    const filtered = this.service.engineeringOrders().filter((order) => {
+      const haystack = [order.poNumber, order.jobCardNumber, order.client, order.scopeDescription, order.workshop].join(' ').toLowerCase();
+      return (!term || haystack.includes(term)) && (!scope || scope === 'engineering') && (!statuses.length || statuses.includes(order.status));
+    });
+    return [...filtered].sort((left, right) => {
+      switch (this.sortKey()) {
+        case 'value_desc': return right.value - left.value;
+        case 'value_asc': return left.value - right.value;
+        case 'job_card': return left.jobCardNumber.localeCompare(right.jobCardNumber);
+        case 'status': return left.status.localeCompare(right.status);
+        default: return right.id.localeCompare(left.id);
+      }
+    });
+  });
+  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.filteredOrders().length / this.pageSize())));
+  readonly paginatedOrders = computed(() => {
+    const page = Math.min(this.tablePage(), this.totalPages());
+    const start = (page - 1) * this.pageSize();
+    return this.filteredOrders().slice(start, start + this.pageSize());
+  });
+  readonly pageStart = computed(() => this.filteredOrders().length ? (this.tablePage() - 1) * this.pageSize() + 1 : 0);
+  readonly pageEnd = computed(() => Math.min(this.tablePage() * this.pageSize(), this.filteredOrders().length));
 
   // Forms Visibility
   readonly showAddMaterialForm = signal<boolean>(false);
@@ -1179,6 +1243,14 @@ export class EngineeringDashboardComponent {
     const order = this.selectedOrder();
     if (!order) return 'Job Card Traceability';
     return `[${order.jobCardNumber}] Job Card & Purchase Order Traceability`;
+  }
+
+  clearTableFilters(): void {
+    this.tableSearch.set('');
+    this.scopeFilter.set('');
+    this.statusFilters.set([]);
+    this.sortKey.set('updated');
+    this.tablePage.set(1);
   }
 
   openJobCardDetail(order: EngineeringOrderRecord): void {

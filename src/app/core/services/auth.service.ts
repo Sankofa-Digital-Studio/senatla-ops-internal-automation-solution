@@ -4,6 +4,7 @@ import { AppRole, AuthSession } from '../models/app.models';
 import { AUTH_GATEWAY, AuthGateway, PasswordResetRequestResult } from '../gateways/auth.gateway';
 import { SESSION_EXPIRY_SCHEDULER } from '../auth/session-expiry.scheduler';
 import { SESSION_MAX_AGE_MS, sessionHasExpired } from '../auth/session-policy';
+import { SessionDataCacheService } from './session-data-cache.service';
 import {
   isAllowedAccessEmail,
   isDeveloperDirectorEmail,
@@ -22,6 +23,7 @@ export class AuthService {
   private readonly router = inject(Router);
   private readonly expiryScheduler = inject(SESSION_EXPIRY_SCHEDULER);
   private readonly zone = inject(NgZone);
+  private readonly sessionDataCache = inject(SessionDataCacheService);
 
   private readonly sessionState = signal<AuthSession | null>(null);
   private readonly readyState = signal(false);
@@ -92,8 +94,19 @@ export class AuthService {
     await this.authGateway.updatePassword(nextPassword, usernameHint);
   }
 
+  async updateDisplayName(displayName: string) {
+    const normalized = displayName.trim();
+    if (normalized.length < 2 || normalized.length > 80) {
+      throw new Error('Display name must be between 2 and 80 characters.');
+    }
+    await this.authGateway.updateDisplayName(normalized);
+    const session = this.sessionState();
+    if (session) this.sessionState.set({ ...session, displayName: normalized });
+  }
+
   async logout() {
     this.setSession(null);
+    this.sessionDataCache.clear();
     await this.authGateway.logout();
   }
 
