@@ -37,9 +37,23 @@ jobs:
       - name: Check protected deployment access and public runtime
         env:
           DEPLOYMENT_URL: ${{ inputs.deployment_url }}
+          EXPECTED_ENVIRONMENT: ${{ inputs.environment }}
           BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
+          set +x
           test -n "$BYPASS_SECRET" || { echo "Canonical project automation bypass secret is required for protected preview smoke." >&2; exit 1; }
+          echo "::add-mask::$BYPASS_SECRET"
+          python3 - <<'PY'
+          import os
+          from urllib.parse import urlparse
+
+          value = os.environ['DEPLOYMENT_URL'].rstrip('/')
+          parsed = urlparse(value)
+          if parsed.scheme != 'https' or not parsed.netloc or parsed.path not in ('', '/') or parsed.params or parsed.query or parsed.fragment:
+              raise SystemExit('deployment_url must be an exact HTTPS deployment origin without a path, query, or fragment.')
+          if os.environ['EXPECTED_ENVIRONMENT'] == 'preview' and not parsed.netloc.endswith('.vercel.app'):
+              raise SystemExit('preview smoke requires an exact Vercel deployment URL.')
+          PY
           body=$(mktemp)
           headers=$(mktemp)
           status=$(curl --silent --show-error --location --cookie "" --max-time 20 \
