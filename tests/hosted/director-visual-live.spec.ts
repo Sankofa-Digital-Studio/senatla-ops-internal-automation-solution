@@ -59,6 +59,20 @@ test.describe('Director Workflow Live Visual Suite', () => {
     const multiDomainSection = page.locator('[data-tour="director-multi-domain-dashboards"]');
     await expect(multiDomainSection).toBeVisible();
 
+    const telemetryCard = page.getByTestId('director-fleet-telemetry');
+    await expect(telemetryCard).toBeVisible();
+    await expect(telemetryCard).toContainText('Fleet Utilization');
+    await expect(telemetryCard).toContainText('Under Maintenance');
+    await expect(telemetryCard).toContainText('Aggregate Fuel Burn Rate');
+    await expect(telemetryCard).toContainText('Total Fuel Expense');
+
+    const primaryTelemetry = telemetryCard.getByTestId('director-fleet-primary-grid');
+    const secondaryTelemetry = telemetryCard.getByTestId('director-fleet-secondary-grid');
+    await expect(primaryTelemetry).toContainText('Fleet Utilization');
+    await expect(primaryTelemetry).toContainText('Under Maintenance');
+    await expect(secondaryTelemetry).toContainText('Aggregate Fuel Burn Rate');
+    await expect(secondaryTelemetry).toContainText('Total Fuel Expense');
+
     // Verify Operating Indicators are present
     await expect(page.getByText('Recognized operating cost', { exact: true })).toBeVisible();
 
@@ -85,6 +99,10 @@ test.describe('Director Workflow Live Visual Suite', () => {
     const multiDomainPath = path.join(screenshotDir, `03-director-multidomain-${projectName}.png`);
     await multiDomainSection.screenshot({ path: multiDomainPath });
     expect(fs.existsSync(multiDomainPath)).toBe(true);
+
+    const telemetryPath = path.join(screenshotDir, `07-director-telemetry-${projectName}.png`);
+    await telemetryCard.screenshot({ path: telemetryPath });
+    expect(fs.existsSync(telemetryPath)).toBe(true);
 
     // Capture Review Queue Section
     const reviewQueuePath = path.join(screenshotDir, `04-director-reviewqueue-${projectName}.png`);
