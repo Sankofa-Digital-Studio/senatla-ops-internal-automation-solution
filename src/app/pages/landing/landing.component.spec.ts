@@ -40,6 +40,46 @@ describe('LandingComponent', () => {
     expect(page.querySelector('#assurance')).not.toBeNull();
   });
 
+  it('navigates to the public RBAC overview from both navigation menus', () => {
+    const page = fixture.nativeElement as HTMLElement;
+    const rbacLinks = Array.from(page.querySelectorAll('a[href="#access"]'));
+
+    expect(rbacLinks).toHaveSize(2);
+    expect(rbacLinks.map((link) => link.textContent?.trim())).toEqual(['RBAC', 'RBAC']);
+    expect(page.querySelector('#access')).not.toBeNull();
+  });
+
+  it('presents exactly three public roles with stable labels and responsibility copy', () => {
+    const page = fixture.nativeElement as HTMLElement;
+    const access = page.querySelector('#access') as HTMLElement;
+    expect(access).not.toBeNull();
+    const roleCards = Array.from(access.querySelectorAll('.role-card'));
+
+    expect(roleCards).toHaveSize(3);
+    expect(roleCards.map((card) => card.querySelector('h3')?.textContent?.trim())).toEqual([
+      'Site Manager',
+      'Administrator',
+      'Director',
+    ]);
+    roleCards.forEach((card) => {
+      expect(card.querySelector('.role-card__summary')?.textContent?.trim()).toBeTruthy();
+      expect(card.querySelector('.role-card__expectation')?.textContent?.trim()).toBeTruthy();
+      expect(card.querySelector('.role-card__label')?.textContent?.trim()).toBe('Expected to');
+    });
+  });
+
+  it('keeps the public RBAC section informational and distinct from the authenticated workspace', () => {
+    const page = fixture.nativeElement as HTMLElement;
+    const access = page.querySelector('#access') as HTMLElement;
+    const roleNote = access.querySelector('.role-note') as HTMLElement;
+
+    expect(access.querySelector('a, button, input, select, textarea')).toBeNull();
+    expect(roleNote.textContent).toContain('before sign-in');
+    expect(roleNote.textContent).toContain('Inside the workspace');
+    expect(roleNote.textContent).toContain('guided workflow');
+    expect(roleNote.textContent).toContain('not a replacement for the role-specific workspace');
+  });
+
   it('links both navigation menus to the stable current-dev APK resolver', () => {
     const page = fixture.nativeElement as HTMLElement;
     const href = '/api/download-apk';

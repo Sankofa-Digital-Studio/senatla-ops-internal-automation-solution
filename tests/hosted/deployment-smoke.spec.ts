@@ -96,6 +96,7 @@ function captureDocumentResponses(page: Page): Array<{ url: string; status: numb
 test('hosted runtime is Supabase-backed and matches the reviewed commit', async ({ request }, testInfo) => {
   const response = await request.get('/assets/runtime-config.json');
   expect(response.ok()).toBeTruthy();
+  expect(response.url()).toBe(`${baseUrl}/assets/runtime-config.json`);
 
   const config = await response.json() as {
     api?: { mode?: string; supabaseUrl?: string; supabaseAnonKey?: string };
@@ -121,6 +122,32 @@ test('hosted runtime is Supabase-backed and matches the reviewed commit', async 
     commitSha: config.build?.commitSha || null,
     environment: config.build?.environment || null,
     bypassHeadersConfigured: Boolean(bypassSecret),
+  });
+});
+
+test('preview landing is reachable at the exact URL and exposes the public RBAC overview', async ({ page }, testInfo) => {
+  const landingUrl = `${baseUrl}/landing`;
+  const response = await page.goto(landingUrl, { waitUntil: 'domcontentloaded' });
+  expect(response?.status()).toBe(200);
+  expect(page.url()).toBe(landingUrl);
+
+  const rbacSection = page.locator('#access');
+  await expect(rbacSection).toBeVisible();
+  await expect(rbacSection).toContainText('Role-based access');
+  await expect(rbacSection).toContainText('Site Manager');
+  await expect(rbacSection).toContainText('Administrator');
+  await expect(rbacSection).toContainText('Director');
+  await expect(rbacSection).toContainText('Expected to');
+  await expect(rbacSection).toContainText('before sign-in');
+
+  await writeEvidence(testInfo, {
+    kind: 'public-landing-rbac',
+    requestedUrl: landingUrl,
+    finalUrl: page.url(),
+    status: response?.status() ?? null,
+    unauthenticated: true,
+    bypassHeadersConfigured: Boolean(bypassSecret),
+    roles: ['Site Manager', 'Administrator', 'Director'],
   });
 });
 

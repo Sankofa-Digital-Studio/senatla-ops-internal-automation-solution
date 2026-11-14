@@ -103,7 +103,7 @@ export type AssetVerificationMode = 'combo' | 'ocr' | 'manual';
         <section class="capture-workspace">
           <header>
             <h3>Capture and scan</h3>
-            <p>Scan a serial number, number plate or licence disc. Evidence is validated and attached to the registration draft; detected values still require human review.</p>
+            <p>On Android or iPhone, use the device scan/camera button for OCR. In a mobile browser, the camera opens after permission; if browser OCR is unavailable, use the device's scan-text/OCR app and paste the recognised text below. Evidence is validated and attached to the registration draft; detected values still require human review.</p>
           </header>
           <div class="capture-grid">
             <button *ngFor="let option of captureOptions" type="button" [disabled]="busy" (click)="captureRequested.emit(option.type)">
@@ -114,7 +114,7 @@ export type AssetVerificationMode = 'combo' | 'ocr' | 'manual';
             <label *ngFor="let option of documentOptions">
               <strong>{{ option.label }}</strong>
               <span>PDF or image</span>
-              <input type="file" accept="application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif" [disabled]="busy" (change)="selectFile($event, option.type)">
+              <input type="file" accept="application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif" capture="environment" [disabled]="busy" (change)="selectFile($event, option.type)">
             </label>
           </div>
           <aside *ngIf="showOcrGuide" class="ocr-guide" aria-live="polite">
@@ -122,7 +122,7 @@ export type AssetVerificationMode = 'combo' | 'ocr' | 'manual';
             <button type="button" (click)="dismissOcrGuide()" title="Hide this guide on this device">Got it</button>
           </aside>
           <div class="ocr-review-input">
-            <label for="manual-ocr-text"><strong>OCR review text</strong><span id="manual-ocr-help">Paste text from an approved scanner when this browser cannot detect text. Only recognised form fields are used.</span></label>
+            <label for="manual-ocr-text"><strong>OCR review text</strong><span id="manual-ocr-help">If this browser cannot detect text, use your device's built-in scan-text/OCR feature or an approved OCR app, then paste the result here. Only recognised form fields are used; never paste secrets or unrelated personal information.</span></label>
             <textarea id="manual-ocr-text" [(ngModel)]="manualOcrText" [disabled]="busy" maxlength="8000" rows="5" aria-describedby="manual-ocr-help" placeholder="Registration: ABC 123 GP&#10;VIN: ...&#10;Make: Toyota&#10;Model: Hilux&#10;Expiry: 2027-06-30"></textarea>
             <app-ui-button size="sm" variant="secondary" [busy]="busy" (pressed)="applyManualOcrText()">Convert text to form</app-ui-button>
           </div>
