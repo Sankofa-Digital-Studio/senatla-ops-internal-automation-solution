@@ -202,8 +202,8 @@ export type MacroStatType = 'revenue' | 'costs' | 'profit' | 'cashflow';
           </div>
         </article>
 
-        <!-- Fleet Telemetry & Utilization -->
-        <article class="rounded-xl border border-gray-800 bg-gray-900 p-5 shadow-sm space-y-4">
+        <!-- Fleet Telemetry & Utilization: primary KPIs follow the dashboard scan path. -->
+        <article data-testid="director-fleet-telemetry" class="rounded-xl border border-gray-800 bg-gray-900 p-5 shadow-sm space-y-4">
           <div class="border-b border-gray-800 pb-3">
             <h3 class="text-sm font-bold uppercase tracking-wider text-white">
               Fleet &amp; Heavy Machinery Telemetry
@@ -211,29 +211,32 @@ export type MacroStatType = 'revenue' | 'costs' | 'profit' | 'cashflow';
             <p class="text-xs text-gray-400">Excavators, wheel loaders, drill rigs, and mobile cranes.</p>
           </div>
 
-          <div class="grid grid-cols-2 gap-3 text-xs">
-            <div class="rounded-lg bg-gray-950 p-3">
+          <div data-testid="director-fleet-primary-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div data-testid="fleet-utilization-metric" class="min-h-[96px] rounded-lg border border-yellow-500/20 bg-gray-950 p-3 flex flex-col justify-between">
               <p class="text-[10px] text-gray-500 uppercase tracking-wider">Fleet Utilization</p>
               <p class="font-mono text-lg font-bold text-yellow-400 mt-1">
                 {{ fleet().utilizationPercent }}%
               </p>
-              <p class="text-[11px] text-gray-400 mt-0.5">{{ fleet().activeInField }} of {{ fleet().totalHeavyMachinery }} deployed</p>
+              <p class="text-[11px] text-gray-400 mt-1">{{ fleet().activeInField }} of {{ fleet().totalHeavyMachinery }} deployed</p>
             </div>
-            <div class="rounded-lg bg-gray-950 p-3">
+            <div data-testid="fleet-maintenance-metric" class="min-h-[96px] rounded-lg border border-amber-500/20 bg-gray-950 p-3 flex flex-col justify-between">
               <p class="text-[10px] text-gray-500 uppercase tracking-wider">Under Maintenance</p>
               <p class="font-mono text-lg font-bold text-amber-400 mt-1">
                 {{ fleet().underMaintenance }} Units
               </p>
-              <p class="text-[11px] text-gray-400 mt-0.5">Spares &amp; servicing active</p>
+              <p class="text-[11px] text-gray-400 mt-1">Spares &amp; servicing active</p>
             </div>
-            <div class="rounded-lg bg-gray-950 p-3">
+          </div>
+
+          <div data-testid="director-fleet-secondary-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-gray-800 pt-3 text-xs">
+            <div data-testid="fleet-fuel-burn-metric" class="min-h-[84px] rounded-lg bg-gray-950 p-3">
               <p class="text-[10px] text-gray-500 uppercase tracking-wider">Aggregate Fuel Burn Rate</p>
               <p class="font-mono text-lg font-bold text-white mt-1">
                 R {{ fleet().hourlyFuelBurnRateTotal }}/hr
               </p>
               <p class="text-[11px] text-gray-400 mt-0.5">Operating hours logged</p>
             </div>
-            <div class="rounded-lg bg-gray-950 p-3">
+            <div data-testid="fleet-fuel-expense-metric" class="min-h-[84px] rounded-lg bg-gray-950 p-3">
               <p class="text-[10px] text-gray-500 uppercase tracking-wider">Total Fuel Expense</p>
               <p class="font-mono text-lg font-bold text-white mt-1">
                 R {{ fleet().fuelCostToDate | number:'1.2-2' }}

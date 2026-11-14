@@ -37,8 +37,25 @@ describe('OverallMacroDashboardComponent', () => {
   it('should render cross-domain bottlenecks and fleet telemetry', () => {
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Fleet Utilization');
+    expect(text).toContain('Under Maintenance');
+    expect(text).toContain('Aggregate Fuel Burn Rate');
+    expect(text).toContain('Total Fuel Expense');
     expect(text).toContain('Cross-Domain Operational Bottlenecks & Risk Radar');
     expect(text).toContain('Workshop 2 Axle Ingot Supplier Backlog');
+  });
+
+  it('keeps primary fleet KPIs ahead of secondary fuel telemetry', () => {
+    const primary = fixture.nativeElement.querySelector('[data-testid="director-fleet-primary-grid"]');
+    const secondary = fixture.nativeElement.querySelector('[data-testid="director-fleet-secondary-grid"]');
+    const primaryText = primary.textContent as string;
+    const secondaryText = secondary.textContent as string;
+
+    expect(primaryText.indexOf('Fleet Utilization')).toBeGreaterThanOrEqual(0);
+    expect(primaryText.indexOf('Under Maintenance')).toBeGreaterThanOrEqual(0);
+    expect(secondaryText.indexOf('Aggregate Fuel Burn Rate')).toBeGreaterThanOrEqual(0);
+    expect(secondaryText.indexOf('Total Fuel Expense')).toBeGreaterThanOrEqual(0);
+    expect(primaryText.indexOf('Aggregate Fuel Burn Rate')).toBe(-1);
+    expect(primaryText.indexOf('Total Fuel Expense')).toBe(-1);
   });
 
   it('should open macro stat drilldown modal when clicking stat cards', () => {
