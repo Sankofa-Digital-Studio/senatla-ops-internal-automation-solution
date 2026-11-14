@@ -9,6 +9,8 @@ describe('public landing navigation', () => {
 
     cy.get('a[href="#capabilities"]').first().click();
     cy.get('#capabilities').should('be.visible');
+    cy.get('a[href="#access"]').first().click();
+    cy.get('#access').should('be.visible').and('contain.text', 'Site Manager').and('contain.text', 'Administrator').and('contain.text', 'Director');
     cy.get('a[href="#assurance"]').first().click();
     cy.get('#assurance').should('be.visible');
   });

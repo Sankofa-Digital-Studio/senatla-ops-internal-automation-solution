@@ -29,6 +29,7 @@
 
       <nav class="desktop-menu" aria-label="Primary navigation">
         <a href="#capabilities" (click)="scrollTo('capabilities', $event)">Capabilities</a>
+        <a href="#access" (click)="scrollTo('access', $event)">RBAC</a>
         <a href="#assurance" (click)="scrollTo('assurance', $event)">Security</a>
         <a href="/api/download-apk" download target="_blank" rel="noopener noreferrer" (click)="trackApkDownload()">Android APK</a>
         <button type="button" *ngIf="isLocalMode()" (click)="showTestCredentials()">Test users</button>
@@ -46,6 +47,7 @@
         <summary role="button" aria-label="Open navigation menu" aria-controls="mobile-navigation"><span></span><span></span><span></span></summary>
         <nav id="mobile-navigation" aria-label="Mobile navigation">
           <a href="#capabilities" (click)="scrollTo('capabilities', $event)">Capabilities</a>
+          <a href="#access" (click)="scrollTo('access', $event)">RBAC</a>
           <a href="#assurance" (click)="scrollTo('assurance', $event)">Security</a>
           <a href="/api/download-apk" download target="_blank" rel="noopener noreferrer" (click)="trackApkDownload()">Android APK</a>
           <button type="button" *ngIf="isLocalMode()" (click)="showTestCredentials()">Test users</button>
@@ -139,6 +141,41 @@
         <article class="feature-card"><h3>Focused daily workflows</h3><p>Give each person a smaller, role-appropriate workspace without losing the operational context that leaders need.</p></article>
         <article class="feature-card"><h3>Approval visibility</h3><p>Keep vendor invoices, onboarding, and operational requests visible until a named person makes the next decision.</p></article>
       </div>
+    </section>
+
+    <section id="access" class="landing-section landing-section--access" tabindex="-1" aria-labelledby="access-heading">
+      <div class="landing-section__heading">
+        <p class="section-kicker">Role-based access</p>
+        <h2 id="access-heading">The right view for every level of responsibility.</h2>
+        <p class="section-intro">Senatla Ops keeps day-to-day action, operational coordination, and executive oversight connected — while giving each role a clear lane.</p>
+      </div>
+      <div class="role-grid">
+        <article class="role-card role-card--site">
+          <div class="role-card__topline"><span class="role-card__index">01</span><span class="role-card__scope">Field operations</span></div>
+          <h3>Site Manager</h3>
+          <p class="role-card__summary">Keep one authorised site ready, safe, staffed, and evidenced for the day.</p>
+          <div class="role-card__divider"></div>
+          <p class="role-card__label">Expected to</p>
+          <p class="role-card__expectation">Confirm readiness, lead the safety rhythm, record attendance and assets, then close the shift with reliable evidence.</p>
+        </article>
+        <article class="role-card role-card--admin">
+          <div class="role-card__topline"><span class="role-card__index">02</span><span class="role-card__scope">Business control</span></div>
+          <h3>Administrator</h3>
+          <p class="role-card__summary">Maintain the people, sites, vendors, and policies that make work possible.</p>
+          <div class="role-card__divider"></div>
+          <p class="role-card__label">Expected to</p>
+          <p class="role-card__expectation">Keep records current, resolve blocked criteria, manage access, and make sure operational requests have an accountable owner.</p>
+        </article>
+        <article class="role-card role-card--director">
+          <div class="role-card__topline"><span class="role-card__index">03</span><span class="role-card__scope">Executive oversight</span></div>
+          <h3>Director</h3>
+          <p class="role-card__summary">See the operating picture across sites and decide what needs attention next.</p>
+          <div class="role-card__divider"></div>
+          <p class="role-card__label">Expected to</p>
+          <p class="role-card__expectation">Review verified evidence, costs, risks, and approval queues — then sign off, redirect, or request revisions with context.</p>
+        </article>
+      </div>
+      <p class="role-note"><span aria-hidden="true">↳</span> Inside the workspace, each role gets its own guided workflow. This overview explains the responsibility boundary before sign-in; it is not a replacement for the role-specific workspace.</p>
     </section>
 
     <section id="assurance" class="landing-section landing-section--assurance" tabindex="-1" aria-labelledby="assurance-heading">

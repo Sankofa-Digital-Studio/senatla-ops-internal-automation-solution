@@ -40,6 +40,19 @@ describe('LandingComponent', () => {
     expect(page.querySelector('#assurance')).not.toBeNull();
   });
 
+  it('presents the three public role responsibility boundaries without exposing workspace steps', () => {
+    const page = fixture.nativeElement as HTMLElement;
+    const access = page.querySelector('#access') as HTMLElement;
+    expect(page.querySelector('a[href="#access"]')).not.toBeNull();
+    expect(access).not.toBeNull();
+    expect(access.querySelectorAll('.role-card')).toHaveSize(3);
+    expect(access.textContent).toContain('Site Manager');
+    expect(access.textContent).toContain('Administrator');
+    expect(access.textContent).toContain('Director');
+    expect(access.textContent).toContain('not a replacement for the role-specific workspace');
+    expect(access.querySelector('button, input, select, textarea')).toBeNull();
+  });
+
   it('links both navigation menus to the stable current-dev APK resolver', () => {
     const page = fixture.nativeElement as HTMLElement;
     const href = '/api/download-apk';
