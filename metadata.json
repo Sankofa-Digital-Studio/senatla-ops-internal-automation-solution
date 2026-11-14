@@ -1,6 +1,6 @@
 {
   "name": "Senatla Ops",
-  "version": "0.5.6",
+  "version": "0.5.8",
   "description": "Internal operations management and automation platform connecting field activity, workforce controls, asset evidence, proposal costing, and accountable approvals.",
   "homepage": "https://senatla-ops.vercel.app",
   "documentation": "https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/",
