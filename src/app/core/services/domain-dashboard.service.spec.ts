@@ -6,6 +6,7 @@ describe('DomainDashboardService', () => {
 
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
     TestBed.configureTestingModule({
       providers: [DomainDashboardService],
     });
@@ -14,6 +15,7 @@ describe('DomainDashboardService', () => {
 
   afterEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
   });
 
   it('should be created and default to overall_macro domain', () => {

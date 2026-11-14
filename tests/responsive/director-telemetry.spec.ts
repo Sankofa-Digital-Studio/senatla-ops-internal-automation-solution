@@ -42,5 +42,8 @@ test('Director fleet telemetry keeps primary and secondary scan hierarchy', asyn
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
-  await expect(card).toHaveScreenshot(`director-telemetry-${testInfo.project.name}.png`, { animations: 'disabled' });
+  await card.screenshot({
+    path: testInfo.outputPath(`director-telemetry-${testInfo.project.name}.png`),
+    animations: 'disabled',
+  });
 });
