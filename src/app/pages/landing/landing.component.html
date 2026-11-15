@@ -39,7 +39,7 @@
             <polyline points="10 17 15 12 10 7"></polyline>
             <line x1="15" y1="12" x2="3" y2="12"></line>
           </svg>
-          <span class="sr-only">Sign In</span>
+          <span class="nav-login-text">Sign in</span>
         </a>
       </nav>
 
@@ -124,14 +124,14 @@
     </main>
 
       <!-- Downward scroll indicator with bounce and afterglow -->
-      <div class="scroll-down-wrap" (click)="scrollTo('capabilities', $event)" role="button" tabindex="0" aria-label="Scroll to discover capabilities">
+      <button type="button" class="scroll-down-wrap" (click)="scrollTo('capabilities', $event)" aria-label="Scroll to discover capabilities">
         <span class="scroll-down-text">Explore platform</span>
         <div class="scroll-down-chevron">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </div>
-      </div>
+      </button>
     </div>
 
     <section id="capabilities" class="landing-section" tabindex="-1" aria-labelledby="capabilities-heading">

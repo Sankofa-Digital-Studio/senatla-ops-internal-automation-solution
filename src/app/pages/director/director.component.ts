@@ -8,6 +8,7 @@ import { CostAttributionService } from 'src/app/core/services/cost-attribution.s
 import { AccessibleDialogDirective } from 'src/app/core/accessibility/accessible-dialog.directive';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { MultiDomainDashboardComponent } from '../dashboards/multi-domain-dashboard.component';
+import { WorkspaceActionStripComponent } from '../../components/workspace-action-strip.component';
 import { ApprovalRequest, ExecutiveOperationalReport, IntegrationOutboxEvent, VendorInvoiceRecord } from 'src/app/core/models/app.models';
 
 export type DirectorViewTab = 'approvals' | 'domains' | 'costs' | 'workforce' | 'all';
@@ -41,7 +42,7 @@ interface DirectorActionState {
   templateUrl: './director.component.html',
   styleUrls: ['./director.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, DecimalPipe, DatePipe, RouterLink, AccessibleDialogDirective, MultiDomainDashboardComponent],
+  imports: [CommonModule, FormsModule, DecimalPipe, DatePipe, RouterLink, AccessibleDialogDirective, MultiDomainDashboardComponent, WorkspaceActionStripComponent],
 })
 export class DirectorComponent {
   readonly auth = inject(AuthService);

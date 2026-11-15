@@ -126,6 +126,16 @@
       </div>
     </section>
 
+    <app-workspace-action-strip
+      class="block workspace-z-summary"
+      title="Decision queue is the next safe action"
+      [detail]="decisionSummary().total ? 'Review source evidence before approving, rejecting, or rerouting the oldest open item.' : 'No decision items are waiting. Use the domain views to inspect operating freshness.'"
+      [stateLabel]="decisionSummary().total + ' open item(s)'"
+      actionLabel="Open decision queue"
+      [tone]="decisionSummary().total ? 'warning' : 'success'"
+      (action)="setTab('approvals')">
+    </app-workspace-action-strip>
+
     <!-- Multi-Domain Operational Dashboards -->
     <section [class.hidden]="activeTab() !== 'all' && activeTab() !== 'domains'" data-tour="director-multi-domain-dashboards" class="space-y-4">
       <div class="flex items-center justify-between border-b border-gray-800 pb-3">

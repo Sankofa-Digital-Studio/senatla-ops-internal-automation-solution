@@ -126,18 +126,17 @@ describe('LandingComponent', () => {
     expect(page.textContent).toContain('Senatla means a rock');
   });
 
-  it('renders sign-in as an accessible icon-only button and nests chevron within hero fold', () => {
+  it('renders an explicit sign-in link and nests the keyboard-accessible chevron within hero fold', () => {
     const page = fixture.nativeElement as HTMLElement;
     const navLogin = page.querySelector('.desktop-menu .nav-login') as HTMLElement;
     expect(navLogin).not.toBeNull();
     expect(navLogin.getAttribute('aria-label')).toBe('Sign In');
     expect(navLogin.querySelector('svg.nav-login-icon')).not.toBeNull();
-    expect(navLogin.querySelector('.sr-only')?.textContent).toContain('Sign In');
-    expect(navLogin.querySelector('.nav-login-text')).toBeNull();
+    expect(navLogin.querySelector('.nav-login-text')?.textContent).toContain('Sign in');
 
     const heroFold = page.querySelector('.hero-fold') as HTMLElement;
     expect(heroFold).not.toBeNull();
-    expect(heroFold.querySelector('.scroll-down-wrap')).not.toBeNull();
+    expect(heroFold.querySelector('button.scroll-down-wrap')).not.toBeNull();
   });
 
   it('offers login without exposing public registration', () => {

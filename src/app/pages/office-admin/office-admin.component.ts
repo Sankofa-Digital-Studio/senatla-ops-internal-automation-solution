@@ -7,6 +7,7 @@ import { AdminIssuesComponent } from './sub-features/admin-issues/admin-issues.c
 import { AdminVendorsComponent } from './sub-features/admin-vendors/admin-vendors.component';
 import { AdminGovernanceComponent } from './sub-features/admin-governance/admin-governance.component';
 import { MultiDomainDashboardComponent } from '../dashboards/multi-domain-dashboard.component';
+import { WorkspaceActionStripComponent } from '../../components/workspace-action-strip.component';
 
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
@@ -57,7 +58,7 @@ const COST_PERIOD_END_EXCLUSIVE = new Date(new Date().getFullYear(), new Date().
   templateUrl: './office-admin.component.html',
   styleUrls: ['./office-admin.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe, DecimalPipe, RouterLink, UiButtonComponent, UiFeedbackComponent, UiTabNavComponent, AdminOverviewComponent, AdminUsersComponent, AdminWorkforceComponent, AdminTimesheetsComponent, AdminSitesComponent, AdminIssuesComponent, AdminVendorsComponent, AdminGovernanceComponent, MultiDomainDashboardComponent],
+  imports: [CommonModule, FormsModule, DatePipe, DecimalPipe, RouterLink, UiButtonComponent, UiFeedbackComponent, UiTabNavComponent, AdminOverviewComponent, AdminUsersComponent, AdminWorkforceComponent, AdminTimesheetsComponent, AdminSitesComponent, AdminIssuesComponent, AdminVendorsComponent, AdminGovernanceComponent, MultiDomainDashboardComponent, WorkspaceActionStripComponent],
 })
 export class OfficeAdminComponent {
   readonly service = inject(OfficeAdminService);

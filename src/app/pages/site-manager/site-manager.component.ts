@@ -17,6 +17,7 @@ import {
   ErpStatCardComponent,
   ErpStatusBadgeComponent,
 } from '../../components/erp';
+import { WorkspaceActionStripComponent } from '../../components/workspace-action-strip.component';
 
 export interface BreakdownRecord {
   id: string;
@@ -36,6 +37,31 @@ export interface GateDwellRecord {
   verifiedAt: string;
 }
 
+type WorkshopWorkStatus = 'queued' | 'ready' | 'in_progress' | 'quality_check' | 'complete' | 'blocked';
+type BlockerSeverity = 'low' | 'medium' | 'high' | 'critical';
+
+interface WorkshopWorkItem {
+  id: string;
+  title: string;
+  workstation: string;
+  assignedEmployeeId: string;
+  dueDate: string;
+  status: WorkshopWorkStatus;
+  blockerId?: string;
+}
+
+interface OperationalBlocker {
+  id: string;
+  category: 'safety' | 'material' | 'drawing' | 'equipment' | 'labour' | 'quality' | 'client' | 'logistics';
+  severity: BlockerSeverity;
+  summary: string;
+  owner: string;
+  dueAt: string;
+  status: 'open' | 'escalated' | 'resolved';
+  createdAt: string;
+  workItemId?: string;
+}
+
 @Component({
   selector: 'app-site-manager',
   templateUrl: './site-manager.component.html',
@@ -50,6 +76,7 @@ export interface GateDwellRecord {
     ErpWorkflowStepperComponent,
     ErpStatCardComponent,
     ErpStatusBadgeComponent,
+    WorkspaceActionStripComponent,
   ],
 })
 export class SiteManagerComponent implements OnDestroy {
@@ -121,6 +148,26 @@ export class SiteManagerComponent implements OnDestroy {
   readonly recentAttendanceAudit = computed(() => this.service.attendanceAuditTrail().slice(0, 6));
   readonly deliveryBusy = signal(false);
   readonly siteAssets = computed(() => this.readiness.assetRows());
+
+  // Phase 1 Manager Control Loop: a small operational overlay shared by site and workshop managers.
+  readonly managerMode = signal<'site' | 'workshop'>('site');
+  shiftObjective = '';
+  shiftTopRisk = '';
+  shiftSupport = '';
+  handoverNote = '';
+  workshopTitle = '';
+  workshopWorkstation = '';
+  workshopAssignedEmployeeId = '';
+  workshopDueDate = '';
+  workshopWorkItems: WorkshopWorkItem[] = [];
+  blockerCategory: OperationalBlocker['category'] = 'equipment';
+  blockerSeverity: BlockerSeverity = 'medium';
+  blockerSummary = '';
+  blockerOwner = '';
+  blockerDueAt = '';
+  operationalBlockers: OperationalBlocker[] = [];
+  workstationReadiness = { machine: false, tools: false, materials: false, operator: false, instruction: false, inspection: false };
+  workshopActionWarning = '';
 
   // Field Operations: Fuel telemetry (Client feedback ISSUE-11)
   fuelAssetId = '';
@@ -215,6 +262,7 @@ export class SiteManagerComponent implements OnDestroy {
     if (selectedSite) {
       this.service.setCurrentSite(selectedSite.id, selectedSite.name);
       this.localSiteName = selectedSite.name;
+      this.loadPersistedManagerControl();
     }
   }
 
@@ -381,6 +429,35 @@ export class SiteManagerComponent implements OnDestroy {
         location: this.parseCoordinateLabel(this.siteLocationLabel) || undefined,
       });
     }
+  }
+
+  private loadPersistedManagerControl(): void {
+    try {
+      const raw = localStorage.getItem(this.managerControlStorageKey());
+      const saved = raw ? JSON.parse(raw) : null;
+      if (!saved) {
+        this.shiftObjective = ''; this.shiftTopRisk = ''; this.shiftSupport = ''; this.handoverNote = '';
+        this.workshopWorkItems = []; this.operationalBlockers = [];
+        this.workstationReadiness = { machine: false, tools: false, materials: false, operator: false, instruction: false, inspection: false };
+        return;
+      }
+      this.shiftObjective = saved.shiftObjective || ''; this.shiftTopRisk = saved.shiftTopRisk || ''; this.shiftSupport = saved.shiftSupport || ''; this.handoverNote = saved.handoverNote || '';
+      this.managerMode.set(saved.managerMode === 'workshop' ? 'workshop' : 'site');
+      this.workshopWorkItems = Array.isArray(saved.workshopWorkItems) ? saved.workshopWorkItems : [];
+      this.operationalBlockers = Array.isArray(saved.operationalBlockers) ? saved.operationalBlockers : [];
+      this.workstationReadiness = saved.workstationReadiness || this.workstationReadiness;
+    } catch { /* Storage unavailable or invalid JSON */ }
+  }
+
+  private savePersistedManagerControl(): void {
+    try {
+      localStorage.setItem(this.managerControlStorageKey(), JSON.stringify({ siteName: this.localSiteName, workDate: this.selectedDateStr, managerMode: this.managerMode(), shiftObjective: this.shiftObjective, shiftTopRisk: this.shiftTopRisk, shiftSupport: this.shiftSupport, handoverNote: this.handoverNote, workshopWorkItems: this.workshopWorkItems, operationalBlockers: this.operationalBlockers, workstationReadiness: this.workstationReadiness }));
+    } catch { /* Storage quota or error */ }
+  }
+
+  private managerControlStorageKey(): string {
+    const siteId = this.readiness.selectedSiteId() || this.localSiteName || 'unassigned-site';
+    return `senatla_site_manager_phase1:${encodeURIComponent(siteId)}:${this.selectedDateStr}`;
   }
 
   private loadPersistedFieldOperations(): void {
@@ -600,7 +677,59 @@ export class SiteManagerComponent implements OnDestroy {
     const newDate = new Date(this.selectedDate);
     newDate.setDate(this.selectedDate.getDate() + days);
     this.selectedDate = newDate;
+    this.loadPersistedManagerControl();
   }
+
+  managerStatusLabel(): string {
+    const open = this.openBlockers().length;
+    if (!this.shiftObjective.trim()) return 'Plan required';
+    if (open) return `${open} blocker${open === 1 ? '' : 's'} open`;
+    if (this.managerMode() === 'workshop' && this.workshopWorkItems.some((item) => item.status === 'blocked')) return 'Workshop blocked';
+    return 'Operationally clear';
+  }
+
+  openBlockers(): OperationalBlocker[] { return this.operationalBlockers.filter((blocker) => blocker.status !== 'resolved'); }
+
+  isBlockerOverdue(blocker: OperationalBlocker): boolean { return blocker.status !== 'resolved' && blocker.dueAt < this.selectedDateStr; }
+
+  readinessChecksComplete(): number { return Object.values(this.workstationReadiness).filter(Boolean).length; }
+
+  staffingWarning(item: WorkshopWorkItem): string {
+    if (!item.assignedEmployeeId) return 'No crew member assigned';
+    const employee = this.service.employees().find((entry) => entry.id === item.assignedEmployeeId);
+    if (!employee) return 'Assigned person not found';
+    return this.getLog(employee).status === 'present' ? '' : `${employee.firstName} ${employee.surname} is not marked present`;
+  }
+
+  addWorkshopWorkItem(): void {
+    if (!this.workshopTitle.trim() || !this.workshopWorkstation.trim()) return;
+    this.workshopWorkItems = [{ id: crypto.randomUUID(), title: this.workshopTitle.trim(), workstation: this.workshopWorkstation.trim(), assignedEmployeeId: this.workshopAssignedEmployeeId, dueDate: this.workshopDueDate || this.selectedDateStr, status: 'queued' }, ...this.workshopWorkItems];
+    this.workshopTitle = ''; this.workshopWorkstation = ''; this.workshopAssignedEmployeeId = ''; this.workshopDueDate = '';
+    this.savePersistedManagerControl();
+  }
+
+  advanceWorkshopWorkItem(item: WorkshopWorkItem): void {
+    const sequence: WorkshopWorkStatus[] = ['queued', 'ready', 'in_progress', 'quality_check', 'complete'];
+    const next = sequence[Math.min(sequence.indexOf(item.status) + 1, sequence.length - 1)];
+    if (item.status === 'blocked') return;
+    if (next === 'in_progress' && (this.readinessChecksComplete() < 6 || this.staffingWarning(item))) {
+      this.workshopActionWarning = 'Complete all six workstation checks and assign a crew member marked present before starting work.';
+      return;
+    }
+    this.workshopActionWarning = '';
+    item.status = next;
+    this.savePersistedManagerControl();
+  }
+
+  addOperationalBlocker(): void {
+    if (!this.blockerSummary.trim() || !this.blockerOwner.trim()) return;
+    this.operationalBlockers = [{ id: crypto.randomUUID(), category: this.blockerCategory, severity: this.blockerSeverity, summary: this.blockerSummary.trim(), owner: this.blockerOwner.trim(), dueAt: this.blockerDueAt || this.selectedDateStr, status: 'open', createdAt: new Date(this.service.currentTime()).toISOString() }, ...this.operationalBlockers];
+    this.blockerSummary = ''; this.blockerOwner = ''; this.blockerDueAt = '';
+    this.savePersistedManagerControl();
+  }
+
+  resolveOperationalBlocker(blocker: OperationalBlocker): void { blocker.status = 'resolved'; this.savePersistedManagerControl(); }
+  saveManagerControl(): void { this.savePersistedManagerControl(); }
 
   onAttendanceStatusChange(change: AttendanceStatusChange) { this.setAttendanceStatus(change.employee, change.status); }
   onAttendanceReasonChange(change: AttendanceReasonChange) { this.service.updateReason(change.employeeId, this.selectedDateStr, change.reason); }
