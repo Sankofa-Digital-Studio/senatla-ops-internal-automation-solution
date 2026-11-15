@@ -4,6 +4,28 @@ All notable Senatla Ops changes are recorded here. Versions follow semantic vers
 
 ## [Unreleased]
 
+## [0.5.8] - 2026-11-14
+
+Device-first OCR capture and browser fallback release.
+
+### Changed
+
+- Mobile evidence inputs request the rear camera where supported.
+- Android and iPhone users are directed to native camera/document scanning for OCR.
+- Mobile-browser users receive an explicit device scan-text/OCR-app fallback when browser OCR is unavailable.
+- Manual OCR review guidance now warns users not to paste secrets or unrelated personal information.
+
+### Verification
+
+- `npm run typecheck` passed on the preview release candidate.
+- `npm run test:ocr-device-uat-contract` passed: 6/6 tests.
+- Existing private evidence storage, content hashing, OCR provenance, and human-review behavior remain unchanged.
+
+### Promotion
+
+- Preview release candidate commit: `0ffe4ac`.
+- Promote to `main` only after the release PR and hosted/native gates pass.
+
 ## [0.5.7] - 2026-11-13
 
 Operational dashboard usability, profile controls, session data handling, and dependency maintenance release.

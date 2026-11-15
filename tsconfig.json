@@ -17,6 +17,7 @@
     "experimentalDecorators": true,
     "ignoreDeprecations": "6.0",
     "moduleResolution": "bundler",
+    "types": ["node"],
     "importHelpers": true,
     "target": "es2022",
     "module": "esnext",
