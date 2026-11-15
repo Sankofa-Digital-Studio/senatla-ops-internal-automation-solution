@@ -19,6 +19,16 @@
       <app-ui-feedback class="mt-3" [message]="resetLink() ? 'One-time reset link: ' + resetLink() : ''" tone="warning"></app-ui-feedback>
     </header>
 
+    <app-workspace-action-strip
+      class="block workspace-f-shell"
+      title="Resolve the highest-risk exception first"
+      [detail]="service.attentionItems().length ? 'Start with the attention count, then use the linked register to correct and audit the source record.' : 'The control centre has no active attention items.'"
+      [stateLabel]="service.attentionItems().length + ' attention item(s)'"
+      actionLabel="Open overview"
+      [tone]="service.attentionItems().length ? 'warning' : 'success'"
+      (action)="selectTab('overview')">
+    </app-workspace-action-strip>
+
     <main class="admin-main flex-1 overflow-y-auto bg-gray-950 px-4 py-4">
       @if (activeTab() === 'overview') {
         @defer (on idle) {

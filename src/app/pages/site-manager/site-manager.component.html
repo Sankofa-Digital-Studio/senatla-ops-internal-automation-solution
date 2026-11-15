@@ -108,6 +108,36 @@
       </app-erp-workflow-stepper>
     </div>
 
+    <app-workspace-action-strip
+      class="block workspace-f-shell"
+      title="Finish the current shift safely"
+      [detail]="service.timeStatus() === 'blocked' ? 'The shift is locked. Review the deadline state and contact an administrator if the record needs recovery.' : service.unsyncedChanges() ? 'Attendance or field changes are waiting for signed delivery and audit confirmation.' : 'Attendance is synced. Review readiness or open the next workflow step.'"
+      [stateLabel]="service.timeStatus() === 'blocked' ? 'Sync locked' : service.unsyncedChanges() ? 'Waiting to sync' : 'Synced to Senatla Ops'"
+      [actionLabel]="service.timeStatus() === 'blocked' ? 'Review sign-off' : service.unsyncedChanges() ? 'Open sign-off' : 'Review readiness'"
+      [tone]="service.timeStatus() === 'blocked' ? 'danger' : service.unsyncedChanges() ? 'warning' : 'success'"
+      (action)="selectTab(service.timeStatus() === 'blocked' || service.unsyncedChanges() ? 'signoff' : 'setup')">
+    </app-workspace-action-strip>
+
+    <!-- Phase 1 Manager Control Centre -->
+    <section class="mt-3 rounded-xl border border-indigo-800/60 bg-indigo-950/30 p-3" aria-labelledby="manager-control-heading">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300">Manager Control Loop</p>
+          <h2 id="manager-control-heading" class="text-sm font-bold text-white">{{ managerStatusLabel() }}</h2>
+        </div>
+        <div class="flex gap-1 rounded-lg border border-indigo-800 bg-gray-950 p-1" role="group" aria-label="Manager mode">
+          <button type="button" (click)="managerMode.set('site'); saveManagerControl()" class="rounded px-2 py-1 text-[10px] font-bold uppercase" [class.bg-indigo-400]="managerMode() === 'site'" [class.text-black]="managerMode() === 'site'">Site</button>
+          <button type="button" (click)="managerMode.set('workshop'); saveManagerControl()" class="rounded px-2 py-1 text-[10px] font-bold uppercase" [class.bg-indigo-400]="managerMode() === 'workshop'" [class.text-black]="managerMode() === 'workshop'">Workshop</button>
+        </div>
+      </div>
+      <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <button type="button" (click)="selectTab('attendance')" class="rounded-lg border border-gray-800 bg-gray-950 p-2 text-left"><span class="block text-[10px] uppercase text-gray-500">Crew present</span><strong class="text-lg text-emerald-300">{{ registerSummary().present }}/{{ registerSummary().total }}</strong></button>
+        <button type="button" (click)="selectTab('operations')" class="rounded-lg border border-gray-800 bg-gray-950 p-2 text-left"><span class="block text-[10px] uppercase text-gray-500">Open blockers</span><strong class="text-lg text-amber-300">{{ openBlockers().length }}</strong></button>
+        <button type="button" (click)="selectTab('operations')" class="rounded-lg border border-gray-800 bg-gray-950 p-2 text-left"><span class="block text-[10px] uppercase text-gray-500">Work packages</span><strong class="text-lg text-sky-300">{{ workshopWorkItems.length }}</strong></button>
+        <button type="button" (click)="selectTab('signoff')" class="rounded-lg border border-gray-800 bg-gray-950 p-2 text-left"><span class="block text-[10px] uppercase text-gray-500">Next action</span><strong class="text-xs text-white">{{ !shiftObjective.trim() ? 'Set shift plan' : openBlockers().length ? 'Review blockers' : 'Continue workflow' }}</strong></button>
+      </div>
+    </section>
+
     <!-- Mobile Quick-Jump Tab Bar -->
     <nav class="mt-3 flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none" aria-label="Site manager sections">
       <button
@@ -278,6 +308,32 @@
         </button>
       </div>
     </div>
+
+    <!-- Phase 1: Shift intention and workstation readiness -->
+    <section class="rounded-xl border border-indigo-800/60 bg-indigo-950/20 p-4 space-y-3" aria-labelledby="shift-intention-heading">
+      <div class="flex items-center justify-between gap-3">
+        <div><p class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300">Manager plan</p><h3 id="shift-intention-heading" class="text-base font-bold text-white">Set the shift intention</h3></div>
+        <span class="text-[10px] font-bold uppercase text-indigo-300">Saved per site and date</span>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-3">
+        <label class="text-xs text-gray-300 sm:col-span-3">Primary outcome<textarea [(ngModel)]="shiftObjective" (ngModelChange)="saveManagerControl()" rows="2" class="mt-1 w-full rounded-lg border border-indigo-800 bg-gray-950 px-3 py-2 text-sm text-white" placeholder="What must be completed today?"></textarea></label>
+        <label class="text-xs text-gray-300">Top risk<input [(ngModel)]="shiftTopRisk" (ngModelChange)="saveManagerControl()" class="mt-1 w-full rounded-lg border border-indigo-800 bg-gray-950 px-3 py-2 text-sm text-white" placeholder="What could stop us?"></label>
+        <label class="text-xs text-gray-300 sm:col-span-2">Support required<input [(ngModel)]="shiftSupport" (ngModelChange)="saveManagerControl()" class="mt-1 w-full rounded-lg border border-indigo-800 bg-gray-950 px-3 py-2 text-sm text-white" placeholder="Who or what decision is needed?"></label>
+      </div>
+    </section>
+
+    <section class="rounded-xl border border-cyan-800/60 bg-cyan-950/20 p-4 space-y-3" aria-labelledby="workstation-readiness-heading">
+      <div class="flex items-center justify-between"><div><p class="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300">Workshop readiness</p><h3 id="workstation-readiness-heading" class="text-base font-bold text-white">Before engineering work starts</h3></div><span class="text-xs font-mono text-cyan-300">{{ readinessChecksComplete() }}/6 verified</span></div>
+      <div class="grid gap-2 sm:grid-cols-3">
+        <label class="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-950 p-2 text-xs text-gray-200"><input type="checkbox" [(ngModel)]="workstationReadiness.machine" (ngModelChange)="saveManagerControl()" class="h-4 w-4 accent-cyan-400">Machine available</label>
+        <label class="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-950 p-2 text-xs text-gray-200"><input type="checkbox" [(ngModel)]="workstationReadiness.tools" (ngModelChange)="saveManagerControl()" class="h-4 w-4 accent-cyan-400">Tools available</label>
+        <label class="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-950 p-2 text-xs text-gray-200"><input type="checkbox" [(ngModel)]="workstationReadiness.materials" (ngModelChange)="saveManagerControl()" class="h-4 w-4 accent-cyan-400">Materials ready</label>
+        <label class="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-950 p-2 text-xs text-gray-200"><input type="checkbox" [(ngModel)]="workstationReadiness.operator" (ngModelChange)="saveManagerControl()" class="h-4 w-4 accent-cyan-400">Competent operator</label>
+        <label class="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-950 p-2 text-xs text-gray-200"><input type="checkbox" [(ngModel)]="workstationReadiness.instruction" (ngModelChange)="saveManagerControl()" class="h-4 w-4 accent-cyan-400">Current instruction</label>
+        <label class="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-950 p-2 text-xs text-gray-200"><input type="checkbox" [(ngModel)]="workstationReadiness.inspection" (ngModelChange)="saveManagerControl()" class="h-4 w-4 accent-cyan-400">Inspection point</label>
+      </div>
+      <p class="text-[11px] text-gray-400">This is a visible readiness check; it does not override the existing authorised-site or safety locks.</p>
+    </section>
 
     <!-- Safety Protocol Lock Interface -->
     <div *ngIf="!service.safetyTalkCompleted()" class="rounded-2xl border border-orange-500/30 bg-gray-900 p-6 text-center space-y-4">
@@ -491,6 +547,40 @@
       <h2 class="text-xl font-bold">Field Operations, Fleet & Materials</h2>
       <p class="text-xs text-gray-400">Log site trips, machine fuel telemetry, breakdown reports, and scrap dwell gates.</p>
     </div>
+
+    <!-- Phase 1: Workshop execution board and blocker andon -->
+    <section class="rounded-2xl border border-indigo-800/50 bg-indigo-950/20 p-5 space-y-4" aria-labelledby="workshop-board-heading">
+      <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"><div><p class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300">Engineering workshop</p><h3 id="workshop-board-heading" class="text-base font-bold text-white">Execution board</h3></div><span class="text-xs text-indigo-300">{{ workshopWorkItems.length }} work packages</span></div>
+      <div class="grid gap-2 sm:grid-cols-4">
+        <input [(ngModel)]="workshopTitle" placeholder="Work package / job card" class="rounded-lg border border-indigo-800 bg-gray-950 px-3 py-2 text-sm text-white sm:col-span-2">
+        <input [(ngModel)]="workshopWorkstation" placeholder="Workstation / bay" class="rounded-lg border border-indigo-800 bg-gray-950 px-3 py-2 text-sm text-white">
+        <button type="button" (click)="addWorkshopWorkItem()" class="rounded-lg bg-indigo-400 px-3 py-2 text-xs font-black uppercase text-black">Add package</button>
+        <select [(ngModel)]="workshopAssignedEmployeeId" class="rounded-lg border border-indigo-800 bg-gray-950 px-3 py-2 text-sm text-white sm:col-span-2"><option value="">Assign crew member</option><option *ngFor="let employee of service.employees()" [value]="employee.id">{{ employee.firstName }} {{ employee.surname }}</option></select>
+        <input type="date" [(ngModel)]="workshopDueDate" class="rounded-lg border border-indigo-800 bg-gray-950 px-3 py-2 text-sm text-white">
+      </div>
+      <div *ngIf="workshopWorkItems.length" class="grid gap-2 md:grid-cols-2">
+        <article *ngFor="let item of workshopWorkItems" class="rounded-xl border border-gray-800 bg-gray-950 p-3">
+          <div class="flex items-start justify-between gap-2"><div><h4 class="text-sm font-bold text-white">{{ item.title }}</h4><p class="text-[11px] text-gray-400">{{ item.workstation }} · due {{ item.dueDate }}</p></div><span class="rounded px-2 py-1 text-[10px] font-black uppercase" [class.bg-emerald-800]="item.status === 'complete'" [class.bg-amber-800]="item.status === 'blocked'" [class.bg-indigo-800]="item.status !== 'complete' && item.status !== 'blocked'">{{ item.status.replace('_',' ') }}</span></div>
+          <p class="mt-2 text-[11px]" [class.text-rose-300]="!!staffingWarning(item)" [class.text-emerald-300]="!staffingWarning(item)">{{ staffingWarning(item) || 'Crew availability confirmed' }}</p>
+          <button type="button" (click)="advanceWorkshopWorkItem(item)" [disabled]="item.status === 'complete' || item.status === 'blocked'" class="mt-3 rounded-lg border border-indigo-700 px-3 py-1.5 text-[10px] font-bold uppercase text-indigo-200 disabled:opacity-40">Advance status</button>
+        </article>
+      </div>
+      <p *ngIf="workshopActionWarning" class="rounded-lg border border-amber-700 bg-amber-950/60 p-2 text-xs text-amber-200">{{ workshopActionWarning }}</p>
+      <p *ngIf="!workshopWorkItems.length" class="rounded-lg border border-dashed border-gray-700 p-4 text-center text-xs text-gray-500">No workshop work packages recorded for this shift.</p>
+    </section>
+
+    <section class="rounded-2xl border border-amber-800/50 bg-amber-950/20 p-5 space-y-4" aria-labelledby="andon-heading">
+      <div class="flex items-center justify-between"><div><p class="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Escalation</p><h3 id="andon-heading" class="text-base font-bold text-white">Blocker andon</h3></div><span class="text-xs text-amber-300">{{ openBlockers().length }} open</span></div>
+      <div class="grid gap-2 sm:grid-cols-4">
+        <select [(ngModel)]="blockerCategory" class="rounded-lg border border-amber-800 bg-gray-950 px-3 py-2 text-sm text-white"><option value="safety">Safety</option><option value="material">Material</option><option value="drawing">Drawing / design</option><option value="equipment">Equipment</option><option value="labour">Labour</option><option value="quality">Quality</option><option value="client">Client decision</option><option value="logistics">Logistics</option></select>
+        <select [(ngModel)]="blockerSeverity" class="rounded-lg border border-amber-800 bg-gray-950 px-3 py-2 text-sm text-white"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="critical">Critical</option></select>
+        <input [(ngModel)]="blockerOwner" placeholder="Owner" class="rounded-lg border border-amber-800 bg-gray-950 px-3 py-2 text-sm text-white">
+        <button type="button" (click)="addOperationalBlocker()" class="rounded-lg bg-amber-400 px-3 py-2 text-xs font-black uppercase text-black">Raise blocker</button>
+        <input [(ngModel)]="blockerSummary" placeholder="What is stopping work?" class="rounded-lg border border-amber-800 bg-gray-950 px-3 py-2 text-sm text-white sm:col-span-3">
+        <input type="date" [(ngModel)]="blockerDueAt" class="rounded-lg border border-amber-800 bg-gray-950 px-3 py-2 text-sm text-white">
+      </div>
+      <div *ngFor="let blocker of openBlockers()" class="flex flex-col gap-2 rounded-xl border border-amber-900 bg-gray-950 p-3 sm:flex-row sm:items-center sm:justify-between"><div><p class="text-sm font-bold text-white">{{ blocker.summary }}</p><p class="text-[11px] uppercase text-amber-300">{{ blocker.category }} · {{ blocker.severity }} · owner {{ blocker.owner }} · due {{ blocker.dueAt }}</p><span *ngIf="isBlockerOverdue(blocker)" class="mt-1 inline-block text-[10px] font-black uppercase text-rose-300">Overdue — escalate manually</span></div><button type="button" (click)="resolveOperationalBlocker(blocker)" class="rounded-lg border border-emerald-700 px-3 py-1.5 text-[10px] font-bold uppercase text-emerald-300">Resolve</button></div>
+    </section>
 
     <!-- Section A: Log Trip Away From Site -->
     <section class="rounded-2xl border border-sky-800/40 bg-sky-950/20 p-5 space-y-4">
@@ -774,6 +864,12 @@
         <p><strong>Date:</strong> {{ selectedDateStr }}</p>
         <p><strong>Safety Briefing:</strong> {{ service.currentSafetyTalk()?.topic || 'Not Completed' }}</p>
         <p *ngIf="plannedTargets"><strong>Planned Targets:</strong> {{ plannedTargets }}</p>
+      </div>
+
+      <div class="rounded-xl border border-indigo-800/60 bg-indigo-950/20 p-3 space-y-2">
+        <div class="flex items-center justify-between"><h4 class="text-xs font-black uppercase tracking-[0.2em] text-indigo-300">Next-shift handover</h4><span class="text-[10px] text-gray-500">Saved locally for this site and date</span></div>
+        <textarea [(ngModel)]="handoverNote" (ngModelChange)="saveManagerControl()" rows="3" class="w-full rounded-lg border border-indigo-800 bg-gray-950 px-3 py-2 text-sm text-white" placeholder="What remains open, what changed, and what must the next manager know?"></textarea>
+        <div class="grid gap-2 text-xs sm:grid-cols-3"><div><span class="text-gray-500">Open blockers</span><strong class="ml-2 text-amber-300">{{ openBlockers().length }}</strong></div><div><span class="text-gray-500">Work packages</span><strong class="ml-2 text-sky-300">{{ workshopWorkItems.length }}</strong></div><div><span class="text-gray-500">Readiness checks</span><strong class="ml-2 text-cyan-300">{{ readinessChecksComplete() }}/6</strong></div></div>
       </div>
 
       <!-- Sync Sign-Off Action Button -->

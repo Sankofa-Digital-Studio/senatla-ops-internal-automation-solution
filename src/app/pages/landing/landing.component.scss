@@ -71,10 +71,9 @@
 }
 
 .desktop-menu .nav-login {
-  width: 2.75rem;
-  height: 2.75rem;
   min-height: 2.75rem;
-  padding: 0;
+  gap: .5rem;
+  padding: .7rem 1rem;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
@@ -657,6 +656,9 @@
 
 /* Central downward chevron with buzz / bounce & afterglow */
 .scroll-down-wrap {
+  border: 0;
+  background: transparent;
+  color: inherit;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -666,6 +668,11 @@
   cursor: pointer;
   user-select: none;
   transition: opacity 0.2s;
+}
+.scroll-down-wrap:focus-visible {
+  outline: 2px solid #bef264;
+  outline-offset: 4px;
+  border-radius: 1rem;
 }
 .scroll-down-wrap:hover {
   opacity: 1;
