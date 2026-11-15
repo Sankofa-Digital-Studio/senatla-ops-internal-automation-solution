@@ -29,6 +29,12 @@ Current release candidate: [v0.5.8](https://github.com/Sankofa-Digital-Studio/se
 
 Senatla Ops gives each operational record an explainable history: who acted, where the work happened, when it changed, which approval applied, and what source evidence supports it. This operational heartbeat helps field, office, and executive users work from the same facts without turning the system into a generic ERP.
 
+## Current product focus
+
+The current release sharpens the shortest safe path for each role. Public and executive views use a Z-pattern summary to surface the decision, evidence, and next action. Dense operational workspaces use an F-pattern hierarchy so users can scan status, exceptions, and the primary action without opening every module. The shared action strip is implemented across Director, Office Administrator, and Site Manager workspaces with accessible status announcements and mobile-responsive controls.
+
+See the [product teardown](docs/product-teardown-2026-11-15.md), [Site Manager flow plan](docs/site-manager-phase-plan.md), and [documentation portal](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/).
+
 ## Product boundary
 
 - Senatla Trading is the single legal owner in the current release.
@@ -154,7 +160,7 @@ Compilation alone does not prove that browser flows, database policies, native b
 - GitHub Issues authorize work and define acceptance criteria.
 - Integration pull requests target `dev`; reviewed releases promote through `preview` to `main`.
 - The [Senatla Ops project board](https://github.com/orgs/Sankofa-Digital-Studio/projects/2) records the actual delivery state.
-- A merged pull request is not release evidence by itself. Required application, database, responsive, native, deployment, rollback, and UAT checks must be recorded. The current v0.5.4 promotion passed the required application, Supabase, responsive, Android, iOS, and native-required gates.
+- A merged pull request is not release evidence by itself. Required application, database, responsive, native, deployment, rollback, and UAT checks must be recorded. The current v0.5.8 release notes record the device-first OCR verification; hosted, native-platform, and production promotion gates remain authoritative for final approval.
 - Durable documents must reference a commit and the current deployment record, not an old immutable preview URL.
 
 See [Contributing](CONTRIBUTING.md), [Changelog](CHANGELOG.md), and the [GitHub delivery backlog](docs/github-delivery-backlog.md).
@@ -171,6 +177,7 @@ See [Contributing](CONTRIBUTING.md), [Changelog](CHANGELOG.md), and the [GitHub 
 Access the live [Senatla Ops Documentation Portal on GitHub Pages](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/).
 
 ### Release management & guides
+- [v0.5.8 Release Notes](docs/release-notes-0.5.8.md)
 - [v0.5.7 Release Notes](docs/release-notes-0.5.7.md)
 - [v0.5.5 Release Notes](docs/release-notes-0.5.5.md)
 - [v0.5.6 Release Notes](docs/release-notes-0.5.6.md)
@@ -184,6 +191,8 @@ Access the live [Senatla Ops Documentation Portal on GitHub Pages](https://sanko
 - [Production Release Checklist](docs/release-checklist.md)
 
 ### Director & operations workspaces
+- [Product Teardown & UX Priorities](docs/product-teardown-2026-11-15.md) ([HTML](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/product-teardown-2026-11-15.html))
+- [Site Manager Flow Expansion Plan](docs/site-manager-phase-plan.md)
 - [Director Workspace Guidance](docs/director-workspace-guidance.md) ([HTML](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/director-workspace-guidance.html))
 - [Director Proposal Templates & Builder](docs/director-proposal-templates.md) ([HTML](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/director-proposal-templates.html))
 - [Historical Costing & Asset Review](docs/historical-costing-and-asset-review.md) ([HTML](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/historical-costing-and-asset-review.html))

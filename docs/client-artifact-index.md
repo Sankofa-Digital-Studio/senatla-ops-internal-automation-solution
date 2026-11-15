@@ -21,6 +21,14 @@ Every approved deployment record must identify the deployment URL, environment, 
 | `docs/visuals/senatla-ops-ecosystem.png` | Operations ecosystem overview | Client-safe concept |
 | `docs/visuals/senatla-ops-role-experiences.png` | Role-shaped experience overview | Client-safe concept |
 | `docs/visuals/senatla-ops-asset-lifecycle-story.png` | Asset control and lifecycle narrative | Client-safe concept |
+| `docs/product-teardown-2026-11-15.html` | Evidence-led product teardown and UX priorities | Client-safe review |
+| `docs/site-manager-phase-plan.md` | Governed Site Manager and workshop flow roadmap | Client planning |
+
+## Public-facing references
+
+The public landing page is the approved product overview: [senatla-ops.vercel.app/landing](https://senatla-ops.vercel.app/landing). The GitHub Pages portal is the approved documentation index: [Senatla Ops Documentation Portal](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/).
+
+Public material may describe the product boundary, role-shaped workflows, evidence model, and release status. It must not expose credentials, employee information, private evidence, service-role keys, unreleased deployment URLs, or local review-user affordances.
 
 ## Demo boundary
 
