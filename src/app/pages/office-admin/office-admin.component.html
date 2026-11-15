@@ -103,15 +103,15 @@
             <input
               [ngModel]="assetSearchTerm()"
               (ngModelChange)="assetSearchTerm.set($event)"
-              placeholder="Search make, model, plate, VIN, serial, or custodian..."
-              class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-yellow-500 focus:outline-none"
+              aria-label="Search assets" placeholder="Search make, model, plate, VIN, serial, or custodian..."
+              class="min-h-11 w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-yellow-500 focus:outline-none"
             >
           </div>
           <div>
             <select
-              [ngModel]="assetSiteFilter()"
+              aria-label="Asset site" [ngModel]="assetSiteFilter()"
               (ngModelChange)="assetSiteFilter.set($event)"
-              class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+              class="balanced-select min-h-11 w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
             >
               <option value="">All Sites</option>
               <option *ngFor="let site of service.activeSites()" [value]="site.id">{{ site.name }}</option>
@@ -119,9 +119,9 @@
           </div>
           <div>
             <select
-              [ngModel]="assetTypeFilter()"
+              aria-label="Asset operating type" [ngModel]="assetTypeFilter()"
               (ngModelChange)="assetTypeFilter.set($event)"
-              class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+              class="balanced-select min-h-11 w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
             >
               <option value="">All Operating Types</option>
               <option value="Yellow Metal">Yellow Metal</option>
@@ -131,9 +131,9 @@
           </div>
           <div>
             <select
-              [ngModel]="assetStatusFilter()"
+              aria-label="Asset status" [ngModel]="assetStatusFilter()"
               (ngModelChange)="assetStatusFilter.set($event)"
-              class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
+              class="balanced-select min-h-11 w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white"
             >
               <option value="">All Statuses</option>
               <option value="Active">Active</option>
@@ -143,10 +143,19 @@
           </div>
         </div>
 
+        <nav aria-label="Asset pages" class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-800 bg-gray-900 p-3">
+          <p class="text-sm text-gray-300" aria-live="polite">Showing {{ assetRangeStart() }}-{{ assetRangeEnd() }} of {{ filteredAssets().length }} assets</p>
+          <div class="flex items-center gap-3">
+            <button type="button" (click)="changeAssetPage(assetPage() - 1)" [disabled]="assetPage() === 1" class="min-h-11 rounded-lg border border-gray-700 px-3 text-sm text-white disabled:opacity-40">Previous</button>
+            <span class="text-sm text-gray-300">Page {{ assetPage() }} of {{ assetPageCount() }}</span>
+            <button type="button" (click)="changeAssetPage(assetPage() + 1)" [disabled]="assetPage() === assetPageCount()" class="min-h-11 rounded-lg border border-gray-700 px-3 text-sm text-white disabled:opacity-40">Next</button>
+          </div>
+        </nav>
+
         <!-- Assets Cards & Data Grid -->
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div
-            *ngFor="let asset of filteredAssets()"
+            *ngFor="let asset of pagedAssets()"
             class="rounded-2xl border border-gray-800 bg-gray-900 p-5 flex flex-col justify-between hover:border-gray-700 transition-all shadow-sm"
           >
             <div>
