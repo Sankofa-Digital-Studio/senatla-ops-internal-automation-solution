@@ -21,13 +21,17 @@
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs text-gray-400 mb-1">Purchase Order #</label>
-            <input [(ngModel)]="invoiceForm.orderNumber" placeholder="PO-9921" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500" />
+            <label class="block text-xs text-gray-400 mb-1" for="vendor-internal-order">Internal Purchase Order #</label>
+            <input id="vendor-internal-order" [(ngModel)]="invoiceForm.orderNumber" placeholder="PO-9921" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500" />
           </div>
           <div>
             <label class="block text-xs text-gray-400 mb-1">Invoice Number</label>
             <input [(ngModel)]="invoiceForm.invoiceNumber" placeholder="INV-2026-04" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500" />
           </div>
+        </div>
+        <div>
+          <label for="vendor-supplier-order" class="block text-xs text-gray-400 mb-1">Supplier Order Reference (if no invoice)</label>
+          <input id="vendor-supplier-order" [(ngModel)]="invoiceForm.supplierOrderNumber" placeholder="Supplier reference" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500" />
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
@@ -89,7 +93,10 @@
                     <app-erp-status-badge [label]="inv.status" [variant]="statusVariant(inv.status)"></app-erp-status-badge>
                   </div>
                   <p class="text-xs text-gray-400 mt-1">
-                    PO: <span class="text-yellow-400 font-mono">{{ inv.orderNumber }}</span>
+                    Internal PO: <span class="text-yellow-400 font-mono">{{ inv.internalOrderNumber || inv.orderNumber }}</span>
+                    @if (inv.supplierOrderNumber) {
+                      · Supplier order: <span class="font-mono">{{ inv.supplierOrderNumber }}</span>
+                    }
                     @if (inv.invoiceNumber) {
                       · Inv: <span class="font-mono">{{ inv.invoiceNumber }}</span>
                     }
