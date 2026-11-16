@@ -1,6 +1,6 @@
 import { VendorWorkspace, VendorAccountInput, VendorInvoiceInput, VendorAccountRow, VendorInvoiceRow, mapVendorAccount, mapVendorInvoice, vendorAccountPayload, vendorInvoicePayload } from '../vendors/vendor-workspace';
 import { decodeEmployeeRates, encodeEmployeeRates } from '../models/employee-rate-metadata';
-import { Injectable, computed, effect, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { RUNTIME_CONFIG, RuntimeConfig } from '../config/runtime-config';
 import {
   AdminActivityEvent,
@@ -261,6 +261,7 @@ export class OfficeAdminService {
   private readonly loadingState = signal(false);
   private readonly errorState = signal('');
   private loadSequence = 0;
+  private workspaceScope: string | null = null;
 
   readonly users = signal<ManagedUserProfile[]>([]);
   readonly sites = signal<Site[]>([]);
@@ -382,11 +383,8 @@ export class OfficeAdminService {
 
   constructor() {
     effect(() => {
-      const ready = this.auth.isReady();
-      const role = this.auth.role();
-      const userId = this.auth.session()?.userId ?? null;
-      if (!ready || !role || !['site', 'office', 'director'].includes(role)) return;
-      void this.loadWorkspace(userId);
+      const scope = this.currentWorkspaceScope();
+      untracked(() => { void this.loadWorkspace(scope); });
     });
   }
 
@@ -1546,26 +1544,54 @@ export class OfficeAdminService {
     } catch {}
   }
 
-  private async loadWorkspace(userId: string | null) {
-    const loadId = ++this.loadSequence;
-    this.loadingState.set(true);
-    this.errorState.set('');
+  private currentWorkspaceScope(): string | null {
+    const session = this.auth.session();
+    const role = this.auth.role();
+    if (!this.auth.isReady() || !session || !role || !['site', 'office', 'director'].includes(role)) return null;
+    return JSON.stringify([session.userId, session.organizationId, role, [...(session.permittedSiteIds || [])].sort(), session.mustChangePassword === true]);
+  }
+
+  async retryWorkspaceLoad(): Promise<void> {
+    if (this.loadingState()) return;
+    await this.loadWorkspace(this.currentWorkspaceScope());
+  }
+
+  private clearLoadedWorkspace(): void {
+    const empty: OfficeAdminWorkspace = {
+      users: [], sites: [], groups: [], employees: [], employeeOnboarding: [], ppeIssues: [],
+      financialTypes: [], issues: [], assets: [], assetCustodyEvents: [], assetComplianceRecords: [],
+      assetMeterReadings: [], assetWorkOrders: [], assetMaintenancePlans: [], assetFuelEntries: [],
+      vendorAccounts: [], vendorInvoices: [], integrationOutbox: [], attendanceQueue: [], activity: [],
+      payrollPeriods: [], payrollExports: [], approvals: [], savedViews: [], organizations: [], anomalies: [],
+      directorReports: [],
+    };
+    this.applyWorkspace(empty);
+    this.organizations.set([]);
     this.hydratedState.set(false);
+  }
+
+  private async loadWorkspace(scope: string | null) {
+    const loadId = ++this.loadSequence;
+    if (scope !== this.workspaceScope) this.clearLoadedWorkspace();
+    this.workspaceScope = scope;
+    this.errorState.set('');
+    this.loadingState.set(!!scope);
+    if (!scope) return;
 
     try {
       const workspace = this.supabase ? await this.loadFromSupabase() : this.loadFromLocal();
-      if (loadId !== this.loadSequence || !userId) return;
+      if (loadId !== this.loadSequence) return;
       this.applyWorkspace(workspace);
       this.hydratedState.set(true);
     } catch (error) {
       if (loadId !== this.loadSequence) return;
-      this.errorState.set(error instanceof Error ? error.message : 'Unable to load office workspace.');
-      this.applyWorkspace(this.createDefaultWorkspace());
-      this.hydratedState.set(true);
+      // A rejected refresh must never replace operational records with demo defaults.
+      // Authorization failures also invalidate the previous snapshot.
+      const code = typeof error === 'object' && error !== null && 'code' in error ? String(error.code) : '';
+      if (['42501', 'PGRST301', 'PGRST302'].includes(code)) this.clearLoadedWorkspace();
+      this.errorState.set('Unable to load office workspace. Please retry.');
     } finally {
-      if (loadId === this.loadSequence) {
-        this.loadingState.set(false);
-      }
+      if (loadId === this.loadSequence) this.loadingState.set(false);
     }
   }
 
@@ -1678,15 +1704,24 @@ export class OfficeAdminService {
   }
 
   private applyWorkspace(workspace: OfficeAdminWorkspace) {
+    const requiredLists: (keyof OfficeAdminWorkspace)[] = ['users', 'sites', 'groups', 'employees', 'financialTypes', 'issues', 'assets', 'activity', 'payrollPeriods', 'payrollExports', 'approvals', 'savedViews'];
+    if (!workspace || requiredLists.some((key) => !Array.isArray(workspace[key]))) {
+      throw new Error('Workspace response is incomplete.');
+    }
+    // Prepare every transformation before publishing any of the new snapshot.
+    const sites = workspace.sites.map((site) => ({ ...site, organizationId: SENATLA_TRADING_ORGANIZATION_ID }));
+    const employees = workspace.employees.map((employee) => ({ ...employee, organizationId: SENATLA_TRADING_ORGANIZATION_ID }));
+    const issues = workspace.issues.map((issue) => ({ ...issue, organizationId: SENATLA_TRADING_ORGANIZATION_ID }));
+    const assets = workspace.assets.map((asset) => this.normalizeAsset(asset));
     this.users.set(workspace.users);
-    this.sites.set(workspace.sites.map((site) => ({ ...site, organizationId: SENATLA_TRADING_ORGANIZATION_ID })));
+    this.sites.set(sites);
     this.groups.set(workspace.groups);
-    this.employees.set(workspace.employees.map((employee) => ({ ...employee, organizationId: SENATLA_TRADING_ORGANIZATION_ID })));
+    this.employees.set(employees);
     this.employeeOnboarding.set(workspace.employeeOnboarding || []);
     this.ppeIssues.set(workspace.ppeIssues || []);
     this.financialTypes.set(workspace.financialTypes);
-    this.issues.set(workspace.issues.map((issue) => ({ ...issue, organizationId: SENATLA_TRADING_ORGANIZATION_ID })));
-    this.assets.set(workspace.assets.map((asset) => this.normalizeAsset(asset)));
+    this.issues.set(issues);
+    this.assets.set(assets);
     this.assetCustodyEvents.set(workspace.assetCustodyEvents || []);
     this.assetComplianceRecords.set(workspace.assetComplianceRecords || []);
     this.assetMeterReadings.set(workspace.assetMeterReadings || []);
