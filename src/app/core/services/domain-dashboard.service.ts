@@ -16,10 +16,84 @@ import {
   UndergroundWorksSummary,
   WastedExpenditureAlert,
   WorkshopActivityMetric,
+  CommercialDocumentPackage,
+  CommercialInvoiceDocument,
+  CommercialPlannedLabourRole,
+  CommercialPurchaseOrderDocument,
+  CommercialQuoteDocument,
 } from '../models/domain-dashboard.models';
 import { SessionDataCacheService } from './session-data-cache.service';
 
 const STORAGE_KEY = 'senatla_domain_dashboard_v1';
+
+export const SEEDED_COMMERCIAL_PACKAGE: CommercialDocumentPackage = {
+  id: 'CDP-TGT-224',
+  packageCode: 'HAR-PKG-2026-368332',
+  clientName: 'Avgold Limited (Harmony Gold Mining Co.)',
+  siteOrWorkshop: 'AMF Steyn Workshop / Target 3# 58 Level Sub Shaft',
+  quote: {
+    quoteNumber: 'TGT - ERI/224',
+    quoteDate: '2026-03-24',
+    client: 'Avgold Limited / Harmony (AMF)',
+    addressedTo: 'Mr Steven Van Pletzen, Foreman (AMF)',
+    scopeDescription: 'Target 3# - 58 level Sub Shaft-To pour concrete on the floor (24,7m length x 3,4m width x 150mm thickness)',
+    plannedRoles: [
+      { role: 'Supervisor', count: 1, durationDays: 20, baselineHourlyRate: 350 },
+      { role: 'Team Leader', count: 1, durationDays: 20, baselineHourlyRate: 280 },
+      { role: 'Boilermaker', count: 1, durationDays: 20, baselineHourlyRate: 320 },
+      { role: 'General Worker', count: 6, durationDays: 20, baselineHourlyRate: 180 },
+    ],
+    amountExclVat: 125000,
+    validityDays: 30,
+    supplierName: 'Senatla Trading Enterprise 26 PTY',
+  },
+  purchaseOrder: {
+    poNumber: '368332-AVG',
+    orderDate: '2026-10-21',
+    client: 'Avgold Limited',
+    buyerName: 'Els, Miss Lucille',
+    buyerEmail: 'lucille.els@harmony.co.za',
+    requisitionNumber: '626832',
+    deliveryWorkshop: 'AMF STEYN WORKSHOP, Welkom',
+    requesterName: 'Mohakala, Mr. Simon',
+    linePartNumber: '3127318',
+    lineDescription: 'TGT-ERI/224_(PURCHASE)_16/10/2026_TARGET 3 - 58 LEVEL SUB SHAFT - TO POUR CONCRETE ON THE FLOOR (24.7M LENGTH X 3,4M WIDTH X 150MM_AMF_JOHAN CALITZ',
+    quantity: 1,
+    unitOfMeasure: 'Each',
+    unitPriceExclVat: 125000,
+    vatRatePercent: 15,
+    vatAmount: 18750,
+    totalAmountInclVat: 143750,
+    promisedDate: '2026-11-23',
+    neededDate: '2026-10-23',
+    settlementTerms: '7 days',
+    referencedQuote: 'QUOTE: TGT-ERI/224_AMF_J CALITZ',
+  },
+  invoice: {
+    invoiceNumber: 'TGT – INV/336',
+    invoiceDate: '2026-10-23',
+    client: 'Avgold Limited',
+    referencedPoNumber: '368322 - AVG',
+    referencedQuoteNumber: 'TGT-ERI/224',
+    scopeDescription: 'Target 3# - 58 level Sub-Shaft -Pouring of concrete on floor ( 24.7m x 3.4m x 150mm) - TGT-ERI/224',
+    amountExclVat: 125000,
+    vatRatePercent: 15,
+    vatAmount: 18750,
+    totalAmountInclVat: 143750,
+    bankName: 'Standard bank, Welkom',
+    accountNumber: '040298752',
+    branchCode: '055535',
+    accountType: 'Cheque',
+  },
+  matchStatus: 'discrepancy_flagged',
+  discrepancies: [
+    'PO Number Transposition: Tax Invoice cites "368322 - AVG", but Official Purchase Order is "368332-AVG" (4th digit mismatch). Reconciled with canonical PO 368332-AVG.',
+    'Quote-to-PO Timeline: Quotation issued 24-Mar-2026 with 30-day validity; official PO released 21-Oct-2026 (commercial acceptance confirmed by Avgold).',
+  ],
+  isDiscrepancyAcknowledged: false,
+  linkedJobCardNumber: null,
+  linkedJobCardId: null,
+};
 
 @Injectable({ providedIn: 'root' })
 export class DomainDashboardService {
@@ -109,6 +183,8 @@ export class DomainDashboardService {
       siteOrWorkshop: 'Workshop 3 (General Assembly)',
     },
   ]);
+
+  readonly commercialPackages = signal<CommercialDocumentPackage[]>([SEEDED_COMMERCIAL_PACKAGE]);
 
   readonly engineeringOrders = signal<EngineeringOrderRecord[]>([
     {
@@ -1201,6 +1277,7 @@ export class DomainDashboardService {
         unassignedDrawsCount: this.unassignedDrawsCount(),
         unbilledVendorOrdersCount: this.unbilledVendorOrdersCount(),
         wastedExpenditures: this.wastedExpenditures(),
+        commercialPackages: this.commercialPackages(),
       };
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
       this.sessionDataCache.set('engineering-job-card-orders', this.engineeringOrders());
@@ -1222,6 +1299,8 @@ export class DomainDashboardService {
         this.unbilledVendorOrdersCount.set(parsed.unbilledVendorOrdersCount);
       if (Array.isArray(parsed.wastedExpenditures))
         this.wastedExpenditures.set(parsed.wastedExpenditures);
+      if (Array.isArray(parsed.commercialPackages))
+        this.commercialPackages.set(parsed.commercialPackages);
     } catch {
       // Use defaults
     }
@@ -1510,6 +1589,169 @@ export class DomainDashboardService {
     this.recalculateEngineeringTotals();
     this.persistToStorage();
     return newOrder;
+  }
+
+  generateJobCardFromCommercialPackage(packageId: string, customSupervisor?: string): EngineeringOrderRecord {
+    const pkg = this.commercialPackages().find((p) => p.id === packageId) || this.commercialPackages()[0];
+    const jobCardNum = pkg.linkedJobCardNumber || 'JC-TGT-224';
+    const supervisor = customSupervisor || 'S. Van Pletzen (AMF Foreman)';
+
+    const initialLabour: JobCardLabourItem[] = [
+      {
+        id: 'LAB-224-1',
+        artisanName: 'M. Khumalo',
+        role: 'Supervisor',
+        hoursWorked: 16,
+        hourlyRate: 350,
+        totalLabourCost: 5600,
+        shiftDate: '2026-10-23',
+        timesheetReference: 'TS-TGT-001',
+      },
+      {
+        id: 'LAB-224-2',
+        artisanName: 'J. Mthembu',
+        role: 'Team Leader',
+        hoursWorked: 16,
+        hourlyRate: 280,
+        totalLabourCost: 4480,
+        shiftDate: '2026-10-23',
+        timesheetReference: 'TS-TGT-002',
+      },
+      {
+        id: 'LAB-224-3',
+        artisanName: 'K. Ndlovu',
+        role: 'Boilermaker',
+        hoursWorked: 16,
+        hourlyRate: 320,
+        totalLabourCost: 5120,
+        shiftDate: '2026-10-24',
+        timesheetReference: 'TS-TGT-003',
+      },
+      {
+        id: 'LAB-224-4',
+        artisanName: 'T. Sithole & Civil Crew (x6 Generals)',
+        role: 'General Worker',
+        hoursWorked: 96,
+        hourlyRate: 180,
+        totalLabourCost: 17280,
+        shiftDate: '2026-10-24',
+        timesheetReference: 'TS-TGT-004',
+      },
+    ];
+
+    const initialMaterials: JobCardMaterialItem[] = [
+      {
+        id: 'MAT-224-1',
+        vendorName: 'AfriSam Welkom Quarry',
+        vendorPoOrInvoice: 'VND-AFR-3310',
+        itemDescription: 'Ready-Mix Concrete 30MPa (150mm Sub-Shaft Floor Slab, 13 m³)',
+        quantity: 13,
+        unitOfMeasure: 'm³',
+        unitRate: 1950,
+        totalCost: 25350,
+        deliveryNoteNumber: 'DN-AFR-8812',
+        procuredDate: '2026-10-22',
+      },
+      {
+        id: 'MAT-224-2',
+        vendorName: 'Scaw Metals Group',
+        vendorPoOrInvoice: 'VND-SCAW-4412',
+        itemDescription: 'High-Tensile Welded Steel Mesh (Ref 193 Fabric, 85 m²)',
+        quantity: 85,
+        unitOfMeasure: 'm²',
+        unitRate: 98,
+        totalCost: 8330,
+        deliveryNoteNumber: 'DN-SCAW-9092',
+        procuredDate: '2026-10-22',
+      },
+    ];
+
+    const totalMat = initialMaterials.reduce((acc, m) => acc + m.totalCost, 0);
+    const totalLabHours = initialLabour.reduce((acc, l) => acc + l.hoursWorked, 0);
+    const totalLabCost = initialLabour.reduce((acc, l) => acc + l.totalLabourCost, 0);
+    const directCost = totalMat + totalLabCost;
+    const val = pkg.purchaseOrder.unitPriceExclVat;
+    const recognizedProfit = Math.max(0, val - directCost);
+    const marginPercent = Number(((recognizedProfit / val) * 100).toFixed(1));
+
+    const newOrder: EngineeringOrderRecord = {
+      id: 'EOR-224',
+      poNumber: pkg.purchaseOrder.poNumber,
+      client: pkg.clientName,
+      quoteNumber: pkg.quote.quoteNumber,
+      invoiceNumber: pkg.invoice.invoiceNumber,
+      jobCardNumber: jobCardNum,
+      scopeDescription: pkg.quote.scopeDescription,
+      status: 'in_progress',
+      value: val,
+      materialsCost: totalMat,
+      labourHours: totalLabHours,
+      labourCost: totalLabCost,
+      workshop: pkg.siteOrWorkshop,
+      deliveryDate: pkg.purchaseOrder.promisedDate,
+      jobCardDetails: {
+        id: jobCardNum,
+        jobCardNumber: jobCardNum,
+        purchaseOrderNumber: pkg.purchaseOrder.poNumber,
+        client: pkg.clientName,
+        quoteNumber: pkg.quote.quoteNumber,
+        invoiceNumber: pkg.invoice.invoiceNumber,
+        scopeDescription: pkg.quote.scopeDescription,
+        workshop: pkg.siteOrWorkshop,
+        assignedSupervisor: supervisor,
+        dateIssued: pkg.purchaseOrder.orderDate,
+        targetDeliveryDate: pkg.purchaseOrder.promisedDate,
+        status: 'in_progress',
+        materials: initialMaterials,
+        labour: initialLabour,
+        totalMaterialsCost: totalMat,
+        totalLabourHours: totalLabHours,
+        totalLabourCost: totalLabCost,
+        totalDirectCost: directCost,
+        linkedPoValue: val,
+        recognizedProfit,
+        marginPercent,
+      },
+    };
+
+    this.commercialPackages.update((pkgs) =>
+      pkgs.map((p) =>
+        p.id === pkg.id
+          ? {
+              ...p,
+              linkedJobCardNumber: jobCardNum,
+              linkedJobCardId: newOrder.id,
+              matchStatus: p.isDiscrepancyAcknowledged || p.discrepancies.length === 0 ? 'reconciled' : 'discrepancy_flagged',
+              generatedAt: new Date().toISOString(),
+            }
+          : p
+      )
+    );
+
+    this.engineeringOrders.update((orders) => {
+      const filtered = orders.filter((o) => o.jobCardNumber !== jobCardNum && o.poNumber !== pkg.purchaseOrder.poNumber);
+      return [newOrder, ...filtered];
+    });
+
+    this.recalculateEngineeringTotals();
+    this.persistToStorage();
+    return newOrder;
+  }
+
+  acknowledgeCommercialDiscrepancy(packageId: string, note?: string): void {
+    this.commercialPackages.update((pkgs) =>
+      pkgs.map((p) =>
+        p.id === packageId
+          ? {
+              ...p,
+              isDiscrepancyAcknowledged: true,
+              matchStatus: 'reconciled',
+              acknowledgementNote: note || 'Discrepancy reviewed and audited; canonical PO 368332-AVG confirmed for payment and invoicing.',
+            }
+          : p
+      )
+    );
+    this.persistToStorage();
   }
 
 }

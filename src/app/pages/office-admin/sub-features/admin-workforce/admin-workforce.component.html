@@ -13,14 +13,84 @@
           <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400">Workforce Directory</h2>
           <p class="mt-0.5 text-xs text-gray-500">{{ filteredEmployees().length }} personnel listed</p>
         </div>
-        <button
-          type="button"
-          (click)="openAddModal()"
-          class="inline-flex items-center gap-1.5 rounded-lg bg-yellow-500 hover:bg-yellow-400 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-black transition-colors shadow"
-        >
-          <span>+</span> Add Employee
-        </button>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            (click)="showRateSettings.set(!showRateSettings())"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-yellow-500/40 bg-yellow-950/20 hover:bg-yellow-900/40 px-3 py-2 text-xs font-bold text-yellow-300 transition-colors cursor-pointer"
+          >
+            <span>⚙</span> {{ showRateSettings() ? 'Hide Baseline Rates' : 'Designation Rates' }}
+          </button>
+          <button
+            type="button"
+            (click)="openAddModal()"
+            class="inline-flex items-center gap-1.5 rounded-lg bg-yellow-500 hover:bg-yellow-400 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-black transition-colors shadow cursor-pointer"
+          >
+            <span>+</span> Add Employee
+          </button>
+        </div>
       </div>
+
+      <!-- Designation Baseline Rates Panel -->
+      @if (showRateSettings()) {
+        <div class="mt-4 rounded-xl border border-yellow-500/30 bg-gray-950 p-3.5 space-y-3">
+          <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+            <div>
+              <h3 class="text-xs font-bold uppercase tracking-wider text-yellow-400">Designation Baseline Rates (Payroll Engine)</h3>
+              <p class="text-[11px] text-gray-400 mt-0.5">Base Rands/hour for craft roles, converted to 8-hour daily shifts. Can be overridden per employee.</p>
+            </div>
+            <span class="rounded bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 px-2 py-0.5 text-[10px] font-bold">ZAR / Hour</span>
+          </div>
+
+          <div class="grid gap-2 sm:grid-cols-2">
+            @for (config of service.designationRates(); track config.role) {
+              <div class="rounded-lg border border-gray-800 bg-gray-900 p-2.5 flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="font-bold text-white text-xs truncate">{{ config.role }}</p>
+                  <p class="text-[10px] text-gray-400 mt-0.5">{{ config.description }}</p>
+                  <p class="text-[10px] text-emerald-400 mt-0.5 font-semibold">R {{ config.baselineHourlyRate * 8 }} / 8-hr shift</p>
+                </div>
+
+                @if (editingRole() === config.role) {
+                  <div class="flex items-center gap-1 shrink-0">
+                    <input
+                      type="number"
+                      [ngModel]="editingRateValue()"
+                      (ngModelChange)="editingRateValue.set($event)"
+                      class="w-16 rounded border border-yellow-500 bg-gray-950 px-1.5 py-1 text-xs text-white font-mono"
+                    />
+                    <button
+                      type="button"
+                      (click)="saveEditRate(config.role)"
+                      class="rounded bg-emerald-500 hover:bg-emerald-400 px-2 py-1 text-[10px] font-bold text-black cursor-pointer"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      (click)="cancelEditRate()"
+                      class="text-gray-400 hover:text-white px-1 text-[10px] cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                } @else {
+                  <div class="flex items-center gap-2 shrink-0">
+                    <span class="font-mono font-bold text-yellow-400 text-xs">R {{ config.baselineHourlyRate }}<span class="text-[10px] text-gray-400 font-normal">/hr</span></span>
+                    <button
+                      type="button"
+                      (click)="startEditRate(config.role, config.baselineHourlyRate)"
+                      class="rounded border border-gray-700 hover:border-yellow-500 hover:text-yellow-300 px-2 py-0.5 text-[10px] text-gray-300 cursor-pointer"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
 
       <!-- Filters -->
       <div class="mt-4 grid gap-3 sm:grid-cols-2">
@@ -110,8 +180,17 @@
               <p class="text-xs font-mono font-bold text-white mt-0.5">{{ service.maskIdNumber(emp.idNumber) }}</p>
             </div>
             <div class="rounded-xl border border-gray-800 bg-gray-950 p-3">
-              <p class="text-[10px] uppercase text-gray-500 font-semibold">Basic Rate</p>
-              <p class="text-xs font-bold text-emerald-400 mt-0.5">R {{ emp.basicRate || 250 }} / day</p>
+              <div class="flex items-center justify-between">
+                <p class="text-[10px] uppercase text-gray-500 font-semibold">Hourly Rate</p>
+                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded"
+                  [ngClass]="emp.hasRateOverride ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-gray-800 text-gray-400'">
+                  {{ emp.hasRateOverride ? 'Override' : 'Baseline' }}
+                </span>
+              </div>
+              <p class="text-xs font-bold text-emerald-400 mt-0.5 font-mono">
+                R {{ service.getEffectiveEmployeeHourlyRate(emp) }} / hr
+                <span class="text-[10px] text-gray-400 font-normal ml-1">(R {{ emp.basicRate || service.getEffectiveEmployeeHourlyRate(emp) * 8 }}/day)</span>
+              </p>
             </div>
           </div>
 
@@ -207,12 +286,19 @@
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs text-gray-400 mb-1">Designation / Role</label>
-              <select [(ngModel)]="newEmployee.role" class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500">
-                <option value="General Worker">General Worker</option>
-                <option value="Machine Operator">Machine Operator</option>
-                <option value="Safety Officer">Safety Officer</option>
-                <option value="Site Supervisor">Site Supervisor</option>
-                <option value="Artisan">Artisan</option>
+              <select
+                [ngModel]="newEmployee.role"
+                (ngModelChange)="onRoleChange($event)"
+                class="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500"
+              >
+                <option value="Supervisor">Supervisor</option>
+                <option value="Team Leader">Team Leader</option>
+                <option value="Boilermaker">Boilermaker (Red Seal)</option>
+                <option value="General Worker">General Worker / Civil</option>
+                <option value="Foreman">Foreman</option>
+                <option value="Operator">Machine Operator</option>
+                <option value="Safety Rep">Safety Rep / Officer</option>
+                <option value="Driver">Driver</option>
               </select>
             </div>
             <div>
@@ -223,6 +309,48 @@
                 }
               </select>
             </div>
+          </div>
+
+          <!-- Rate Configuration & Override -->
+          <div class="rounded-xl border border-gray-800 bg-gray-950 p-3.5 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs font-bold text-white">Payroll Rate Configuration</p>
+                <p class="text-[11px] text-gray-400">
+                  Role Baseline: <strong class="text-yellow-400">R {{ service.getBaselineRate(newEmployee.role || 'General Worker') }} / hr</strong> (R {{ service.getBaselineRate(newEmployee.role || 'General Worker') * 8 }} / 8-hr shift)
+                </p>
+              </div>
+              <label class="flex items-center gap-1.5 text-xs text-yellow-300 font-semibold cursor-pointer">
+                <input
+                  type="checkbox"
+                  [ngModel]="newEmployee.hasRateOverride"
+                  (ngModelChange)="toggleRateOverride($event)"
+                  class="accent-yellow-500 rounded"
+                />
+                Custom Override
+              </label>
+            </div>
+
+            @if (newEmployee.hasRateOverride) {
+              <div class="pt-2 border-t border-gray-800 grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[11px] text-amber-300 mb-1 font-semibold">Custom Hourly Rate (ZAR/hr) *</label>
+                  <input
+                    type="number"
+                    [ngModel]="newEmployee.rateOverride"
+                    (ngModelChange)="onOverrideRateChange($event)"
+                    placeholder="e.g. 360"
+                    class="w-full rounded-lg border border-amber-500/60 bg-gray-900 px-3 py-1.5 text-white text-xs font-mono focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+                <div>
+                  <label class="block text-[11px] text-gray-400 mb-1">Equivalent Shift Basic Rate</label>
+                  <p class="text-xs font-mono font-bold text-emerald-400 pt-1.5">
+                    R {{ newEmployee.basicRate || 0 }} / 8-hr shift
+                  </p>
+                </div>
+              </div>
+            }
           </div>
         </div>
       }
@@ -309,6 +437,7 @@
             <div><dt class="text-gray-500">Full Name</dt><dd class="font-semibold text-white">{{ newEmployee.firstName }} {{ newEmployee.surname }}</dd></div>
             <div><dt class="text-gray-500">ID Number</dt><dd class="font-mono text-white">{{ newEmployee.idNumber }}</dd></div>
             <div><dt class="text-gray-500">Role</dt><dd class="text-white">{{ newEmployee.role }}</dd></div>
+            <div><dt class="text-gray-500">Hourly & Shift Rate</dt><dd class="text-emerald-400 font-mono">R {{ newEmployee.hasRateOverride ? newEmployee.rateOverride : service.getBaselineRate(newEmployee.role || 'General Worker') }} / hr ({{ newEmployee.hasRateOverride ? 'Override' : 'Baseline' }})</dd></div>
             <div><dt class="text-gray-500">Site</dt><dd class="text-white">{{ service.getSiteName(newEmployee.siteId || '') }}</dd></div>
             <div><dt class="text-gray-500">Medical Status</dt><dd class="text-yellow-400 capitalize">{{ newOnboarding.medicalStatus }}</dd></div>
             <div><dt class="text-gray-500">Boot & Overall Size</dt><dd class="text-white">Boot {{ newPpe.bootSize }}, Overall {{ newPpe.overallSize }}</dd></div>

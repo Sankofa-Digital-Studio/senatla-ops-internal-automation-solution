@@ -200,4 +200,64 @@ describe('EngineeringDashboardComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Shareholders Return 30% Dividend Pool');
     expect(fixture.nativeElement.textContent).toContain('Current Distribution Status');
   });
+
+  it('should display the 3-way commercial match package with Quote, PO, and Invoice', () => {
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Commercial Document Traceability (3-Way Match)');
+    expect(text).toContain('TGT - ERI/224');
+    expect(text).toContain('368332-AVG');
+    expect(text).toContain('TGT – INV/336');
+    expect(text).toContain('Typo 368322');
+  });
+
+  it('should allow acknowledging the commercial discrepancy on PO 368332-AVG', () => {
+    const pkg = component.activeCommercialPackage();
+    expect(pkg).toBeTruthy();
+    expect(pkg!.isDiscrepancyAcknowledged).toBeFalse();
+
+    component.acknowledgeDiscrepancy(pkg!);
+    fixture.detectChanges();
+
+    const updatedPkg = component.activeCommercialPackage();
+    expect(updatedPkg!.isDiscrepancyAcknowledged).toBeTrue();
+    expect(updatedPkg!.matchStatus).toBe('reconciled');
+    expect(component.commercialFeedback()).toContain('Canonical PO 368332-AVG confirmed');
+  });
+
+  it('should generate an authoritative Job Card from the commercial document package with the 4 planned roles', () => {
+    const pkg = component.activeCommercialPackage();
+    expect(pkg).toBeTruthy();
+
+    component.generateJobCardFromPackage(pkg!);
+    fixture.detectChanges();
+
+    const generated = service.engineeringOrders().find((o) => o.poNumber === '368332-AVG');
+    expect(generated).toBeDefined();
+    expect(generated?.quoteNumber).toBe('TGT - ERI/224');
+    expect(generated?.invoiceNumber).toBe('TGT – INV/336');
+    expect(generated?.value).toBe(125000);
+    expect(generated?.jobCardDetails?.labour.length).toBe(4);
+
+    const roles = generated?.jobCardDetails?.labour.map((l) => l.role);
+    expect(roles).toContain('Supervisor');
+    expect(roles).toContain('Team Leader');
+    expect(roles).toContain('Boilermaker');
+    expect(roles).toContain('General Worker');
+
+    expect(component.selectedOrder()?.poNumber).toBe('368332-AVG');
+  });
+
+  it('should auto-populate baseline hourly rates when selecting trade roles in labour form', () => {
+    component.onLabRoleChange('Supervisor');
+    expect(component.labRate()).toBe(350);
+
+    component.onLabRoleChange('Team Leader');
+    expect(component.labRate()).toBe(280);
+
+    component.onLabRoleChange('Boilermaker (Red Seal)');
+    expect(component.labRate()).toBe(320);
+
+    component.onLabRoleChange('General Worker');
+    expect(component.labRate()).toBe(180);
+  });
 });
