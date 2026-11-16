@@ -384,7 +384,9 @@ export class OfficeAdminService {
   constructor() {
     effect(() => {
       const scope = this.currentWorkspaceScope();
-      untracked(() => { void this.loadWorkspace(scope); });
+      untracked(() => {
+        if (scope !== this.workspaceScope) void this.loadWorkspace(scope);
+      });
     });
   }
 

@@ -133,4 +133,22 @@ describe('Office workspace load recovery', () => {
     expect(service.sites()).toBe(sites);
     expect(service.error()).not.toBe('');
   });
+  it('avoids a redundant full load on token refresh but reloads changed access', async () => {
+    auth.session.set({ userId: 'a', organizationId: 'org-a', permittedSiteIds: ['1'] });
+    TestBed.tick();
+    await Promise.resolve();
+    expect(loader).toHaveBeenCalledTimes(1);
+    auth.session.set({ userId: 'a', organizationId: 'org-a', permittedSiteIds: ['1'], issuedAt: 'renewed' });
+    TestBed.tick();
+    await Promise.resolve();
+    expect(loader).toHaveBeenCalledTimes(1);
+    auth.role.set('site');
+    TestBed.tick();
+    await Promise.resolve();
+    expect(loader).toHaveBeenCalledTimes(2);
+    auth.session.set(null);
+    TestBed.tick();
+    expect(service.sites()).toEqual([]);
+    expect(service.isHydrated()).toBeFalse();
+  });
 });
