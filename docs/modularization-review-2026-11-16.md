@@ -2,7 +2,31 @@
 
 16 November 2026 | Architecture assessment | Implementation not started
 
-## Decision
+## Consolidation update and execution order — 16 November 2026
+
+This update supersedes the earlier working-tree scope and sequencing below. The integration combines release commit 3f1d0b3 and commercial/workforce commit 6e95238 through PR #148. The six swarm branches point to the same commercial commit; they are not six independent features. Main promotion and branch deletion are conditional on the combined commit passing CI.
+
+No feature removal is planned. Preserve routes, permissions, stored records and drafts, exports, approvals, device workflows, and current payroll behavior. The consolidation fixes rate metadata lost on database reload, invalid rate inputs, and repeat commercial generation overwriting job-card edits. New regression cases cover rate round trips and repeated/invalid generation.
+
+### Ordered delivery
+
+1. Finish integration and run one combined CI gate: application verification, database contracts, responsive checks, Android build and iOS simulator build. Record any device/UAT limitations separately.
+2. Merge the verified integration into main, confirm both source commits are ancestors, then delete integrated feature branch names. Detach checked-out feature worktrees while retaining their files and untracked projects. Preserve long-lived dev and preview branches.
+3. Highest-value refactor: narrow OfficeAdminService data loading and state ownership, beginning with the existing vendor workflow. First capture requests, transferred bytes, ready time, and failure behavior. Extract only its persistence/state boundary behind the existing API; retain one writable state owner and existing approval/audit orchestration. Then independently introduce feature-scoped loading and retry so one failed dataset cannot blank unrelated work. Do not create a repository/state/service trio unless distinct responsibilities justify all three.
+4. Extract duplicated payroll calculations into a pure module with explicit caller policies. Preserve the existing zero-rate fallback and employee-inclusion differences until business rules are approved. Test the differing cases before consolidation.
+5. Separate dashboard fixture data and browser-session storage from operational data contracts. Commercial packages and designation baselines currently remain browser-session scoped; the seeded package is not proof of a shared production record. Shared persistence is a separate functional delivery, not an incidental refactor.
+6. Finish Office Admin component ownership using existing sub-features, then isolate engineering job-card panels, Site Manager workflows, and asset device adapters where their dependencies justify it.
+7. Remove proven dead handlers and temporary compatibility bridges only after callers migrate. Re-measure request counts, bytes, bundles and failure recovery. Stop splitting when further layers add navigation without independent responsibility.
+
+### Review challenge and acceptance
+
+Compared with the previous pass, the priority is narrower: fix observed data-loss defects first, reduce eager loading next, and avoid multiplying services merely to reduce line counts. The argument against extraction is additional indirection and regression risk; the acceptance gate is fewer unrelated dependencies, preserved outputs, isolated retries, and measured loading improvement. No speedup percentage is claimed without a runtime baseline. Native build success does not establish physical-device usability.
+
+The remaining user-supplied release input is approved letterhead artwork: provide the original approved logo/letterhead and intended header/footer placement so exports can match the brand without invented artwork. This does not block code consolidation.
+
+---
+
+## Original assessment — Decision
 
 Senatla Ops has clear modularization candidates. Prioritize OfficeAdminService, the ownership of dashboard data, duplicated payroll logic, and the Office Admin and Site Manager workspaces. Retain the current deployment model and evolve toward a modular monolith with feature-owned state, explicit contracts, and focused UI components.
 

@@ -260,4 +260,18 @@ describe('EngineeringDashboardComponent', () => {
     component.onLabRoleChange('General Worker');
     expect(component.labRate()).toBe(180);
   });
+  it('preserves job-card edits when commercial generation is repeated', () => {
+    const pkg = service.commercialPackages()[0];
+    const first = service.generateJobCardFromCommercialPackage(pkg.id);
+    const edited = { ...first, scopeDescription: 'Reviewed scope' };
+    service.engineeringOrders.update((orders) => orders.map((order) => order.id === first.id ? edited : order));
+    expect(service.generateJobCardFromCommercialPackage(pkg.id)).toBe(edited);
+    expect(service.engineeringOrders().filter((order) => order.id === first.id).length).toBe(1);
+  });
+
+  it('rejects unknown commercial packages without changing orders', () => {
+    const orders = service.engineeringOrders();
+    expect(() => service.generateJobCardFromCommercialPackage('missing')).toThrowError('Commercial package not found.');
+    expect(service.engineeringOrders()).toBe(orders);
+  });
 });

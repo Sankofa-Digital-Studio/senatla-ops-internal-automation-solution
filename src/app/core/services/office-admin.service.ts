@@ -1,3 +1,4 @@
+import { decodeEmployeeRates, encodeEmployeeRates } from '../models/employee-rate-metadata';
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { RUNTIME_CONFIG, RuntimeConfig } from '../config/runtime-config';
 import {
@@ -745,7 +746,7 @@ export class OfficeAdminService {
         basic_rate: normalized.basicRate,
         pay_rate_unit: normalized.payRateUnit ?? 'daily',
         safety_qualifications: normalized.safetyQualifications ?? [],
-        additional_fields: normalized.additionalFields ?? {},
+        additional_fields: encodeEmployeeRates(normalized),
         salary_advances: normalized.salaryAdvances,
         financials: normalized.financials,
         logs: normalized.logs,
@@ -775,7 +776,7 @@ export class OfficeAdminService {
         id_number: employee.idNumber, company_number: employee.companyNumber ?? null, role: employee.role, designation: employee.designation ?? null,
         site_id: employee.siteId, group_id: employee.groupId ?? null, employment_status: employee.employmentStatus ?? 'active',
         start_date: employee.startDate, basic_rate: employee.basicRate, pay_rate_unit: employee.payRateUnit ?? 'daily',
-        safety_qualifications: employee.safetyQualifications ?? [], additional_fields: employee.additionalFields ?? {},
+        safety_qualifications: employee.safetyQualifications ?? [], additional_fields: encodeEmployeeRates(employee),
         salary_advances: employee.salaryAdvances, financials: employee.financials, logs: employee.logs,
         adjustments: employee.adjustments, tax_ref_number: employee.taxRefNumber ?? null,
       })));
@@ -1575,7 +1576,8 @@ export class OfficeAdminService {
   }
 
   updateDesignationBaselineRate(role: string, hourlyRate: number): void {
-    const rate = Math.max(0, Number(hourlyRate));
+    const rate = Number(hourlyRate);
+    if (!Number.isFinite(rate) || rate < 0) return;
     this.designationRates.update((list) =>
       list.map((item) =>
         item.role.toLowerCase() === role.toLowerCase()
@@ -1584,6 +1586,7 @@ export class OfficeAdminService {
       )
     );
     this.saveDesignationRates();
+    void this.persistLocalWorkspace();
   }
 
   private loadStoredDesignationRates(): DesignationRateConfig[] {
@@ -1907,7 +1910,7 @@ export class OfficeAdminService {
       savedViews: [],
       organizations: [SENATLA_TRADING_ORGANIZATION],
       anomalies: [],
-      designationRates: DEFAULT_DESIGNATION_RATES,
+      designationRates: this.loadStoredDesignationRates(),
     };
   }
 
@@ -2097,6 +2100,7 @@ export class OfficeAdminService {
       payRateUnit: row.pay_rate_unit || 'daily',
       safetyQualifications: row.safety_qualifications || [],
       additionalFields: row.additional_fields || {},
+      ...decodeEmployeeRates(row.additional_fields),
       salaryAdvances: Number(row.salary_advances || 0),
       financials: row.financials || {},
       logs: row.logs || {},
