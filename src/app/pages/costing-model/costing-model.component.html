@@ -17,7 +17,7 @@
       <div class="flex flex-wrap items-center justify-between gap-3"><h2 id="proposal-setup-heading" class="text-lg font-bold">Proposal setup</h2><span class="text-xs rounded-full bg-amber-950 px-3 py-1 text-amber-200">Draft until reviewed</span></div>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <label class="text-sm text-gray-200">Template
-          <select aria-label="Proposal template" [value]="proposal().templateId" (change)="loadTemplate($any($event.target).value, $any($event.target))" class="mt-1 block w-full min-h-11 rounded-lg border border-gray-600 bg-gray-950 p-3 text-white">
+          <select aria-label="Proposal template" [value]="proposal().templateId" (change)="loadTemplate($any($event.target).value, $any($event.target))" class="balanced-select mt-1 block w-full min-h-11 rounded-lg border border-gray-600 bg-gray-950 p-3 text-white">
             <option *ngFor="let layout of layouts" [value]="layout.id">{{ layout.name }}</option>
           </select>
         </label>

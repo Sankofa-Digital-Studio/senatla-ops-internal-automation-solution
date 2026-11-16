@@ -23,7 +23,7 @@ The public Senatla Trading website is maintained outside this repository and rem
 - Plus-address aliases, including `thosontula+tag@gmail.com`, are ordinary accounts and do not inherit the developer override.
 - New users receive a temporary password and must replace it before opening a workspace.
 
-Current release candidate: [v0.5.8](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.8) ([Release notes](docs/release-notes-0.5.8.md)). Previous release: [v0.5.7](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.7) ([Release notes](docs/release-notes-0.5.7.md)). Hosted production target: [senatla-ops.vercel.app](https://senatla-ops.vercel.app). Public landing page: [senatla-ops.vercel.app/landing](https://senatla-ops.vercel.app/landing). Documentation portal: [GitHub Pages](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/).
+Next release candidate: [v0.5.9](docs/release-notes-0.5.9.md). Latest merged release: [v0.5.8](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.8) ([Release notes](docs/release-notes-0.5.8.md)). Previous release: [v0.5.7](https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.7) ([Release notes](docs/release-notes-0.5.7.md)). Hosted production target: [senatla-ops.vercel.app](https://senatla-ops.vercel.app). Public landing page: [senatla-ops.vercel.app/landing](https://senatla-ops.vercel.app/landing). Documentation portal: [GitHub Pages](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/).
 
 ## Product outcome
 

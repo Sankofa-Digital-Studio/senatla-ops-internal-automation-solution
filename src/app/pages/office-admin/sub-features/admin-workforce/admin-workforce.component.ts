@@ -30,6 +30,11 @@ export class AdminWorkforceComponent {
   readonly isAddModalOpen = signal<boolean>(false);
   readonly currentWizardStep = signal<number>(0);
 
+  // Designation Rates Panel State
+  readonly showRateSettings = signal<boolean>(false);
+  readonly editingRole = signal<string | null>(null);
+  readonly editingRateValue = signal<number>(0);
+
   readonly wizardSteps: ErpWorkflowStep[] = [
     { id: 'details', label: '1. Personal Details', description: 'Name, ID & designation' },
     { id: 'compliance', label: '2. Compliance & Medical', description: 'Criminal, medical & red ticket' },
@@ -123,16 +128,68 @@ export class AdminWorkforceComponent {
     this.selectedEmployeeId.set(this.selectedEmployeeId() === id ? null : id);
   }
 
+  startEditRate(role: string, currentRate: number): void {
+    this.editingRole.set(role);
+    this.editingRateValue.set(currentRate);
+  }
+
+  saveEditRate(role: string): void {
+    if (this.editingRateValue() > 0) {
+      this.service.updateDesignationBaselineRate(role, this.editingRateValue());
+      this.feedback.set(`Baseline rate for ${role} updated to R ${this.editingRateValue()} / hr.`);
+    }
+    this.editingRole.set(null);
+  }
+
+  cancelEditRate(): void {
+    this.editingRole.set(null);
+  }
+
+  onRoleChange(newRole: string): void {
+    this.newEmployee.role = newRole as any;
+    this.newEmployee.designation = newRole;
+    if (!this.newEmployee.hasRateOverride) {
+      const baseline = this.service.getBaselineRate(newRole);
+      this.newEmployee.hourlyRate = baseline;
+      this.newEmployee.basicRate = baseline * 8;
+    }
+  }
+
+  toggleRateOverride(enabled: boolean): void {
+    this.newEmployee.hasRateOverride = enabled;
+    if (enabled) {
+      if (!this.newEmployee.rateOverride) {
+        this.newEmployee.rateOverride = this.service.getBaselineRate(this.newEmployee.role || 'General Worker');
+      }
+      this.newEmployee.basicRate = (this.newEmployee.rateOverride || 0) * 8;
+    } else {
+      const baseline = this.service.getBaselineRate(this.newEmployee.role || 'General Worker');
+      this.newEmployee.hourlyRate = baseline;
+      this.newEmployee.basicRate = baseline * 8;
+    }
+  }
+
+  onOverrideRateChange(rate: number): void {
+    this.newEmployee.rateOverride = Number(rate) || 0;
+    this.newEmployee.basicRate = (this.newEmployee.rateOverride || 0) * 8;
+  }
+
   openAddModal(): void {
     const defaultSite = this.service.activeSites()[0]?.id || '';
+    const initialRole = 'General Worker';
+    const baselineRate = this.service.getBaselineRate(initialRole);
     this.newEmployee = {
       firstName: '',
       surname: '',
       idNumber: '',
-      role: 'General Worker',
+      role: initialRole,
+      designation: initialRole,
       siteId: defaultSite,
       employmentStatus: 'active',
-      basicRate: 250,
+      hourlyRate: baselineRate,
+      hasRateOverride: false,
+      rateOverride: 0,
+      basicRate: baselineRate * 8,
       startDate: new Date().toISOString().slice(0, 10),
     };
     this.newOnboarding = {
@@ -183,7 +240,10 @@ export class AdminWorkforceComponent {
         designation: this.newEmployee.role || 'General Worker',
         siteId: this.newEmployee.siteId || this.service.activeSites()[0]?.id || '',
         startDate: this.newEmployee.startDate || new Date().toISOString().slice(0, 10),
-        basicRate: this.newEmployee.basicRate || 250,
+        basicRate: this.newEmployee.basicRate || (this.newEmployee.hasRateOverride ? (this.newEmployee.rateOverride || 0) * 8 : this.service.getBaselineRate(this.newEmployee.role || 'General Worker') * 8),
+        hourlyRate: this.newEmployee.hourlyRate || this.service.getBaselineRate(this.newEmployee.role || 'General Worker'),
+        hasRateOverride: !!this.newEmployee.hasRateOverride,
+        rateOverride: this.newEmployee.rateOverride || undefined,
         payRateUnit: 'daily',
         safetyQualifications: [],
         additionalFields: {},

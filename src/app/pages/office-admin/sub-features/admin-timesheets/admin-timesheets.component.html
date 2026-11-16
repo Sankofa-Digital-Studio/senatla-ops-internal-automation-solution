@@ -10,22 +10,22 @@
       <h2 class="text-base font-bold text-white">Timesheet Register & Reconciliation</h2>
       <p class="mt-1 text-xs text-gray-400">Review and audit daily site attendance for operational reconciliation.</p>
     </div>
-    <div class="flex flex-wrap items-center gap-3">
+    <div class="flex flex-wrap items-end gap-3">
       <div>
-        <label class="block text-[11px] text-gray-400 uppercase font-semibold mb-1">Work Date</label>
+        <label for="timesheet-work-date" class="block text-[11px] text-gray-400 uppercase font-semibold mb-1">Work Date</label>
         <input
-          type="date"
+          id="timesheet-work-date" type="date"
           [ngModel]="timesheetDate()"
           (ngModelChange)="timesheetDate.set($event)"
-          class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-1.5 text-xs text-white focus:outline-none focus:border-yellow-500"
+          class="h-11 rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white focus:outline-none focus:border-yellow-500"
         />
       </div>
       <div>
-        <label class="block text-[11px] text-gray-400 uppercase font-semibold mb-1">Site Filter</label>
-        <select
+        <label for="timesheet-site-filter" class="block text-[11px] text-gray-400 uppercase font-semibold mb-1">Site Filter</label>
+        <select id="timesheet-site-filter"
           [ngModel]="timesheetSiteId()"
           (ngModelChange)="timesheetSiteId.set($event)"
-          class="rounded-lg border border-gray-700 bg-gray-950 px-3 py-1.5 text-xs text-white focus:outline-none focus:border-yellow-500"
+          class="balanced-select h-11 rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white focus:outline-none focus:border-yellow-500"
         >
           <option value="">All sites</option>
           @for (site of service.activeSites(); track site.id) {
@@ -33,7 +33,7 @@
           }
         </select>
       </div>
-      <div class="pt-4">
+      <div>
         <app-erp-export-trigger
           label="Export Register"
           [busy]="busy()"

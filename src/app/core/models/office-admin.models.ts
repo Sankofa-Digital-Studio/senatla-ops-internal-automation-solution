@@ -26,6 +26,7 @@ import {
   Site,
   VehicleAsset,
   ExecutiveOperationalReport,
+  DesignationRateConfig,
 } from './app.models';
 
 export interface OfficeAdminWorkspace {
@@ -56,6 +57,7 @@ export interface OfficeAdminWorkspace {
   organizations: Organization[];
   anomalies: AdminAnomaly[];
   directorReports?: ExecutiveOperationalReport[];
+  designationRates?: DesignationRateConfig[];
 }
 
 export interface UserInviteInput {
