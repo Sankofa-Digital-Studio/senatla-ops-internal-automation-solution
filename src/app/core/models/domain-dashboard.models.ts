@@ -66,6 +66,82 @@ export interface JobCardLabourItem {
   timesheetReference?: string;
 }
 
+export interface CommercialPlannedLabourRole {
+  role: string;
+  count: number;
+  durationDays: number;
+  baselineHourlyRate?: number;
+}
+
+export interface CommercialQuoteDocument {
+  quoteNumber: string;
+  quoteDate: string;
+  client: string;
+  addressedTo: string;
+  scopeDescription: string;
+  plannedRoles: CommercialPlannedLabourRole[];
+  amountExclVat: number;
+  validityDays: number;
+  supplierName: string;
+}
+
+export interface CommercialPurchaseOrderDocument {
+  poNumber: string;
+  orderDate: string;
+  client: string;
+  buyerName: string;
+  buyerEmail: string;
+  requisitionNumber: string;
+  deliveryWorkshop: string;
+  requesterName: string;
+  linePartNumber: string;
+  lineDescription: string;
+  quantity: number;
+  unitOfMeasure: string;
+  unitPriceExclVat: number;
+  vatRatePercent: number;
+  vatAmount: number;
+  totalAmountInclVat: number;
+  promisedDate: string;
+  neededDate: string;
+  settlementTerms: string;
+  referencedQuote: string;
+}
+
+export interface CommercialInvoiceDocument {
+  invoiceNumber: string;
+  invoiceDate: string;
+  client: string;
+  referencedPoNumber: string;
+  referencedQuoteNumber: string;
+  scopeDescription: string;
+  amountExclVat: number;
+  vatRatePercent: number;
+  vatAmount: number;
+  totalAmountInclVat: number;
+  bankName: string;
+  accountNumber: string;
+  branchCode: string;
+  accountType: string;
+}
+
+export interface CommercialDocumentPackage {
+  id: string;
+  packageCode: string;
+  clientName: string;
+  siteOrWorkshop: string;
+  quote: CommercialQuoteDocument;
+  purchaseOrder: CommercialPurchaseOrderDocument;
+  invoice: CommercialInvoiceDocument;
+  matchStatus: 'matched' | 'discrepancy_flagged' | 'reconciled';
+  discrepancies: string[];
+  isDiscrepancyAcknowledged?: boolean;
+  acknowledgementNote?: string;
+  linkedJobCardNumber?: string | null;
+  linkedJobCardId?: string | null;
+  generatedAt?: string;
+}
+
 export interface JobCardDetail {
   id: string;
   jobCardNumber: string;

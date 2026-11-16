@@ -38,7 +38,19 @@ import {
   VendorInvoiceRecord,
   VehicleAsset,
   ExecutiveOperationalReport,
+  DesignationRateConfig,
 } from '../models/app.models';
+
+export const DEFAULT_DESIGNATION_RATES: DesignationRateConfig[] = [
+  { role: 'Supervisor', baselineHourlyRate: 350, standardDailyHours: 8, description: 'Direct shift and safety supervision' },
+  { role: 'Team Leader', baselineHourlyRate: 280, standardDailyHours: 8, description: 'Frontline crew leadership & task coordination' },
+  { role: 'Boilermaker', baselineHourlyRate: 320, standardDailyHours: 8, description: 'Heavy structural fabrication & coded welding' },
+  { role: 'General Worker', baselineHourlyRate: 180, standardDailyHours: 8, description: 'Civil support & manual underground tasks' },
+  { role: 'Foreman', baselineHourlyRate: 380, standardDailyHours: 8, description: 'Workshop & shaft foreman oversight' },
+  { role: 'Operator', baselineHourlyRate: 260, standardDailyHours: 8, description: 'Yellow metal & heavy machinery operation' },
+  { role: 'Safety Rep', baselineHourlyRate: 240, standardDailyHours: 8, description: 'SHE inspections & compliance audits' },
+  { role: 'Driver', baselineHourlyRate: 200, standardDailyHours: 8, description: 'Fleet haulage & material transport' },
+];
 import { OfficeAdminWorkspace, UserInviteInput } from '../models/office-admin.models';
 import { CLIENT_INITIAL_ASSETS } from '../data/client-initial-assets';
 import { AssignmentDecision, AssignmentReview, planAssetSiteTransfer, planEmployeeSiteAssignment } from '../assignment/assignment-planning';
@@ -277,6 +289,7 @@ export class OfficeAdminService {
   readonly savedViews = signal<SavedAdminView[]>([]);
   readonly organizations = signal<Organization[]>([]);
   readonly directorReports = signal<ExecutiveOperationalReport[]>([]);
+  readonly designationRates = signal<DesignationRateConfig[]>(this.loadStoredDesignationRates());
 
   readonly isHydrated = this.hydratedState.asReadonly();
   readonly isLoading = this.loadingState.asReadonly();
@@ -1483,7 +1496,9 @@ export class OfficeAdminService {
     }
 
     const totalDays = Math.max(0, automatedDays + adjustmentDays);
-    const grossWages = totalDays * employee.basicRate;
+    const effectiveHourlyRate = this.getEffectiveEmployeeHourlyRate(employee);
+    const effectiveDailyWage = employee.basicRate > 0 ? employee.basicRate : effectiveHourlyRate * 8;
+    const grossWages = totalDays * effectiveDailyWage;
     let totalAllowances = 0;
     let totalDeductions = 0;
 
@@ -1537,6 +1552,55 @@ export class OfficeAdminService {
 
   isExpired(dateStr: string) {
     return new Date(`${dateStr}T00:00:00`).getTime() < new Date().getTime();
+  }
+
+  getBaselineRate(role: string): number {
+    const config = this.designationRates().find(
+      (r) => r.role.toLowerCase() === role.toLowerCase()
+    );
+    return config ? config.baselineHourlyRate : 180;
+  }
+
+  getEffectiveEmployeeHourlyRate(employee: Employee): number {
+    if (employee.hasRateOverride && typeof employee.rateOverride === 'number' && employee.rateOverride > 0) {
+      return employee.rateOverride;
+    }
+    if (typeof employee.hourlyRate === 'number' && employee.hourlyRate > 0) {
+      return employee.hourlyRate;
+    }
+    if (employee.basicRate > 0) {
+      return Math.round(employee.basicRate / 8);
+    }
+    return this.getBaselineRate(employee.role || employee.designation || 'General Worker');
+  }
+
+  updateDesignationBaselineRate(role: string, hourlyRate: number): void {
+    const rate = Math.max(0, Number(hourlyRate));
+    this.designationRates.update((list) =>
+      list.map((item) =>
+        item.role.toLowerCase() === role.toLowerCase()
+          ? { ...item, baselineHourlyRate: rate }
+          : item
+      )
+    );
+    this.saveDesignationRates();
+  }
+
+  private loadStoredDesignationRates(): DesignationRateConfig[] {
+    try {
+      const raw = sessionStorage.getItem('senatla_designation_rates_v1');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return DEFAULT_DESIGNATION_RATES;
+  }
+
+  private saveDesignationRates(): void {
+    try {
+      sessionStorage.setItem('senatla_designation_rates_v1', JSON.stringify(this.designationRates()));
+    } catch {}
   }
 
   private async loadWorkspace(userId: string | null) {
@@ -1697,6 +1761,7 @@ export class OfficeAdminService {
     this.savedViews.set(workspace.savedViews);
     this.organizations.set([SENATLA_TRADING_ORGANIZATION]);
     this.directorReports.set(workspace.directorReports || []);
+    if (workspace.designationRates?.length) this.designationRates.set(workspace.designationRates);
   }
 
   private createDefaultWorkspace(): OfficeAdminWorkspace {
@@ -1842,6 +1907,7 @@ export class OfficeAdminService {
       savedViews: [],
       organizations: [SENATLA_TRADING_ORGANIZATION],
       anomalies: [],
+      designationRates: DEFAULT_DESIGNATION_RATES,
     };
   }
 
@@ -1875,6 +1941,7 @@ export class OfficeAdminService {
       organizations: this.organizations(),
       anomalies: this.anomalies(),
       directorReports: this.directorReports(),
+      designationRates: this.designationRates(),
     } satisfies OfficeAdminWorkspace));
   }
 

@@ -118,6 +118,13 @@ export interface Site {
   isActive: boolean;
 }
 
+export interface DesignationRateConfig {
+  role: Employee['role'];
+  baselineHourlyRate: number;
+  standardDailyHours: number;
+  description: string;
+}
+
 // Support for SA Labour Law UI-19 & Payroll
 export interface Employee {
   id: string;
@@ -126,12 +133,15 @@ export interface Employee {
   surname: string;
   idNumber: string;
   companyNumber?: string;
-  role: 'General Worker' | 'Safety Rep' | 'Operator' | 'Driver' | 'Foreman';
+  role: 'General Worker' | 'Safety Rep' | 'Operator' | 'Driver' | 'Foreman' | 'Supervisor' | 'Team Leader' | 'Boilermaker' | 'General';
   designation?: string;
   siteId: string;
   groupId?: string;
   startDate: string;
   basicRate: number;
+  hourlyRate?: number;
+  rateOverride?: number;
+  hasRateOverride?: boolean;
   payRateUnit?: 'hourly' | 'daily' | 'monthly';
   safetyQualifications?: string[];
   additionalFields?: Record<string, string>;

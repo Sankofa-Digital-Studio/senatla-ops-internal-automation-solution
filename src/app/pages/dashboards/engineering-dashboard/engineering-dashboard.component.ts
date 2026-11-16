@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomainDashboardService } from '../../../core/services/domain-dashboard.service';
-import { EngineeringOrderRecord, JobCardDetail, JobCardLabourItem, JobCardMaterialItem } from '../../../core/models/domain-dashboard.models';
+import { CommercialDocumentPackage, EngineeringOrderRecord, JobCardDetail, JobCardLabourItem, JobCardMaterialItem } from '../../../core/models/domain-dashboard.models';
 import { ErpStatusBadgeComponent } from '../../../components/erp/erp-status-badge.component';
 import { ErpModalComponent } from '../../../components/erp/erp-modal.component';
 import { DashboardScopeId } from '../../../core/models/dashboard-scope.models';
@@ -242,6 +242,193 @@ export type JobCardTabType = 'materials' | 'labour' | 'commercial';
           }
         </div>
       </div>
+
+      <!-- ========================================================================= -->
+      <!-- COMMERCIAL 3-WAY TRACEABILITY: QUOTE ➔ PURCHASE ORDER ➔ TAX INVOICE       -->
+      <!-- ========================================================================= -->
+      @if (activeCommercialPackage(); as pkg) {
+        <div class="rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-gray-950 via-gray-900 to-cyan-950/20 p-5 shadow-xl space-y-4">
+          <!-- Header Bar -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-800 pb-4">
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                  Commercial Document Traceability (3-Way Match)
+                </span>
+                <span class="text-xs text-gray-400">· Contract: <strong class="text-white">{{ pkg.clientName }}</strong></span>
+                <span class="rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                  [ngClass]="pkg.matchStatus === 'reconciled' || pkg.matchStatus === 'matched' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'">
+                  {{ pkg.matchStatus === 'reconciled' ? 'Audit Reconciled' : pkg.matchStatus === 'matched' ? '3-Way Matched' : 'Discrepancy Detected' }}
+                </span>
+              </div>
+              <h3 class="text-base font-bold text-white mt-1">
+                Commercial Audit Trail: Quotation ➔ Client Purchase Order ➔ Tax Invoice
+              </h3>
+              <p class="text-xs text-gray-400 mt-0.5">
+                Target 3# 58 Level Sub Shaft concrete floor pouring (24.7m x 3.4m x 150mm). Trace and generate authoritative Job Card with 4 planned crew allocations.
+              </p>
+            </div>
+
+            <!-- Header Action CTA -->
+            <div class="flex items-center gap-2 shrink-0">
+              @if (!pkg.linkedJobCardNumber) {
+                <button
+                  type="button"
+                  (click)="generateJobCardFromPackage(pkg)"
+                  class="rounded-lg bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-black px-4 py-2.5 text-xs font-black uppercase tracking-wider transition shadow-lg flex items-center gap-2 cursor-pointer"
+                >
+                  <span>⚡</span>
+                  <span>Generate Job Card from Commercial Documents</span>
+                </button>
+              } @else {
+                <span class="rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3 py-2 text-xs font-bold flex items-center gap-1.5">
+                  <span>✓</span> Job Card Generated ({{ pkg.linkedJobCardNumber }})
+                </span>
+              }
+            </div>
+          </div>
+
+          <!-- Commercial Feedback Notification -->
+          @if (commercialFeedback()) {
+            <div class="rounded-xl border border-emerald-700/60 bg-emerald-950/40 p-3 text-xs text-emerald-200 flex items-center justify-between">
+              <span>{{ commercialFeedback() }}</span>
+              <button type="button" (click)="commercialFeedback.set('')" class="text-emerald-400 hover:text-white text-xs font-bold cursor-pointer">Dismiss</button>
+            </div>
+          }
+
+          <!-- 3-Way Match Document Stage Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <!-- DOC 1: QUOTATION -->
+            <div class="rounded-xl border border-gray-800 bg-gray-950 p-4 flex flex-col justify-between hover:border-gray-700 transition">
+              <div>
+                <div class="flex items-center justify-between gap-2 border-b border-gray-800/80 pb-2">
+                  <span class="text-[10px] uppercase font-bold text-gray-400">1. Quotation</span>
+                  <span class="font-mono text-xs font-bold text-yellow-400">{{ pkg.quote.quoteNumber }}</span>
+                </div>
+                <div class="mt-2.5 space-y-1.5 text-xs">
+                  <p class="text-gray-300"><span class="text-gray-500 text-[10px] uppercase font-semibold">Date:</span> {{ pkg.quote.quoteDate }}</p>
+                  <p class="text-gray-300 truncate"><span class="text-gray-500 text-[10px] uppercase font-semibold">To:</span> {{ pkg.quote.addressedTo }}</p>
+                  <p class="text-gray-300 text-[11px] line-clamp-2">{{ pkg.quote.scopeDescription }}</p>
+                  <div class="pt-2 border-t border-gray-800/60">
+                    <p class="text-[10px] uppercase font-bold text-gray-400 mb-1">Planned Resources (Quote Breakdown):</p>
+                    <div class="flex flex-wrap gap-1">
+                      @for (role of pkg.quote.plannedRoles; track role.role) {
+                        <span class="rounded bg-gray-900 border border-gray-700 px-1.5 py-0.5 text-[10px] text-gray-300">
+                          {{ role.count }}x {{ role.role }}
+                        </span>
+                      }
+                      <span class="rounded bg-gray-900 border border-gray-700 px-1.5 py-0.5 text-[10px] text-yellow-400 font-bold">
+                        {{ pkg.quote.plannedRoles[0]?.durationDays || 20 }} days
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-4 pt-3 border-t border-gray-800 flex items-center justify-between">
+                <span class="text-[10px] uppercase text-gray-500 font-bold">Quoted (Excl VAT)</span>
+                <span class="font-mono text-sm font-black text-white">R {{ pkg.quote.amountExclVat | number:'1.2-2' }}</span>
+              </div>
+            </div>
+
+            <!-- DOC 2: PURCHASE ORDER -->
+            <div class="rounded-xl border border-yellow-500/40 bg-gray-950 p-4 flex flex-col justify-between hover:border-yellow-400 transition">
+              <div>
+                <div class="flex items-center justify-between gap-2 border-b border-gray-800/80 pb-2">
+                  <span class="text-[10px] uppercase font-bold text-yellow-400">2. Client Purchase Order</span>
+                  <span class="font-mono text-xs font-bold text-yellow-400">{{ pkg.purchaseOrder.poNumber }}</span>
+                </div>
+                <div class="mt-2.5 space-y-1.5 text-xs">
+                  <p class="text-gray-300"><span class="text-gray-500 text-[10px] uppercase font-semibold">Order Date:</span> {{ pkg.purchaseOrder.orderDate }}</p>
+                  <p class="text-gray-300"><span class="text-gray-500 text-[10px] uppercase font-semibold">Buyer:</span> {{ pkg.purchaseOrder.buyerName }}</p>
+                  <p class="text-gray-300"><span class="text-gray-500 text-[10px] uppercase font-semibold">Deliver To:</span> {{ pkg.purchaseOrder.requesterName }} / {{ pkg.purchaseOrder.deliveryWorkshop }}</p>
+                  <p class="text-gray-300"><span class="text-gray-500 text-[10px] uppercase font-semibold">Req #:</span> {{ pkg.purchaseOrder.requisitionNumber }} · Part {{ pkg.purchaseOrder.linePartNumber }}</p>
+                  <p class="text-[11px] text-gray-400 font-mono mt-1">{{ pkg.purchaseOrder.referencedQuote }}</p>
+                </div>
+              </div>
+
+              <div class="mt-4 pt-3 border-t border-gray-800">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-[10px] uppercase text-gray-500 font-bold">PO (Excl VAT)</span>
+                  <span class="font-mono text-sm font-bold text-white">R {{ pkg.purchaseOrder.unitPriceExclVat | number:'1.2-2' }}</span>
+                </div>
+                <div class="flex items-center justify-between text-xs mt-1">
+                  <span class="text-[10px] uppercase text-yellow-400 font-bold">Total (Incl 15% VAT)</span>
+                  <span class="font-mono text-sm font-black text-yellow-300">R {{ pkg.purchaseOrder.totalAmountInclVat | number:'1.2-2' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- DOC 3: TAX INVOICE -->
+            <div class="rounded-xl border border-gray-800 bg-gray-950 p-4 flex flex-col justify-between hover:border-gray-700 transition">
+              <div>
+                <div class="flex items-center justify-between gap-2 border-b border-gray-800/80 pb-2">
+                  <span class="text-[10px] uppercase font-bold text-gray-400">3. Tax Invoice</span>
+                  <span class="font-mono text-xs font-bold text-emerald-400">{{ pkg.invoice.invoiceNumber }}</span>
+                </div>
+                <div class="mt-2.5 space-y-1.5 text-xs">
+                  <p class="text-gray-300"><span class="text-gray-500 text-[10px] uppercase font-semibold">Invoice Date:</span> {{ pkg.invoice.invoiceDate }}</p>
+                  <p class="text-gray-300"><span class="text-gray-500 text-[10px] uppercase font-semibold">Referenced PO:</span>
+                    <span class="font-mono font-bold" [ngClass]="pkg.invoice.referencedPoNumber.includes('368322') ? 'text-amber-400' : 'text-white'">
+                      {{ pkg.invoice.referencedPoNumber }}
+                    </span>
+                    @if (pkg.invoice.referencedPoNumber.includes('368322')) {
+                      <span class="ml-1 text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1 py-0.2 rounded font-bold">Typo 368322</span>
+                    }
+                  </p>
+                  <p class="text-gray-300"><span class="text-gray-500 text-[10px] uppercase font-semibold">Quote Ref:</span> {{ pkg.invoice.referencedQuoteNumber }}</p>
+                  <p class="text-gray-300"><span class="text-gray-500 text-[10px] uppercase font-semibold">Remittance:</span> {{ pkg.invoice.bankName }} (Acc: {{ pkg.invoice.accountNumber }})</p>
+                </div>
+              </div>
+
+              <div class="mt-4 pt-3 border-t border-gray-800">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-[10px] uppercase text-gray-500 font-bold">Billed (Excl VAT)</span>
+                  <span class="font-mono text-sm font-bold text-white">R {{ pkg.invoice.amountExclVat | number:'1.2-2' }}</span>
+                </div>
+                <div class="flex items-center justify-between text-xs mt-1">
+                  <span class="text-[10px] uppercase text-emerald-400 font-bold">Total (Incl 15% VAT)</span>
+                  <span class="font-mono text-sm font-black text-emerald-300">R {{ pkg.invoice.totalAmountInclVat | number:'1.2-2' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Discrepancy & Reconciliation Bar -->
+          @if (pkg.discrepancies.length > 0) {
+            <div class="rounded-xl border border-amber-500/40 bg-amber-950/20 p-3.5 space-y-2">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <span class="rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold uppercase">
+                    Commercial Audit Alerts
+                  </span>
+                  <span class="text-xs text-amber-200 font-bold">2 Discrepancy Notes Flagged on Document Match</span>
+                </div>
+
+                @if (!pkg.isDiscrepancyAcknowledged) {
+                  <button
+                    type="button"
+                    (click)="acknowledgeDiscrepancy(pkg)"
+                    class="rounded bg-amber-500 hover:bg-amber-400 text-black px-3 py-1 text-xs font-bold transition shadow cursor-pointer self-start sm:self-auto"
+                  >
+                    Acknowledge &amp; Reconcile PO 368332-AVG
+                  </button>
+                } @else {
+                  <span class="text-xs font-bold text-emerald-400">
+                    ✓ Acknowledged &amp; Audited
+                  </span>
+                }
+              </div>
+
+              <ul class="space-y-1 text-xs text-gray-300 pl-4 list-disc">
+                @for (d of pkg.discrepancies; track d) {
+                  <li>{{ d }}</li>
+                }
+              </ul>
+            </div>
+          }
+        </div>
+      }
 
       <!-- ========================================================================= -->
       <!-- JOB CARD & PURCHASE ORDER TRACEABILITY PIPELINE                           -->
@@ -782,10 +969,13 @@ export type JobCardTabType = 'materials' | 'labour' | 'commercial';
                       <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Trade Role / Specialization *</label>
                       <select
                         [ngModel]="labRole()"
-                        (ngModelChange)="labRole.set($event)"
+                        (ngModelChange)="onLabRoleChange($event)"
                         class="w-full rounded border border-gray-700 bg-gray-900 px-2 py-1.5 text-xs text-white focus:border-yellow-500 focus:outline-none"
                       >
+                        <option value="Supervisor">Supervisor</option>
+                        <option value="Team Leader">Team Leader</option>
                         <option value="Boilermaker (Red Seal)">Boilermaker (Red Seal)</option>
+                        <option value="General Worker">General Worker</option>
                         <option value="Coded Welder">Coded Welder (Flux-Core / TIG)</option>
                         <option value="Wheel Lathe Turner / Machinist">Wheel Lathe Turner / Machinist</option>
                         <option value="Ultrasonic NDT Inspector">Ultrasonic NDT Inspector</option>
@@ -966,6 +1156,21 @@ export type JobCardTabType = 'materials' | 'labour' | 'commercial';
                     <p class="text-[11px] text-gray-400 mt-1">Supervisor: {{ card.assignedSupervisor }}</p>
                   </div>
                 </div>
+
+                @if (card.purchaseOrderNumber === '368332-AVG' || card.quoteNumber === 'TGT - ERI/224') {
+                  <div class="p-3 rounded-lg border border-cyan-500/30 bg-cyan-950/20 text-xs space-y-1">
+                    <div class="flex items-center justify-between">
+                      <span class="font-bold text-cyan-300">3-Way Match Verified (Harmony Avgold Contract)</span>
+                      <span class="rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 text-[10px] font-bold">100% Value Matched</span>
+                    </div>
+                    <p class="text-gray-300 text-[11px]">
+                      Canonical PO: <strong class="text-white">368332-AVG</strong> · Quote: <strong class="text-white">TGT - ERI/224</strong> · Invoice: <strong class="text-white">TGT – INV/336</strong>
+                    </p>
+                    <p class="text-gray-400 text-[10px]">
+                      Delivered to: AMF Steyn Workshop · Payment Terms: 7 days · Remittance: Standard Bank Welkom (040298752)
+                    </p>
+                  </div>
+                }
               </div>
             </div>
           }
@@ -1212,6 +1417,10 @@ export class EngineeringDashboardComponent {
   readonly pageStart = computed(() => this.filteredOrders().length ? (this.tablePage() - 1) * this.pageSize() + 1 : 0);
   readonly pageEnd = computed(() => Math.min(this.tablePage() * this.pageSize(), this.filteredOrders().length));
 
+  // Commercial 3-Way Traceability State
+  readonly activeCommercialPackage = computed(() => this.service.commercialPackages()[0] || null);
+  readonly commercialFeedback = signal<string>('');
+
   // Forms Visibility
   readonly showAddMaterialForm = signal<boolean>(false);
   readonly showAddLabourForm = signal<boolean>(false);
@@ -1388,6 +1597,28 @@ export class EngineeringDashboardComponent {
 
     this.showCreateJobCardModal.set(false);
     this.openJobCardDetail(created);
+  }
+
+  generateJobCardFromPackage(pkg: CommercialDocumentPackage): void {
+    const created = this.service.generateJobCardFromCommercialPackage(pkg.id);
+    this.commercialFeedback.set(`Job Card ${created.jobCardNumber} successfully generated from PO ${pkg.purchaseOrder.poNumber}.`);
+    this.openJobCardDetail(created);
+  }
+
+  acknowledgeDiscrepancy(pkg: CommercialDocumentPackage): void {
+    this.service.acknowledgeCommercialDiscrepancy(pkg.id);
+    this.commercialFeedback.set('Discrepancy reviewed and audited. Canonical PO 368332-AVG confirmed.');
+  }
+
+  onLabRoleChange(role: string): void {
+    this.labRole.set(role);
+    if (role.includes('Supervisor')) this.labRate.set(350);
+    else if (role.includes('Team Leader')) this.labRate.set(280);
+    else if (role.includes('Boilermaker') || role.includes('Welder')) this.labRate.set(320);
+    else if (role.includes('Machinist') || role.includes('Turner')) this.labRate.set(380);
+    else if (role.includes('NDT')) this.labRate.set(420);
+    else if (role.includes('General')) this.labRate.set(180);
+    else this.labRate.set(250);
   }
 
   reconcileDraws(): void {

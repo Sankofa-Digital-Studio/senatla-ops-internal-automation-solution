@@ -43,4 +43,41 @@ describe('AdminWorkforceComponent', () => {
     component.closeAddModal();
     expect(component.isAddModalOpen()).toBeFalse();
   });
+
+  it('manages designation baseline rates and supports updating rates', () => {
+    expect(component.service.getBaselineRate('Supervisor')).toBe(350);
+    expect(component.service.getBaselineRate('Team Leader')).toBe(280);
+    expect(component.service.getBaselineRate('Boilermaker')).toBe(320);
+    expect(component.service.getBaselineRate('General Worker')).toBe(180);
+
+    component.startEditRate('Boilermaker', 320);
+    expect(component.editingRole()).toBe('Boilermaker');
+    expect(component.editingRateValue()).toBe(320);
+
+    component.editingRateValue.set(340);
+    component.saveEditRate('Boilermaker');
+    expect(component.service.getBaselineRate('Boilermaker')).toBe(340);
+    expect(component.editingRole()).toBeNull();
+  });
+
+  it('handles role change and custom rate override in employee onboarding wizard', () => {
+    component.openAddModal();
+    expect(component.newEmployee.role).toBe('General Worker');
+    expect(component.newEmployee.hasRateOverride).toBeFalse();
+
+    component.onRoleChange('Boilermaker');
+    expect(component.newEmployee.role).toBe('Boilermaker');
+    expect(component.newEmployee.hourlyRate).toBe(component.service.getBaselineRate('Boilermaker'));
+
+    component.toggleRateOverride(true);
+    expect(component.newEmployee.hasRateOverride).toBeTrue();
+
+    component.onOverrideRateChange(360);
+    expect(component.newEmployee.rateOverride).toBe(360);
+    expect(component.newEmployee.basicRate).toBe(360 * 8);
+
+    component.toggleRateOverride(false);
+    expect(component.newEmployee.hasRateOverride).toBeFalse();
+    expect(component.newEmployee.hourlyRate).toBe(component.service.getBaselineRate('Boilermaker'));
+  });
 });
