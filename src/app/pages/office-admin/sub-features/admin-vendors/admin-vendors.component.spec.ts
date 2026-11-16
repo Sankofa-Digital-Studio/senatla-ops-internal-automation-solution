@@ -30,6 +30,7 @@ describe('AdminVendorsComponent', () => {
       vendorId: '',
       orderNumber: '',
       invoiceNumber: '',
+      supplierOrderNumber: '',
       itemsPurchased: '',
       total: 0,
       responsiblePerson: '',
@@ -37,5 +38,26 @@ describe('AdminVendorsComponent', () => {
     };
     await component.submitInvoice();
     expect(component.feedback()).toContain('Vendor, order number, and total amount are required.');
+  });
+  it('sends the internal PO and supplier reference required by the command', async () => {
+    const submit = spyOn(component.service, 'submitVendorInvoice').and.resolveTo({} as any);
+    component.invoiceForm = { vendorId: 'vendor-1', orderNumber: 'INT-12', invoiceNumber: '', supplierOrderNumber: 'SUP-77', itemsPurchased: 'Filters', total: 100, responsiblePerson: 'Office', invoiceDate: '2026-11-16' };
+    await component.submitInvoice();
+    expect(submit).toHaveBeenCalledOnceWith(jasmine.objectContaining({ internalOrderNumber: 'INT-12', supplierOrderNumber: 'SUP-77', total: 100 }));
+    expect(component.feedback()).toBe('Vendor invoice recorded successfully.');
+    expect(component.invoiceForm.supplierOrderNumber).toBe('');
+  });
+
+  it('retains entered references after a failed save and prevents concurrent submission', async () => {
+    const submit = spyOn(component.service, 'submitVendorInvoice').and.rejectWith(new Error('Save failed'));
+    component.invoiceForm = { vendorId: 'vendor-1', orderNumber: 'INT-12', invoiceNumber: 'INV-4', supplierOrderNumber: '', itemsPurchased: 'Filters', total: 100, responsiblePerson: 'Office', invoiceDate: '2026-11-16' };
+    component.busy.set(true);
+    await component.submitInvoice();
+    expect(submit).not.toHaveBeenCalled();
+    component.busy.set(false);
+    await component.submitInvoice();
+    expect(component.invoiceForm.orderNumber).toBe('INT-12');
+    expect(component.feedback()).toBe('Save failed');
+    expect(component.busy()).toBeFalse();
   });
 });
