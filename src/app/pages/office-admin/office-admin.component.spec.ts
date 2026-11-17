@@ -240,6 +240,24 @@ describe('OfficeAdminComponent', () => {
     expect(component.service.assets().length).toBe(2);
     expect(component.service.activity()[0].action).toBe('asset_import_committed');
   });
+  it('shows load failure and a working retry without rendering demo workspace data', async () => {
+    (component.service as any).errorState.set('Unable to load office workspace. Please retry.');
+    (component.service as any).hydratedState.set(false);
+    const retry = spyOn(component.service, 'retryWorkspaceLoad').and.resolveTo();
+    fixture.detectChanges();
+    const alert = fixture.nativeElement.querySelector('[role="alert"]');
+    expect(alert.textContent).toContain('Please retry');
+    expect(fixture.nativeElement.textContent).toContain('Workspace data is unavailable.');
+    alert.querySelector('button').click();
+    expect(retry).toHaveBeenCalledTimes(1);
+  });
+
+  it('labels retained workspace data as stale after a refresh failure', () => {
+    (component.service as any).hydratedState.set(true);
+    (component.service as any).errorState.set('Unable to load office workspace. Please retry.');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="alert"]').textContent).toContain('It may be out of date.');
+  });
 });
 
 function outbox(status: 'pending' | 'processing' | 'completed' | 'failed', hour: number) {
