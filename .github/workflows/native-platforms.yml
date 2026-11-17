@@ -40,19 +40,18 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 0
+          fetch-depth: 2
       - id: scope
         name: Detect native-impacting changes
         shell: bash
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          if [ "${{ github.event_name }}" != "pull_request" ]; then
+          if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
             echo "native=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          changed_files="$(git diff --name-only "$BASE_SHA" "$GITHUB_SHA")"
+          # The first parent of the checked-out PR merge commit is the base.
+          changed_files="$(git diff --name-only "$GITHUB_SHA^1" "$GITHUB_SHA")"
           if grep -Eq '^(android/|ios/|src/|package(-lock)?\.json$|capacitor\.config\.ts$|\.browserslistrc$|\.npmrc$|angular\.json$|ionic\.config\.json$|tsconfig.*\.json$|scripts/(normalize-capacitor-spm-paths|write-runtime-config)\.mjs$|\.github/workflows/native-platforms\.yml$)' <<< "$changed_files"; then
             echo "native=true" >> "$GITHUB_OUTPUT"
           else
@@ -146,13 +145,24 @@ jobs:
     steps:
       - name: Verify the native gate result
         env:
+          CHANGES_RESULT: ${{ needs.changes.result }}
           NATIVE_CHANGED: ${{ needs.changes.outputs.native }}
           ANDROID_RESULT: ${{ needs.android-debug.result }}
           IOS_RESULT: ${{ needs.ios-simulator.result }}
         run: |
-          if [ "$NATIVE_CHANGED" != "true" ]; then
+          if [ "$CHANGES_RESULT" != "success" ]; then
+            echo "Native change detection failed: $CHANGES_RESULT" >&2
+            exit 1
+          fi
+
+          if [ "$NATIVE_CHANGED" = "false" ]; then
             echo "Native build is not applicable to this change."
             exit 0
+          fi
+
+          if [ "$NATIVE_CHANGED" != "true" ]; then
+            echo "Native change detection did not produce a valid result." >&2
+            exit 1
           fi
 
           if [ "$ANDROID_RESULT" = "success" ] && [ "$IOS_RESULT" = "success" ]; then
