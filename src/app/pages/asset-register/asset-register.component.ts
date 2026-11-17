@@ -404,13 +404,7 @@ export class AssetRegisterComponent {
   }
 
   assetReadiness(asset: VehicleAsset): ReadinessState {
-    if (['retired', 'disposed'].includes(asset.lifecycleState || '') || asset.status === 'Expired') return 'blocked';
-    const openOrders = this.service.assetWorkOrders().filter((order) => order.assetId === asset.id && !['completed', 'cancelled'].includes(order.status));
-    if (openOrders.some((order) => order.priority === 'critical' || order.status === 'blocked')) return 'blocked';
-    const compliance = this.service.assetComplianceRecords().filter((record) => record.assetId === asset.id);
-    const licenceExpired = Boolean(asset.licenseExpiry && new Date(`${asset.licenseExpiry}T23:59:59`).getTime() < Date.now());
-    if (asset.status === 'Maintenance' || openOrders.length || licenceExpired || compliance.some((record) => ['due', 'expired'].includes(record.status))) return 'attention';
-    return 'ready';
+    return this.service.assetReadiness(asset);
   }
 
   readinessLabel(asset: VehicleAsset) {

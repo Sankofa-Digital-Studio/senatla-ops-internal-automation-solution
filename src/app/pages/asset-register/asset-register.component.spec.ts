@@ -46,14 +46,16 @@ describe('AssetRegisterComponent', () => {
     expect(generator.organizationId).toBe(excavator.organizationId);
   });
 
-  it('derives explainable readiness from operational records', () => {
-    const excavator = component.service.assets().find((asset) => asset.id === 'demo-excavator')!;
-    const compressor = component.service.assets().find((asset) => asset.id === 'demo-compressor')!;
-    const loader = component.service.assets().find((asset) => asset.id === 'demo-loader')!;
+  it('blocks missing licence evidence and retains open work order reasons', () => {
+    const asset = component.service.assets().find((entry) => entry.id === 'demo-excavator')!;
+    const result = component.service.evaluateAssetReadiness({ ...asset, licenseExpiry: '' }, '2026-06-15');
 
-    expect(component.assetReadiness(excavator)).toBe('attention');
-    expect(component.assetReadiness(compressor)).toBe('blocked');
-    expect(component.assetReadiness(loader)).toBe('ready');
+    expect(result.canProceed).toBeFalse();
+    expect(result.reasons.map((reason) => reason.code)).toEqual(jasmine.arrayContaining([
+      'asset_licence_missing',
+      'asset_work_order_open',
+    ]));
+    expect(component.assetReadiness({ ...asset, licenseExpiry: '' })).toBe('blocked');
   });
 
   it('creates and persists an incomplete registration owned by the signed-in user', async () => {
