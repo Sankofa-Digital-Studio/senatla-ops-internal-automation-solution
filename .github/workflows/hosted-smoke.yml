@@ -37,6 +37,7 @@ jobs:
       - name: Check protected deployment access and public runtime
         env:
           DEPLOYMENT_URL: ${{ inputs.deployment_url }}
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
           EXPECTED_ENVIRONMENT: ${{ inputs.environment }}
           BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
@@ -45,6 +46,7 @@ jobs:
           echo "::add-mask::$BYPASS_SECRET"
           python3 - <<'PY'
           import os
+          import re
           from urllib.parse import urlparse
 
           value = os.environ['DEPLOYMENT_URL'].rstrip('/')
@@ -53,12 +55,13 @@ jobs:
               raise SystemExit('deployment_url must be an exact HTTPS deployment origin without a path, query, or fragment.')
           if os.environ['EXPECTED_ENVIRONMENT'] == 'preview' and not parsed.netloc.endswith('.vercel.app'):
               raise SystemExit('preview smoke requires an exact Vercel deployment URL.')
+          if not re.fullmatch(r'[0-9a-f]{40}', os.environ['EXPECTED_COMMIT']):
+              raise SystemExit('expected_commit must be a full Git commit SHA.')
           PY
           body=$(mktemp)
           headers=$(mktemp)
-          status=$(curl --silent --show-error --location --cookie "" --max-time 20 \
+          status=$(curl --silent --show-error --max-time 20 \
             --header "x-vercel-protection-bypass: $BYPASS_SECRET" \
-            --header "x-vercel-set-bypass-cookie: true" \
             --dump-header "$headers" \
             --output "$body" --write-out '%{http_code}' \
             "${DEPLOYMENT_URL%/}/assets/runtime-config.json")
@@ -72,13 +75,18 @@ jobs:
             --argjson locationPresent "$location_present" \
             --argjson setCookieNames "${set_cookie_names:-[]}" \
             --arg bypassHeaderSent "true" \
-            '{deploymentUrl:$deploymentUrl,status:($status|tonumber),locationPresent:$locationPresent,setCookieNames:$setCookieNames,bypassHeaderSent:($bypassHeaderSent == "true"),redirectsFollowedByCurl:true}' \
+            '{deploymentUrl:$deploymentUrl,status:($status|tonumber),locationPresent:$locationPresent,setCookieNames:$setCookieNames,bypassHeaderSent:($bypassHeaderSent == "true"),redirectsFollowedByCurl:false}' \
             > output/deployment-evidence/runtime-preflight.json
           if [ "$status" != 200 ] || ! jq -e '.api.mode == "supabase" and (.api.supabaseUrl | length > 0) and (.api.supabaseAnonKey | length > 0)' "$body" >/dev/null 2>&1; then
             echo "Protected runtime preflight failed (HTTP $status). Check the bypass secret for the exact Vercel project and deployment; no application content or secret was logged." >&2
             exit 1
           fi
-          echo "Protected preview runtime preflight passed."
+          if ! jq -e --arg sha "$EXPECTED_COMMIT" --arg environment "$EXPECTED_ENVIRONMENT" \
+            '.build.commitSha == $sha and .build.environment == $environment' "$body" >/dev/null; then
+            echo "Protected runtime metadata does not match the reviewed commit and environment." >&2
+            exit 1
+          fi
+          echo "Protected runtime preflight passed."
       - uses: actions/setup-node@v7
         with:
           node-version: 24.15.0
