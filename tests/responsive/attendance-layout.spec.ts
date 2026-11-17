@@ -8,6 +8,18 @@ const credentials = {
   director: { email: RESPONSIVE_TEST_ACCOUNTS.director.email, password: RESPONSIVE_TEST_PASSWORD },
 };
 
+test('Office startup hydrates through one workspace snapshot request', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'Request contract is viewport independent.');
+  const snapshots: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/rest/v1/rpc/office_workspace_snapshot_v1')) snapshots.push(request.url());
+  });
+  await seedAuthenticatedPage(page, 'office');
+  await expect(page.getByRole('heading', { name: 'Control Centre' })).toBeVisible({ timeout: 120000 });
+  expect(snapshots).toHaveLength(1);
+  await expect(page.getByText('Workspace data is unavailable.')).toHaveCount(0);
+});
+
 test('Office Admin attendance queue renders without responsive regressions', async ({ page }, testInfo) => {
   await seedAuthenticatedPage(page, 'office');
   const recovery = page.getByRole('button', { name: 'Recovery' });

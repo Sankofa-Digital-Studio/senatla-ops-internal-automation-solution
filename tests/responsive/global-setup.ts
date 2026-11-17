@@ -1,3 +1,4 @@
+import { verifyWorkspaceSnapshot } from './workspace-load-benchmark';
 import { spawnSync } from 'node:child_process';
 import { createClient } from '@supabase/supabase-js';
 import { RESPONSIVE_TEST_ACCOUNTS, RESPONSIVE_TEST_PASSWORD } from './accounts';
@@ -15,6 +16,7 @@ export default async function globalSetup() {
   const sql = fixtureSql(ids);
   const result = spawnSync('docker', ['exec', '-i', 'supabase_db_senatla-ops', 'psql', '-U', 'postgres', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1'], { input: sql, encoding: 'utf8' });
   if (result.status !== 0) throw new Error(result.stderr || result.stdout || 'Responsive SQL fixture failed.');
+  await verifyWorkspaceSnapshot(url, required('SENATLA_SUPABASE_ANON_KEY'));
 }
 
 async function ensureUser(
