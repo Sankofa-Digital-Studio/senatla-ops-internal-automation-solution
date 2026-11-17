@@ -139,7 +139,7 @@ jobs:
           name: hosted-deployment-evidence
           path: |
             output/deployment-evidence
-            output/playwright/hosted-results
+            output/playwright/hosted-results/**/hosted-redirect-evidence.json
           if-no-files-found: error
           retention-days: 30
       - name: Enforce smoke result

@@ -194,6 +194,27 @@ test('authorized Office QA account reaches the protected workspace', async ({ pa
   await page.goto('/login/office');
   await page.locator('input[name="username"]').fill(email!);
   await page.locator('input[name="password"]').fill(password!);
+  const authRequests = new Map<string, string>();
+  const authStage = (url: string) => {
+    const { hostname, pathname } = new URL(url);
+    if (!hostname.endsWith('.supabase.co')) return;
+    if (pathname === '/auth/v1/token') return 'sign-in';
+    if (pathname === '/rest/v1/profiles') return 'profile';
+    if (pathname === '/rest/v1/profile_site_access') return 'site-access';
+    return undefined;
+  };
+  page.on('request', (request) => {
+    const stage = authStage(request.url());
+    if (stage) authRequests.set(stage, 'pending');
+  });
+  page.on('response', (response) => {
+    const stage = authStage(response.url());
+    if (stage) authRequests.set(stage, String(response.status()));
+  });
+  page.on('requestfailed', (request) => {
+    const stage = authStage(request.url());
+    if (stage) authRequests.set(stage, 'network failure');
+  });
   await page.getByRole('button', { name: 'Sign In' }).click();
   try {
     await expect(page).toHaveURL(new URL('/office-admin', baseUrl).toString());
@@ -204,6 +225,10 @@ test('authorized Office QA account reaches the protected workspace', async ({ pa
     }
     if (path === '/login/office' && await page.getByRole('alert').isVisible()) {
       throw new Error('The Office sign-in form displayed an error. Verify the QA account credentials, provisioning, and Office role in the preview Supabase project.');
+    }
+    if (await page.getByRole('status', { name: 'Preparing workspace' }).isVisible()) {
+      const stages = Array.from(authRequests, ([stage, state]) => `${stage}=${state}`).join(', ');
+      throw new Error(`Office sign-in stalled while preparing the workspace. Supabase requests: ${stages || 'none observed'}.`);
     }
     throw error;
   }
