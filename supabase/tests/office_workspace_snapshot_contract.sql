@@ -20,10 +20,10 @@ insert into public.assets(id,registration_number,make,model,type,license_expiry,
 ('e7200000-0000-4000-8000-000000000002','SNAP-DENY','Test','Asset','Light Vehicle',current_date,'Active','e7100000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000001');
 set local session_replication_role = origin;
 set local role authenticated;
-set local "request.jwt.claims" = '{"sub":"e7000000-0000-4000-8000-000000000001","role":"authenticated"}';
+set local "request.jwt.claims" = '{"sub":"e7000000-0000-4000-8000-000000000001","role":"authenticated","exp":4102444800}';
 select lives_ok('select public.office_workspace_snapshot_v1()', 'office snapshot reads all collections');
 select is((select count(*) from jsonb_object_keys(public.office_workspace_snapshot_v1())),26::bigint,'all 26 datasets are present');
-set local "request.jwt.claims" = '{"sub":"e7000000-0000-4000-8000-000000000002","role":"authenticated"}';
+set local "request.jwt.claims" = '{"sub":"e7000000-0000-4000-8000-000000000002","role":"authenticated","exp":4102444800}';
 select ok(exists(select 1 from jsonb_array_elements(public.office_workspace_snapshot_v1()->'assets') item where item->>'id'='e7200000-0000-4000-8000-000000000001'), 'site snapshot includes allowed asset');
 select ok(not exists(select 1 from jsonb_array_elements(public.office_workspace_snapshot_v1()->'assets') item where item->>'id'='e7200000-0000-4000-8000-000000000002'), 'site snapshot excludes forbidden asset');
 select is(

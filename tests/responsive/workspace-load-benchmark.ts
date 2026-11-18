@@ -28,6 +28,14 @@ export async function verifyWorkspaceSnapshot(url: string, anonKey: string) {
     });
     const login = await client.auth.signInWithPassword({ email: RESPONSIVE_TEST_ACCOUNTS[role].email, password: RESPONSIVE_TEST_PASSWORD });
     if (login.error) throw login.error;
+    // Auth and PostgREST containers may disagree briefly at a second boundary.
+    // Warm up outside the measurement and retry only this explicit timing error.
+    for (let attempt = 0; ; attempt++) {
+      const probe = await client.from('profiles').select('id').limit(1);
+      if (!probe.error) break;
+      if (attempt >= 9 || probe.error.code !== 'PGRST303' || !probe.error.message.includes('issued at future')) throw probe.error;
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
     // Compare on an isolated fixture before any browser tests start writing to it.
     requests = 0; bytes = 0;
     let start = performance.now();
