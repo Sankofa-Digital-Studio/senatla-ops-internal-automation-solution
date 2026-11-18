@@ -23,7 +23,7 @@ export default defineConfig({
       'x-vercel-protection-bypass': bypassSecret,
       'x-vercel-set-bypass-cookie': 'true',
     } : undefined,
-    screenshot: 'only-on-failure',
+    screenshot: 'off',
     trace: 'off',
     video: 'off',
     launchOptions: {

@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { expect, test, type APIRequestContext, type Page, type TestInfo } from 'playwright/test';
+import { isUatEmailAllowedOnOrigin } from '../../src/app/core/auth/access-email-policy';
 
 const MAX_REDIRECT_HOPS = 8;
 const baseUrl = requiredBaseUrl(process.env.SENATLA_HOSTED_URL || 'https://senatla-ops.vercel.app');
@@ -151,7 +152,7 @@ test('preview landing is reachable at the exact URL and exposes the public RBAC 
   });
 });
 
-test('unauthenticated Office route redirects to the role-specific login', async ({ page, request }, testInfo) => {
+test('unauthenticated Office route redirects to sign-in and preserves the destination', async ({ page, request }, testInfo) => {
   const requestTrace = await traceRedirectChain(request, '/office-admin');
   const documentResponses = captureDocumentResponses(page);
   await page.goto('/office-admin');
@@ -178,7 +179,7 @@ test('unauthenticated Office route redirects to the role-specific login', async 
       bypassCookieSetObserved: browserCookies.some((cookie) => cookie.name.toLowerCase().includes('vercel')),
     },
   });
-  await expect(page).toHaveURL(/\/login\/office\?redirect=%2Foffice-admin$/);
+  await expect(page).toHaveURL(new URL('/login?redirect=%2Foffice-admin', baseUrl).toString());
   await expect(page.getByRole('heading', { name: 'Senatla Ops' })).toBeVisible();
 });
 
@@ -186,12 +187,51 @@ test('authorized Office QA account reaches the protected workspace', async ({ pa
   const email = process.env.SENATLA_HOSTED_QA_EMAIL?.trim();
   const password = process.env.SENATLA_HOSTED_QA_PASSWORD;
   test.skip(!email || !password, 'Dedicated hosted QA credentials are required.');
+  expect(isUatEmailAllowedOnOrigin(email!, new URL(baseUrl).origin),
+    'The QA identity is restricted to the UAT origin. An exact deployment URL requires an approved QA identity allowed on that host.',
+  ).toBe(true);
 
   await page.goto('/login/office');
   await page.locator('input[name="username"]').fill(email!);
   await page.locator('input[name="password"]').fill(password!);
+  const authRequests = new Map<string, string>();
+  const authStage = (url: string) => {
+    const { hostname, pathname } = new URL(url);
+    if (!hostname.endsWith('.supabase.co')) return;
+    if (pathname === '/auth/v1/token') return 'sign-in';
+    if (pathname === '/rest/v1/profiles') return 'profile';
+    if (pathname === '/rest/v1/profile_site_access') return 'site-access';
+    return undefined;
+  };
+  page.on('request', (request) => {
+    const stage = authStage(request.url());
+    if (stage) authRequests.set(stage, 'pending');
+  });
+  page.on('response', (response) => {
+    const stage = authStage(response.url());
+    if (stage) authRequests.set(stage, String(response.status()));
+  });
+  page.on('requestfailed', (request) => {
+    const stage = authStage(request.url());
+    if (stage) authRequests.set(stage, 'network failure');
+  });
   await page.getByRole('button', { name: 'Sign In' }).click();
-  await expect(page).toHaveURL(/\/office-admin$/);
+  try {
+    await expect(page).toHaveURL(new URL('/office-admin', baseUrl).toString());
+  } catch (error) {
+    const path = new URL(page.url()).pathname;
+    if (path === '/login/recovery') {
+      throw new Error('The Office QA account was sent to password recovery or a required password change.');
+    }
+    if (path === '/login/office' && await page.getByRole('alert').isVisible()) {
+      throw new Error('The Office sign-in form displayed an error. Verify the QA account credentials, provisioning, and Office role in the preview Supabase project.');
+    }
+    if (await page.getByRole('status', { name: 'Preparing workspace' }).isVisible()) {
+      const stages = Array.from(authRequests, ([stage, state]) => `${stage}=${state}`).join(', ');
+      throw new Error(`Office sign-in stalled while preparing the workspace. Supabase requests: ${stages || 'none observed'}.`);
+    }
+    throw error;
+  }
   await expect(page.getByRole('heading', { name: 'Control Centre' })).toBeVisible();
 
   const dimensions = await page.evaluate(() => ({
