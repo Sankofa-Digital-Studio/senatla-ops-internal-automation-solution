@@ -1,3 +1,4 @@
+import { loadOfficeWorkspaceRows } from '../workspace/office-workspace-loader';
 import { VendorWorkspace, VendorAccountInput, VendorInvoiceInput, VendorAccountRow, VendorInvoiceRow, mapVendorAccount, mapVendorInvoice, vendorAccountPayload, vendorInvoicePayload } from '../vendors/vendor-workspace';
 import { decodeEmployeeRates, encodeEmployeeRates } from '../models/employee-rate-metadata';
 import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
@@ -1598,65 +1599,33 @@ export class OfficeAdminService {
   }
 
   private async loadFromSupabase(): Promise<OfficeAdminWorkspace> {
-    const [
-      profileResult,
-      siteResult,
-      groupResult,
-      employeeResult,
-      onboardingResult,
-      ppeResult,
-      financialTypeResult,
-      issueResult,
-      assetResult,
-      activityResult,
-      payrollPeriodResult,
-      payrollExportResult,
-      approvalResult,
-      savedViewResult,
-      organizationResult,
-      custodyResult,
-      complianceResult,
-      meterResult,
-      workOrderResult,
-      maintenancePlanResult,
-      fuelResult,
-      vendorResult,
-      vendorInvoiceResult,
-      outboxResult,
-      attendanceQueueResult,
-      issueEventResult,
-    ] = await Promise.all([
-      this.supabase!.from('profiles').select('id, username, display_name, role, is_active, created_at').order('created_at', { ascending: false }),
-      this.supabase!.from('sites').select('id, organization_id, name, location, manager_profile_id, team_name, job_number, estimated_duration, compliance_checklist, is_active').order('name'),
-      this.supabase!.from('employee_groups').select('id, name, is_active').order('name'),
-      this.supabase!.from('employees').select('id, organization_id, first_name, surname, id_number, company_number, role, designation, site_id, group_id, employment_status, start_date, basic_rate, pay_rate_unit, safety_qualifications, additional_fields, salary_advances, financials, logs, adjustments, tax_ref_number').order('surname'),
-      this.supabase!.from('employee_onboarding_records').select('id, organization_id, employee_id, criminal_check_status, fingerprint_check_status, medical_status, red_ticket_number, red_ticket_issued_at, red_ticket_expires_at, notes, updated_at').order('updated_at', { ascending: false }),
-      this.supabase!.from('ppe_issue_records').select('id, organization_id, employee_id, item_type, brand, size, unit_cost, order_date, collection_date, status, requested_at, office_confirmed_at, office_confirmed_by, employee_confirmed_at, employee_confirmed_by').order('requested_at', { ascending: false }),
-      this.supabase!.from('financial_types').select('id, name, category, is_active, is_system').order('name'),
-      this.supabase!.from('issues').select('id, organization_id, site_id, reported_by, category, description, status, severity, owner_profile_id, due_at, audit_trail, version, created_at').order('created_at', { ascending: false }),
-      this.supabase!.from('assets').select('id, organization_id, registration_number, serial_number, vin, make, model, type, license_expiry, status, assigned_site_id, notes, custodian_name, asset_class, lifecycle_state, retired_at').order('license_expiry'),
-      this.supabase!.from('admin_activity_log').select('id, organization_id, action, entity_type, entity_id, actor_id, actor_name, details, occurred_at').order('occurred_at', { ascending: false }).limit(50),
-      this.supabase!.from('payroll_periods').select('id, organization_id, period_key, month, year, status, locked_at, locked_by').order('year', { ascending: false }).order('month', { ascending: false }),
-      this.supabase!.from('payroll_exports').select('id, organization_id, period_key, include_full_ids, requested_by, file_name, created_at').order('created_at', { ascending: false }).limit(25),
-      this.supabase!.from('approval_requests').select('id, organization_id, request_type, status, requested_by, requested_by_name, reviewed_by, reviewed_by_name, payload, notes, created_at, reviewed_at').order('created_at', { ascending: false }).limit(50),
-      this.supabase!.from('saved_admin_views').select('id, organization_id, name, filters, created_by, created_at').order('created_at', { ascending: false }).limit(25),
-      this.supabase!.from('organizations').select('id, name, slug, is_active, created_at').order('name'),
-      this.supabase!.from('asset_custody_events').select('id, organization_id, asset_id, from_site_id, to_site_id, from_custodian, to_custodian, accepted_by, notes, occurred_at').order('occurred_at', { ascending: false }),
-      this.supabase!.from('asset_compliance_records').select('id, organization_id, asset_id, compliance_type, reference_number, issued_at, expires_at, status, document_path, notes').order('expires_at'),
-      this.supabase!.from('asset_meter_readings').select('id, organization_id, asset_id, meter_type, reading, recorded_at, recorded_by, source').order('recorded_at', { ascending: false }),
-      this.supabase!.from('asset_work_orders').select('id, organization_id, asset_id, title, description, status, priority, due_at, completed_at, cost').order('due_at'),
-      this.supabase!.from('asset_maintenance_plans').select('id, organization_id, asset_id, name, interval_days, interval_meter, meter_type, next_due_at, next_due_meter, is_active').order('name'),
-      this.supabase!.from('asset_fuel_entries').select('id, organization_id, asset_id, fuel_date, litres, unit_cost, total_cost, odometer_km, engine_hours, supplier, reference_number, recorded_by, created_at').order('fuel_date', { ascending: false }),
-      this.supabase!.from('vendor_accounts').select('id, organization_id, name, description, tax_number, is_active, total_owing_amount, created_at, updated_at').order('name'),
-      this.supabase!.from('vendor_invoice_records').select('id, organization_id, vendor_id, invoice_date, order_number, invoice_number, supplier_order_number, internal_order_number, items_purchased, total, responsible_person, status, requested_by, requested_by_name, director_reviewed_by, director_reviewed_at, created_at, updated_at').order('created_at', { ascending: false }),
-      this.supabase!.from('integration_outbox').select('id, organization_id, event_type, aggregate_type, aggregate_id, payload, status, idempotency_key, attempts, last_error, created_at, processed_at').order('created_at', { ascending: false }).limit(100),
-      this.supabase!.from('queued_sync_submissions').select('id, organization_id, submitted_by, site_id, work_date, status, outcome, attempts, idempotency_key, last_error, diagnostic_context, created_at, processed_at').order('created_at', { ascending: false }).limit(100),
-      this.supabase!.from('issue_events').select('id, issue_id, event_type, from_status, to_status, reason, actor_id, actor_name, owner_profile_id, due_at, occurred_at').order('occurred_at', { ascending: true }),
-    ]);
-
-    const results = [profileResult, siteResult, groupResult, employeeResult, onboardingResult, ppeResult, financialTypeResult, issueResult, assetResult, activityResult, payrollPeriodResult, payrollExportResult, approvalResult, savedViewResult, organizationResult, custodyResult, complianceResult, meterResult, workOrderResult, maintenancePlanResult, fuelResult, vendorResult, vendorInvoiceResult, outboxResult, attendanceQueueResult, issueEventResult];
-    const firstError = results.find((result) => result.error)?.error;
-    if (firstError) throw firstError;
+    const rows = await loadOfficeWorkspaceRows(this.supabase!);
+    const profileResult = { data: rows['profiles'] };
+    const siteResult = { data: rows['sites'] };
+    const groupResult = { data: rows['employee_groups'] };
+    const employeeResult = { data: rows['employees'] };
+    const onboardingResult = { data: rows['employee_onboarding_records'] };
+    const ppeResult = { data: rows['ppe_issue_records'] };
+    const financialTypeResult = { data: rows['financial_types'] };
+    const issueResult = { data: rows['issues'] };
+    const assetResult = { data: rows['assets'] };
+    const activityResult = { data: rows['admin_activity_log'] };
+    const payrollPeriodResult = { data: rows['payroll_periods'] };
+    const payrollExportResult = { data: rows['payroll_exports'] };
+    const approvalResult = { data: rows['approval_requests'] };
+    const savedViewResult = { data: rows['saved_admin_views'] };
+    const organizationResult = { data: rows['organizations'] };
+    const custodyResult = { data: rows['asset_custody_events'] };
+    const complianceResult = { data: rows['asset_compliance_records'] };
+    const meterResult = { data: rows['asset_meter_readings'] };
+    const workOrderResult = { data: rows['asset_work_orders'] };
+    const maintenancePlanResult = { data: rows['asset_maintenance_plans'] };
+    const fuelResult = { data: rows['asset_fuel_entries'] };
+    const vendorResult = { data: rows['vendor_accounts'] };
+    const vendorInvoiceResult = { data: rows['vendor_invoice_records'] };
+    const outboxResult = { data: rows['integration_outbox'] };
+    const attendanceQueueResult = { data: rows['queued_sync_submissions'] };
+    const issueEventResult = { data: rows['issue_events'] };
 
     return {
       users: (profileResult.data as ProfileRow[]).map((row) => this.mapProfile(row)),
