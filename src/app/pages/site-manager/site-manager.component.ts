@@ -18,6 +18,7 @@ import {
   ErpStatusBadgeComponent,
 } from '../../components/erp';
 import { WorkspaceActionStripComponent } from '../../components/workspace-action-strip.component';
+import { BlockerSeverity, MANAGER_CONTROL_GATEWAY, ManagerControlGateway, ManagerControlState, WorkshopWorkItem, WorkshopWorkStatus } from '../../core/gateways/manager-control.gateway';
 
 export interface BreakdownRecord {
   id: string;
@@ -37,30 +38,7 @@ export interface GateDwellRecord {
   verifiedAt: string;
 }
 
-type WorkshopWorkStatus = 'queued' | 'ready' | 'in_progress' | 'quality_check' | 'complete' | 'blocked';
-type BlockerSeverity = 'low' | 'medium' | 'high' | 'critical';
-
-interface WorkshopWorkItem {
-  id: string;
-  title: string;
-  workstation: string;
-  assignedEmployeeId: string;
-  dueDate: string;
-  status: WorkshopWorkStatus;
-  blockerId?: string;
-}
-
-interface OperationalBlocker {
-  id: string;
-  category: 'safety' | 'material' | 'drawing' | 'equipment' | 'labour' | 'quality' | 'client' | 'logistics';
-  severity: BlockerSeverity;
-  summary: string;
-  owner: string;
-  dueAt: string;
-  status: 'open' | 'escalated' | 'resolved';
-  createdAt: string;
-  workItemId?: string;
-}
+type OperationalBlocker = ManagerControlState['operationalBlockers'][number];
 
 @Component({
   selector: 'app-site-manager',
@@ -82,6 +60,7 @@ interface OperationalBlocker {
 export class SiteManagerComponent implements OnDestroy {
   readonly service = inject(StaffDataService);
   readonly readiness = inject(SiteReadinessService);
+  readonly managerControlGateway = inject<ManagerControlGateway>(MANAGER_CONTROL_GATEWAY);
   private readonly timesheetRegister = inject(TimesheetRegisterService);
   private readonly route = inject(ActivatedRoute);
 
@@ -148,6 +127,11 @@ export class SiteManagerComponent implements OnDestroy {
   readonly recentAttendanceAudit = computed(() => this.service.attendanceAuditTrail().slice(0, 6));
   readonly deliveryBusy = signal(false);
   readonly siteAssets = computed(() => this.readiness.assetRows());
+  readonly managerControlError = signal('');
+  private managerSnapshotId?: string;
+  private managerSnapshotVersion = 0;
+  private managerControlSaveQueue: Promise<void> = Promise.resolve();
+  private managerControlLoadVersion = 0;
 
   // Phase 1 Manager Control Loop: a small operational overlay shared by site and workshop managers.
   readonly managerMode = signal<'site' | 'workshop'>('site');
@@ -431,33 +415,58 @@ export class SiteManagerComponent implements OnDestroy {
     }
   }
 
-  private loadPersistedManagerControl(): void {
+  private async loadPersistedManagerControl(): Promise<void> {
+    const siteId = this.readiness.selectedSiteId() || this.localSiteName || 'unassigned-site';
+    const scope = { siteId, workDate: this.selectedDateStr };
+    const loadVersion = ++this.managerControlLoadVersion;
     try {
-      const raw = localStorage.getItem(this.managerControlStorageKey());
-      const saved = raw ? JSON.parse(raw) : null;
+      const saved = await this.managerControlGateway.load(scope);
+      if (loadVersion !== this.managerControlLoadVersion) return;
+      this.managerControlError.set('');
       if (!saved) {
+        this.managerSnapshotId = undefined;
+        this.managerSnapshotVersion = 0;
         this.shiftObjective = ''; this.shiftTopRisk = ''; this.shiftSupport = ''; this.handoverNote = '';
-        this.workshopWorkItems = []; this.operationalBlockers = [];
+        this.managerMode.set('site'); this.workshopWorkItems = []; this.operationalBlockers = [];
         this.workstationReadiness = { machine: false, tools: false, materials: false, operator: false, instruction: false, inspection: false };
         return;
       }
+      this.managerSnapshotId = saved.snapshotId;
+      this.managerSnapshotVersion = saved.version || 0;
       this.shiftObjective = saved.shiftObjective || ''; this.shiftTopRisk = saved.shiftTopRisk || ''; this.shiftSupport = saved.shiftSupport || ''; this.handoverNote = saved.handoverNote || '';
       this.managerMode.set(saved.managerMode === 'workshop' ? 'workshop' : 'site');
       this.workshopWorkItems = Array.isArray(saved.workshopWorkItems) ? saved.workshopWorkItems : [];
       this.operationalBlockers = Array.isArray(saved.operationalBlockers) ? saved.operationalBlockers : [];
       this.workstationReadiness = saved.workstationReadiness || this.workstationReadiness;
-    } catch { /* Storage unavailable or invalid JSON */ }
+    } catch (error) {
+      if (loadVersion !== this.managerControlLoadVersion) return;
+      this.managerControlError.set(error instanceof Error ? error.message : 'Manager control state could not be loaded.');
+    }
   }
 
-  private savePersistedManagerControl(): void {
-    try {
-      localStorage.setItem(this.managerControlStorageKey(), JSON.stringify({ siteName: this.localSiteName, workDate: this.selectedDateStr, managerMode: this.managerMode(), shiftObjective: this.shiftObjective, shiftTopRisk: this.shiftTopRisk, shiftSupport: this.shiftSupport, handoverNote: this.handoverNote, workshopWorkItems: this.workshopWorkItems, operationalBlockers: this.operationalBlockers, workstationReadiness: this.workstationReadiness }));
-    } catch { /* Storage quota or error */ }
-  }
-
-  private managerControlStorageKey(): string {
+  private async savePersistedManagerControl(throwOnFailure = false): Promise<void> {
     const siteId = this.readiness.selectedSiteId() || this.localSiteName || 'unassigned-site';
-    return `senatla_site_manager_phase1:${encodeURIComponent(siteId)}:${this.selectedDateStr}`;
+    const scope = { siteId, workDate: this.selectedDateStr };
+    const state: ManagerControlState = structuredClone({
+      snapshotId: this.managerSnapshotId, version: this.managerSnapshotVersion, managerMode: this.managerMode(), shiftObjective: this.shiftObjective,
+      shiftTopRisk: this.shiftTopRisk, shiftSupport: this.shiftSupport, handoverNote: this.handoverNote,
+      workshopWorkItems: this.workshopWorkItems, operationalBlockers: this.operationalBlockers, workstationReadiness: this.workstationReadiness,
+    });
+    const save = this.managerControlSaveQueue.catch(() => undefined).then(async () => {
+      const result = await this.managerControlGateway.save(scope, { ...state, snapshotId: this.managerSnapshotId || state.snapshotId, version: this.managerSnapshotVersion });
+      if (scope.workDate === this.selectedDateStr && scope.siteId === (this.readiness.selectedSiteId() || this.localSiteName || 'unassigned-site')) {
+        this.managerSnapshotId = result.snapshotId || this.managerSnapshotId;
+        this.managerSnapshotVersion = result.version;
+      }
+    });
+    this.managerControlSaveQueue = save.then(() => undefined, () => undefined);
+    try {
+      await save;
+      this.managerControlError.set('');
+    } catch (error) {
+      this.managerControlError.set(error instanceof Error ? error.message : 'Manager control state could not be saved.');
+      if (throwOnFailure) throw error;
+    }
   }
 
   private loadPersistedFieldOperations(): void {
@@ -708,7 +717,7 @@ export class SiteManagerComponent implements OnDestroy {
     this.savePersistedManagerControl();
   }
 
-  advanceWorkshopWorkItem(item: WorkshopWorkItem): void {
+  async advanceWorkshopWorkItem(item: WorkshopWorkItem): Promise<void> {
     const sequence: WorkshopWorkStatus[] = ['queued', 'ready', 'in_progress', 'quality_check', 'complete'];
     const next = sequence[Math.min(sequence.indexOf(item.status) + 1, sequence.length - 1)];
     if (item.status === 'blocked') return;
@@ -717,8 +726,14 @@ export class SiteManagerComponent implements OnDestroy {
       return;
     }
     this.workshopActionWarning = '';
-    item.status = next;
-    this.savePersistedManagerControl();
+    try {
+      await this.savePersistedManagerControl(true);
+      await this.managerControlGateway.transitionWorkPackage(item.id, next);
+      item.status = next;
+      await this.savePersistedManagerControl(true);
+    } catch (error) {
+      this.managerControlError.set(error instanceof Error ? error.message : 'The server rejected the work-package transition.');
+    }
   }
 
   addOperationalBlocker(): void {
@@ -729,7 +744,7 @@ export class SiteManagerComponent implements OnDestroy {
   }
 
   resolveOperationalBlocker(blocker: OperationalBlocker): void { blocker.status = 'resolved'; this.savePersistedManagerControl(); }
-  saveManagerControl(): void { this.savePersistedManagerControl(); }
+  saveManagerControl(): void { void this.savePersistedManagerControl(); }
 
   onAttendanceStatusChange(change: AttendanceStatusChange) { this.setAttendanceStatus(change.employee, change.status); }
   onAttendanceReasonChange(change: AttendanceReasonChange) { this.service.updateReason(change.employeeId, this.selectedDateStr, change.reason); }
@@ -791,6 +806,7 @@ export class SiteManagerComponent implements OnDestroy {
     if (selectedSite) {
       this.service.setCurrentSite(selectedSite.id, selectedSite.name);
       this.localSiteName = selectedSite.name;
+      await this.loadPersistedManagerControl();
     }
     const draft = this.service.siteDayDraft();
     if (draft && draft.workDate === this.selectedDateStr) {

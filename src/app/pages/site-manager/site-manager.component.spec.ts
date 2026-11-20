@@ -228,4 +228,37 @@ describe('SiteManagerComponent', () => {
     expect(updatedSummary.pending).toBe(0);
     expect(updatedSummary.present).toBe(employees.length);
   });
+
+  it('keeps workshop work out of progress until readiness and attendance are complete', async () => {
+    const employee = component.service.employees()[0];
+    const item = { id: 'work-gate-test', title: 'Inspect pump', workstation: 'Bay 2', assignedEmployeeId: employee.id, dueDate: component.selectedDateStr, status: 'ready' as const };
+    component.workshopWorkItems = [item];
+
+    await component.advanceWorkshopWorkItem(item);
+
+    expect(item.status).toBe('ready');
+    expect(component.workshopActionWarning).toContain('all six workstation checks');
+
+    component.workstationReadiness = { machine: true, tools: true, materials: true, operator: true, instruction: true, inspection: true };
+    component.service.updateStatus(employee.id, component.selectedDateStr, 'present', {
+      photoDataUrl: 'data:image/svg+xml;base64,PHN2Zy8+',
+      capturedAt: new Date(component.service.currentTime()),
+    });
+    await component.advanceWorkshopWorkItem(item);
+
+    expect(item.status).toBe('in_progress');
+    expect(component.workshopActionWarning).toBe('');
+  });
+
+  it('blocks workshop start when the assigned employee is not present', async () => {
+    const employee = component.service.employees()[0];
+    const item = { id: 'work-attendance-test', title: 'Inspect pump', workstation: 'Bay 2', assignedEmployeeId: employee.id, dueDate: component.selectedDateStr, status: 'ready' as const };
+    component.workshopWorkItems = [item];
+    component.workstationReadiness = { machine: true, tools: true, materials: true, operator: true, instruction: true, inspection: true };
+
+    await component.advanceWorkshopWorkItem(item);
+
+    expect(item.status).toBe('ready');
+    expect(component.workshopActionWarning).toContain('marked present');
+  });
 });

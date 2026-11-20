@@ -125,31 +125,59 @@ The Site Manager flow remains one governed operational workflow. Engineering wor
 - P3-03 explainable recommendations with alternatives and overrides.
 - P3-04 metacognitive manager review and learning loop.
 
-## Three-step analysis applied before Phase 2
+## Phase 1 three-pass audit and Phase 2 evolution — 18 Nov 2026
 
-### Step 1 — Evidence and value
+### Pass 1 — Verify the delivered behavior
 
-Phase 1 now covers the real manager problems: fragmented status, workshop blockers, poor handover, weak work readiness, shift isolation and silent staffing failures. The build is responsive and type/build validated, but the browser test runner cannot start ChromeHeadless in the current environment.
+The delivered interface covers shift objective, risk, support, handover, site/date scoping, workshop work packages, six readiness checks, attendance warnings and manually owned blockers. Existing code confirms the overlay was stored in browser storage. The earlier plan explicitly disclaimed audit-grade sync evidence. So Phase 1 improves continuity and visibility, but does not establish a shared operational record.
 
-### Step 2 — Devil's advocate
+### Pass 2 — Challenge the assumptions and failure paths
 
-- Browser persistence is useful for continuity but is not audit evidence and can be lost when a device is shared or cleared.
-- A status board can become a duplicate job-card system unless it stays a thin execution overlay.
-- A start gate can block legitimate work if it treats incomplete capture as proof of unsafe conditions.
-- Overdue labels without an owner or escalation path merely create dashboard anxiety.
-- Attendance linkage must remain read-only; a workshop manager must not be able to rewrite the attendance register through assignment controls.
+- **Shared handover:** a second manager or device could not reliably see the first manager's draft. Browser storage can also be cleared or remain on a shared device.
+- **Gate bypass:** the UI checked readiness and presence, but a direct database write could skip that client check. Work date was also inferred from due date, which is not the same operational date.
+- **Audit trust:** allowing clients to insert audit rows would let a client manufacture events; appending records from only some code paths would leave gaps.
+- **Review boundary:** a reviewer needs authority to accept or reject a handover, but should not gain broad permission to rewrite the manager's operational records.
+- **Product boundary:** a second job-card, attendance, procurement or safety system would duplicate existing sources of truth. Phase 2 must remain an execution overlay and read existing records for gates.
+- **Partial failure and concurrency:** saving the parent snapshot, readiness, packages and blockers is multiple writes. A failure can leave a partial save, and concurrent managers can overwrite a newer draft unless the contract adds explicit conflict control.
 
-### Step 3 — Improvements accepted before Phase 2
+### Pass 3 — Accepted improvements and trade-offs
 
-Phase 1 now uses site/date-scoped storage, a controlled start gate, explicit overdue blocker visibility, human-owned escalation, and clear separation between local draft state and signed sync evidence. Phase 2 must add server persistence, RLS, maker-checker controls and audit contracts before expanding authority.
+The first Phase 2 slice adds an RLS-protected server model and a local gateway fallback, separates shift work date from package deadline, gates `in_progress` at both RPC and database trigger boundaries, restricts reviewer authority to the status RPC, and creates append-only event rows from database triggers. The browser still gives quick feedback; the database remains the enforcement point.
+
+The trade-off is deliberate: this delivers governed manager records and start controls before expanding into permits, competence, inspection or procurement. The multi-table save now runs through one database transaction with an idempotency key and expected-version check. Phase 2 still needs the remaining execution domains and their negative authorization tests before the full phase can be called complete.
+
+## Phase 2 delivery status
+
+| Task | Status | Evidence / remaining work |
+| --- | --- | --- |
+| P2-01 Competence and authorisation | Not started | Add evidence-backed competence records and an attributable override path. |
+| P2-02 Dynamic toolbox talks | Not started | Compose topics from existing work/risk data and capture acknowledgements. |
+| P2-03 Permit and hold-point workflow | Foundation only | The work-start gate is hardened; permit states, maker-checker review and hazard-specific negative tests remain. |
+| P2-04 Quality and non-conformance | Not started | Add inspection results and linked NCR/rework states. |
+| P2-05 Materials and consumables | Not started | Add readiness references without writing to procurement records. |
+| P2-06 Governed server persistence | Core slice implemented | Shift snapshots, readiness, packages and blockers save atomically with RLS, an expected-version check and an idempotency key. Reviewer status and database event audit are governed separately. |
+| P2-07 Cross-role escalation inbox | Not started | Add accountable queue, acknowledgement and SLA behavior. |
+| P2-08 Audit and migration contract | Core contract executed | Clean-reset migration chain and 33-assertion pgTAP contract added and executed against the connected database, including authenticated save, idempotent replay and stale-version rejection. Full local database suite remains unavailable because Docker is not installed in this environment. |
+
+## Additional Phase 2 tasks added by the audit
+
+- **P2-09 — Shift-date integrity:** persist work date independently from due date and use it for readiness and attendance checks. Status: implemented in the governance hardening migration.
+- **P2-10 — Server-enforced execution gate:** reject direct writes that start work without all six checks and an assigned present employee. Status: implemented in RPC and trigger paths; verify with local Supabase negative tests.
+- **P2-11 — Trustworthy audit events:** generate audit rows from database changes and deny direct client insert/update/delete. Status: implemented in trigger and grants; verify in database tests.
+- **P2-12 — Rejected handover revision:** permit a rejected draft to be revised and resubmitted while keeping accepted handovers immutable. Status: implemented in trigger and status RPC; add workflow UI and behavioral tests.
+- **P2-13 — Conflict-safe saves:** add idempotency/version checks and atomic persistence for manager snapshot collections. Status: implemented in `save_manager_control_state_v1`; request replays return their original version, concurrent first inserts serialize, and stale edits fail with a reload message instead of silently overwriting a newer version.
+- **P2-14 — Multi-role negative authorization suite:** prove office reviewers can review without editing manager records, and Site-role users outside their assigned site scope cannot read or write manager control records. Status: schema contract coverage added; role fixtures and negative RLS behavior tests remain.
+- **P2-15 — Reviewer role guard:** keep review writes invoker-rights and enforce that only Office Admin or Director can accept/reject submitted handovers without editing their content. Status: implemented in RLS and the status trigger; add fixture-based behavior tests.
+- **P2-16 — Phase 2 database query path:** add covering foreign-key indexes and init-plan-safe auth checks after the Supabase advisor surfaced avoidable per-row work. Status: applied; the advisor no longer reports new Phase 2 foreign-key or auth-initplan warnings. New indexes are currently unused because these records have no sustained production workload yet.
 
 ## Definition of done
 
 - Responsive at desktop and 390px mobile widths.
 - Existing attendance, safety, readiness, telemetry and sign-off behavior remains intact.
-- Manager overlay persists by site and date and survives reload without overwriting another shift.
+- Hosted manager overlay persists by authorized site and work date; local review mode remains site/date isolated.
 - No cross-site data is exposed.
 - Work cannot enter `in progress` without six readiness checks and an assigned present crew member.
 - Overdue unresolved blockers are visibly marked and remain human-escalated.
-- Unit tests cover blocker ageing, attendance staffing warnings, readiness state and site/date handover persistence.
-- `npm run typecheck`, `npm run build` and focused tests pass.
+- Unit tests cover blocker ageing, attendance staffing warnings, readiness state, site/date handover persistence and workshop start gating.
+- Database tests cover RLS, function privilege boundaries, work-date separation and append-only audit permissions.
+- `npm run typecheck`, `npm run lint`, `npm run build`, focused browser tests and the full Supabase database suite pass before production release.

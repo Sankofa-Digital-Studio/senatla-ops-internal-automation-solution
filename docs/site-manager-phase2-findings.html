@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#163b35">
+  <meta name="description" content="Three-pass Phase 1 review and Phase 2 Site Manager delivery findings.">
+  <title>Site Manager Phase 2 Findings</title>
+  <style>
+    :root{color-scheme:light;--ink:#172b28;--muted:#536663;--brand:#17685a;--deep:#163b35;--paper:#f5f7f4;--line:#d9e3dd;--gold:#b78324;--white:#fff;--red:#9b3c34;font:16px/1.65 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink)}a{color:var(--brand)}.hero{background:var(--deep);color:white;padding:clamp(2rem,7vw,5.4rem) max(1rem,calc((100vw - 1080px)/2)) 3rem}.eyebrow{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:#acd6c8;font-weight:700}.hero h1{max-width:850px;margin:.55rem 0;font-size:clamp(2rem,6vw,3.6rem);line-height:1.08;letter-spacing:-.035em}.hero p{max-width:730px;color:#d9e9e2;margin:1rem 0 0}.meta{font-size:.9rem;color:#c4d9d1;margin-top:1.5rem}.wrap{max-width:1080px;margin:auto;padding:2rem 1rem 5rem}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:-.6rem}.metric,.card{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:1.15rem}.metric strong{display:block;font-size:1.25rem;color:var(--deep)}.metric span{font-size:.88rem;color:var(--muted)}section{margin-top:2.5rem}h2{font-size:1.65rem;line-height:1.25;margin:0 0 .8rem;letter-spacing:-.02em}h3{font-size:1.1rem;margin:.1rem 0 .5rem;color:var(--deep)}p{margin:.5rem 0 1rem}.muted{color:var(--muted)}.passes{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}.pass{border-top:4px solid var(--brand)}.pass:nth-child(2){border-color:var(--gold)}.pass:nth-child(3){border-color:#438773}ul{padding-left:1.2rem;margin:.4rem 0}.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:white}table{width:100%;border-collapse:collapse;min-width:680px}th,td{text-align:left;padding:.8rem .9rem;border-bottom:1px solid var(--line);vertical-align:top}th{background:#eaf1ed;color:var(--deep);font-size:.9rem}tr:last-child td{border-bottom:0}.status{font-weight:700;color:var(--brand)}.open{font-weight:700;color:#765610}.callout{border-left:4px solid var(--gold);background:#fff8e9;padding:1rem 1.15rem;border-radius:0 10px 10px 0}.checks{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}.check{padding:.8rem 1rem;background:white;border:1px solid var(--line);border-radius:10px}.footer{border-top:1px solid var(--line);padding-top:1rem;color:var(--muted);font-size:.9rem;margin-top:3rem}
+    @media(max-width:700px){.summary,.passes,.checks{grid-template-columns:1fr}.wrap{padding-top:1.4rem}.hero{padding-bottom:2.3rem}.metric{padding:.9rem 1rem}section{margin-top:2rem}}
+    @media print{body{background:white}.hero{padding:2rem;color:white}.wrap{padding:1rem}.card,.metric,.table-wrap{break-inside:avoid}a{color:inherit}}
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="eyebrow">Operations product review · 18 November 2026</div>
+    <h1>Site Manager Phase 2 Findings</h1>
+    <p>A three-pass review of Phase 1, the improvements carried into Phase 2, and the evidence and remaining work that determine readiness.</p>
+    <div class="meta">Decision: governance foundation implemented; full Phase 2 backlog remains in progress.</div>
+  </header>
+  <main class="wrap">
+    <div class="summary" aria-label="Review summary">
+      <div class="metric"><strong>33 / 33</strong><span>Remote database contract assertions passed</span></div>
+      <div class="metric"><strong>Atomic and versioned</strong><span>Manager record saves use one database transaction</span></div>
+      <div class="metric"><strong>6 workflows open</strong><span>Competence, briefing, permits, quality, materials, escalation</span></div>
+    </div>
+    <section>
+      <h2>Finding</h2>
+      <p>Phase 1 improved shift planning and workshop visibility, but its manager overlay lived in browser storage. It was not a dependable shared handover record, and readiness checks enforced only in the interface could be bypassed. Phase 2 now establishes server-backed records, site/date access controls, database start gates, trusted audit events, and conflict-safe saves.</p>
+      <div class="callout"><strong>Release boundary:</strong> this slice is a governed foundation for continued Phase 2 development. It does not complete the full Phase 2 backlog or authorize a production release by itself.</div>
+    </section>
+    <section>
+      <h2>Three-pass analysis</h2>
+      <div class="passes">
+        <article class="card pass"><h3>1 · Verify the delivered behavior</h3><p>Phase 1 covered shift objective, risk, support, handover, workshop work, six readiness checks, attendance warnings, and blockers. Browser storage was scoped by site and date, with no claim that it was server audit evidence.</p></article>
+        <article class="card pass"><h3>2 · Challenge the failure paths</h3><ul><li>Second manager/device could miss local state.</li><li>Direct writes could bypass UI-only start gates.</li><li>Due date and operational work date were conflated.</li><li>Client-written audit events were forgeable.</li><li>Partial saves and stale concurrent edits could lose data.</li><li>Reviewer permissions could become broad edit access.</li></ul></article>
+        <article class="card pass"><h3>3 · Improve and evolve Phase 2</h3><p>Move enforcement into Postgres, use RLS and narrow reviewer rights, atomically save versioned records, generate audit events from triggers, and keep work date distinct from due date. Continue with explicit permit, competence, quality, material, briefing, and escalation workflows.</p></article>
+      </div>
+    </section>
+    <section>
+      <h2>Implemented foundation</h2>
+      <div class="checks">
+        <div class="check">RLS-protected snapshots, readiness, work packages, blockers, and audit events.</div>
+        <div class="check">One-transaction saves with idempotency and expected-version conflict checks.</div>
+        <div class="check">Database start gate requires six checks and an assigned person marked present.</div>
+        <div class="check">Trigger-generated append-only events; authenticated clients cannot write or delete events.</div>
+        <div class="check">Review status is limited to authorized reviewer roles; accepted handovers are immutable.</div>
+        <div class="check">Separate work date from package deadline; local review mode remains available.</div>
+        <div class="check">Applied foreign-key indexes and auth-policy tuning; no new Phase 2 advisor findings.</div>
+        <div class="check">33-assertion remote database contract covers authenticated save, replay, and stale rejection.</div>
+      </div>
+    </section>
+    <section>
+      <h2>Phase 2 backlog status</h2>
+      <div class="table-wrap"><table><thead><tr><th>Task</th><th>Status</th><th>Next outcome</th></tr></thead><tbody>
+        <tr><td>P2-01 Competence and authorisation</td><td class="open">Open</td><td>Evidence, expiry, policy gates, attributable exceptions</td></tr>
+        <tr><td>P2-02 Dynamic toolbox talks</td><td class="open">Open</td><td>Explainable topic selection and crew acknowledgement</td></tr>
+        <tr><td>P2-03 Permits and hold points</td><td class="open">Foundation only</td><td>Lifecycle, maker-checker UI, hazard-specific denial tests</td></tr>
+        <tr><td>P2-04 Quality and non-conformance</td><td class="open">Open</td><td>Inspection evidence, rework, release rules</td></tr>
+        <tr><td>P2-05 Materials and consumables</td><td class="open">Open</td><td>Readiness references linked to existing procurement records</td></tr>
+        <tr><td>P2-06 Governed server persistence</td><td class="status">Core implemented</td><td>Extend the governed record as domains are added</td></tr>
+        <tr><td>P2-07 Cross-role escalation inbox</td><td class="open">Open</td><td>Owner, SLA, acknowledgement, overdue state</td></tr>
+        <tr><td>P2-08 Audit and migration contract</td><td class="status">Core executed</td><td>Role-negative fixtures and Docker-enabled full DB suite</td></tr>
+        <tr><td>P2-09 to P2-13 integrity and save controls</td><td class="status">Implemented</td><td>Expand role fixtures and workflow coverage</td></tr>
+        <tr><td>P2-14 / P2-15 role behavior</td><td class="open">Partial</td><td>Dedicated multi-role negative behavior tests</td></tr>
+        <tr><td>P2-16 database query path</td><td class="status">Applied</td><td>Review plans after production usage</td></tr>
+      </tbody></table></div>
+    </section>
+    <section>
+      <h2>Verification and limits</h2>
+      <ul>
+        <li>Remote pgTAP contract: 33 assertions passed, including authenticated saves, idempotent replay, and stale-version rejection.</li>
+        <li>Typecheck, lint, and production build passed during implementation. Final checks are being rerun after report updates.</li>
+        <li>Angular specs compiled, but ChromeHeadless did not complete; browser execution is not claimed as passing.</li>
+        <li>Local full Supabase tests could not run because Docker is unavailable. Remote contract execution covered the database contract.</li>
+        <li>Unrelated pre-existing Supabase security findings remain outside this change.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Recommended implementation order</h2>
+      <ol><li>Role/site negative RLS fixtures against clean-reset migrations.</li><li>Permit and hold-point lifecycle with maker-checker denial tests.</li><li>Competence and authorisation inputs to assignment and start decisions.</li><li>Quality inspection, non-conformance, and release rules.</li><li>Toolbox talk acknowledgements, materials, and escalation workflows.</li><li>Browser-level tests on a working runner and full DB tests in Docker-enabled CI.</li></ol>
+    </section>
+    <footer class="footer">Source of truth for task-level status: <a href="site-manager-phase-plan.md">Site Manager Flow Expansion Plan</a>.</footer>
+  </main>
+</body>
+</html>

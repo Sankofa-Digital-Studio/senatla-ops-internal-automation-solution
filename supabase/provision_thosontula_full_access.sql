@@ -1,8 +1,8 @@
--- Provision / Update Developer Full Access for Thoso Ntula (thosontula@gmail.com)
+-- Provision / Update Developer Full Access for Ntula Thoso {developerEmail}
 -- Grants Director, Office Admin, and Site Manager cross-workspace capabilities
 -- Target Project: btdavpeyxtirtshovjdu (Senatla Operations)
--- Target Username / Email: thosontula@gmail.com
--- Display Name: Thoso Ntula
+-- Target Username / Email: {developerEmail}
+-- Display Name: {firstName} {lastName}
 -- Role: director (Developer Director with Office Admin and Site Manager capabilities)
 
 DO $$
@@ -10,7 +10,7 @@ DECLARE
   v_user_id uuid;
   v_org_id uuid := '00000000-0000-4000-8000-000000000001';
   v_email text := 'thosontula@gmail.com';
-  v_display_name text := 'Thoso Ntula';
+  v_display_name text := 'Ntula Thoso';
   v_role text := 'director';
   v_temp_password text := 'Sen4t!aFullAccessThoso2026!';
   v_site record;

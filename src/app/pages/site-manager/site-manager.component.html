@@ -118,6 +118,10 @@
       (action)="selectTab(service.timeStatus() === 'blocked' || service.unsyncedChanges() ? 'signoff' : 'setup')">
     </app-workspace-action-strip>
 
+    <p *ngIf="managerControlError()" class="mt-2 rounded-lg border border-rose-800 bg-rose-950/40 px-3 py-2 text-xs text-rose-200" role="alert">
+      {{ managerControlError() }} {{ managerControlGateway.persistenceMode === 'server' ? 'The server did not confirm this change. Reload the shift before retrying.' : 'This browser did not confirm a local save.' }}
+    </p>
+
     <!-- Phase 1 Manager Control Centre -->
     <section class="mt-3 rounded-xl border border-indigo-800/60 bg-indigo-950/30 p-3" aria-labelledby="manager-control-heading">
       <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -867,7 +871,7 @@
       </div>
 
       <div class="rounded-xl border border-indigo-800/60 bg-indigo-950/20 p-3 space-y-2">
-        <div class="flex items-center justify-between"><h4 class="text-xs font-black uppercase tracking-[0.2em] text-indigo-300">Next-shift handover</h4><span class="text-[10px] text-gray-500">Saved locally for this site and date</span></div>
+        <div class="flex items-center justify-between"><h4 class="text-xs font-black uppercase tracking-[0.2em] text-indigo-300">Next-shift handover</h4><span class="text-[10px] text-gray-500">{{ managerControlGateway.persistenceMode === 'server' ? 'Server record for this site and date' : 'Local review copy for this site and date' }}</span></div>
         <textarea [(ngModel)]="handoverNote" (ngModelChange)="saveManagerControl()" rows="3" class="w-full rounded-lg border border-indigo-800 bg-gray-950 px-3 py-2 text-sm text-white" placeholder="What remains open, what changed, and what must the next manager know?"></textarea>
         <div class="grid gap-2 text-xs sm:grid-cols-3"><div><span class="text-gray-500">Open blockers</span><strong class="ml-2 text-amber-300">{{ openBlockers().length }}</strong></div><div><span class="text-gray-500">Work packages</span><strong class="ml-2 text-sky-300">{{ workshopWorkItems.length }}</strong></div><div><span class="text-gray-500">Readiness checks</span><strong class="ml-2 text-cyan-300">{{ readinessChecksComplete() }}/6</strong></div></div>
       </div>
