@@ -9,6 +9,9 @@ import { SupabaseAuthGateway } from './supabase-auth.gateway';
 import { READINESS_GATEWAY } from './readiness.gateway';
 import { SupabaseReadinessGateway } from './supabase-readiness.gateway';
 import { LocalReadinessGateway } from './local-readiness.gateway';
+import { MANAGER_CONTROL_GATEWAY } from './manager-control.gateway';
+import { LocalManagerControlGateway } from './local-manager-control.gateway';
+import { SupabaseManagerControlGateway } from './supabase-manager-control.gateway';
 
 export function provideBackendGateways(config: RuntimeConfig): Provider[] {
   const isSupabaseConfigured =
@@ -27,11 +30,15 @@ export function provideBackendGateways(config: RuntimeConfig): Provider[] {
   const readinessGateway = isSupabaseConfigured
     ? SupabaseReadinessGateway
     : LocalReadinessGateway;
+  const managerControlGateway = isSupabaseConfigured
+    ? SupabaseManagerControlGateway
+    : LocalManagerControlGateway;
 
   return [
     { provide: APP_STATE_GATEWAY, useClass: appStateGateway },
     { provide: AUTH_GATEWAY, useClass: authGateway },
     { provide: READINESS_GATEWAY, useClass: readinessGateway },
+    { provide: MANAGER_CONTROL_GATEWAY, useClass: managerControlGateway },
     { provide: LocalReadinessGateway, useClass: LocalReadinessGateway },
   ];
 }
