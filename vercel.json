@@ -11,6 +11,7 @@
     { "source": "/asset-register", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }] },
     { "source": "/costing-model", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }] },
     { "source": "/profile-settings", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }] },
+    { "source": "/manifest.webmanifest", "headers": [{ "key": "Access-Control-Allow-Origin", "value": "*" }, { "key": "Content-Type", "value": "application/manifest+json" }] },
     { "source": "/((?!landing$).*)", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }] }
   ],
   "rewrites": [
