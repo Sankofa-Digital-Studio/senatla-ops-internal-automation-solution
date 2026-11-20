@@ -1,66 +1,86 @@
-Subject: Welcome to Senatla Ops (UAT) – Your Office Admin Login Details
+Subject: Welcome to Senatla Ops (UAT) – Your Office Admin Login Details & Next Steps
 
 To: Maggie <maggie@senatlatrading.com>
 From: Senatla Operations Team
+Subject: Welcome to Senatla Ops (UAT) – Your Office Admin Login Details & Next Steps
 
 Hi Maggie,
 
 Welcome to the testing phase (UAT – User Acceptance Testing) of our new Senatla Ops platform!
 
-We have set up your dedicated testing profile as an Office Admin. Below are your login credentials, a simple explanation of your test email, and an easy step-by-step guide to get you started.
+We have set up your dedicated testing profile as an Office Admin. Below are your login credentials, a simple explanation of your test email, an easy step-by-step guide to get you started, and two important next steps for us to collaborate on.
 
 ==================================================
 1. YOUR LOGIN DETAILS
 ==================================================
+
 - UAT Testing Portal (Landing Page): https://senatla-ops-uat.vercel.app/landing
 - Direct Office Sign-in: https://senatla-ops-uat.vercel.app/login/office
 - Username / Work Email: maggie+UAT@senatlatrading.com
 - Temporary Password: Sen4t!aOpsMaggieUAT2026
 - Role: Office Admin
+- Designated Workspace: Control Centre (/office-admin)
 
 ==================================================
-2. WHAT DOES "maggie+UAT@senatlatrading.com" MEAN?
+2. WHAT DOES maggie+UAT@senatlatrading.com MEAN?
 ==================================================
+
 You might notice the "+UAT" added to your email address. Here is what it means:
 
-1. It delivers straight to your normal inbox:
-Any messages, notifications, or password resets sent to maggie+UAT@senatlatrading.com will arrive directly in your normal work inbox (maggie@senatlatrading.com). You do NOT need a second email account or a separate Microsoft/Google inbox.
+1. It sends all emails to your normal inbox:
+   Any messages, notifications, or password resets sent to maggie+UAT@senatlatrading.com will arrive directly in your regular work inbox (maggie@senatlatrading.com). You do NOT need a second email account or a new Microsoft/Google account.
 
-2. It directs you to the dedicated testing environment:
-The "+UAT" tag ensures you are guided to https://senatla-ops-uat.vercel.app/landing. This allows you to test creating employees, reviewing timesheets, and checking assets safely without touching live production records or your permanent account.
+2. It keeps testing safe and separate:
+   The "+UAT" tag directs you to our dedicated testing environment (https://senatla-ops-uat.vercel.app/landing). This means you can create test employees, test sites, and test timesheets safely without affecting live production data or your permanent company account.
 
 ==================================================
 3. QUICK & SIMPLE ON-BOARDING FLOW (4 EASY STEPS)
 ==================================================
-Step 1: Open the UAT Portal & Sign In
-- Go to: https://senatla-ops-uat.vercel.app/landing
-- Click "Sign In" (or go to https://senatla-ops-uat.vercel.app/login/office).
-- Enter your email (maggie+UAT@senatlatrading.com) and temporary password (Sen4t!aOpsMaggieUAT2026).
-- Click "Sign In".
 
-Step 2: Set Your Permanent Password
-- Because this is your first time logging in, the system will immediately ask you to create your own permanent password.
-- Please choose a strong password (at least 12 characters, including uppercase, lowercase, numbers, and symbols).
+1. Open the UAT Portal & Sign In:
+   - Go to https://senatla-ops-uat.vercel.app/landing
+   - Click "Sign In" (or go directly to https://senatla-ops-uat.vercel.app/login/office)
+   - Enter your username (maggie+UAT@senatlatrading.com) and temporary password (Sen4t!aOpsMaggieUAT2026)
+   - Click "Sign In".
 
-Step 3: Choose a 4- or 5-Digit Recovery PIN
-- Enter a 4- or 5-digit PIN of your choice (e.g. 4829).
-- Keep this PIN in mind; it serves as your security verification if you ever need to reset your password.
+2. Set Your New Permanent Password:
+   - Because this is your first time logging in, the system will immediately ask you to create your own permanent password.
+   - Tip: Choose a strong password (at least 12 characters, with an uppercase letter, lowercase letter, number, and special character like ! or @).
 
-Step 4: Explore the Office Admin Workspace
-- Once submitted, sign in with your new permanent password.
-- You will arrive in the Control Centre (/office-admin).
-- You can freely test:
-  * People & Workforce: Review employee records and site allocations.
-  * Timesheets: Check daily shift attendance and site logs.
-  * Sites & Assets: Inspect workshop facilities and machinery registers.
-  * Issues & Vendors: Track operational alerts and supplier entries.
+3. Choose a 4- or 5-Digit Recovery PIN:
+   - Right below your new password, you will be asked to choose a simple 4 or 5 digit PIN (e.g. 4829).
+   - Keep this PIN safe; it is your backup code if you ever forget your password.
+
+4. Explore the Office Admin Workspace:
+   - Once updated, log in with your new permanent password.
+   - You will land directly in the Control Centre (/office-admin).
+   - Key areas ready for your review:
+     * People & Workforce: Review employee registers and site assignments.
+     * Timesheets: Inspect daily shift submissions and attendance logs.
+     * Sites & Assets: Check workshop facilities and equipment registers.
+     * Issues & Vendors: Review operational incidents and suppliers.
 
 ==================================================
-4. NEED HELP?
+4. ACTION REQUIRED: PLEASE REPLY ONCE CREATED & SEND EMPLOYEE LIST
 ==================================================
-If you have any questions or encounter any issues while signing in or testing, please reach out to us right away.
 
-Thank you for helping us test and refine the Senatla Ops workspace!
+To help us get your workspace fully populated and ready for day-to-day operations, please complete these two quick actions:
+
+1. Confirm Your Account Setup:
+   As soon as you have completed logging in and set your new password, please REPLY to this email to let us know that your UAT user is successfully created and active.
+
+2. Send Employee Details for Bulk Upload:
+   Please attach or reply with ANY list, spreadsheet, or register of employee details you currently have (e.g. Excel spreadsheet, Word document, or PDF containing names, ID numbers, company numbers, roles/designations, assigned sites, or medical/security check status).
+   We will take this data and start uploading their profiles directly into the system so you have accurate workforce records ready in your Control Centre.
+
+==================================================
+5. NEED HELP?
+==================================================
+
+If you run into any questions, notice anything unclear, or need help logging in, please reply directly to this email or reach out to the team.
+
+Thank you for helping us test and perfect the Senatla Ops workspace!
 
 Warm regards,
 Senatla Operations Team
+Sankofa Digital Studio
