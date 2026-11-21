@@ -147,30 +147,88 @@
         </div>
       </div>
 
-      <!-- Row 1 Metric Callouts: Total Days, Start, and End -->
+      <!-- Row 1 Metric Callouts: Total Days, Start, and End + Duration Reconciliation Card -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-white/10 text-xs">
         <div class="p-2.5 rounded-lg bg-white/5 border border-white/10 flex items-center justify-between">
           <div>
             <div class="text-[10px] uppercase tracking-wider text-slate-300 font-bold">Total Working Days</div>
-            <div class="text-2xl font-black text-emerald-400" id="row1WorkingDaysDisplay">373 days</div>
+            <div class="text-2xl font-black text-emerald-400" id="row1WorkingDaysDisplay">407 days</div>
           </div>
-          <span class="text-[11px] font-mono text-slate-400" id="row1CalendarDaysDisplay">(591 calendar days)</span>
+          <span class="text-[11px] font-mono text-slate-400" id="row1CalendarDaysDisplay">(640 calendar days)</span>
         </div>
 
         <div class="p-2.5 rounded-lg bg-white/5 border border-white/10 flex items-center justify-between">
           <div>
-            <div class="text-[10px] uppercase tracking-wider text-slate-300 font-bold">START DATE</div>
-            <div class="text-lg font-black font-mono text-white" id="row1StartDateDisplay">sTART: Tue 07 12 27</div>
+            <div class="text-[10px] uppercase tracking-wider text-slate-300 font-bold flex items-center gap-1.5">
+              <span>START DATE</span>
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            </div>
+            <div class="text-base font-black font-mono text-white flex items-center gap-1.5" id="row1StartDateDisplay">
+              <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              <span>sTART: Tue 07 12 27</span>
+            </div>
           </div>
           <span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">Phase 03 Start</span>
         </div>
 
         <div class="p-2.5 rounded-lg bg-white/5 border border-white/10 flex items-center justify-between">
           <div>
-            <div class="text-[10px] uppercase tracking-wider text-slate-300 font-bold">END DATE</div>
-            <div class="text-lg font-black font-mono text-indigo-300" id="row1EndDateDisplay">END: Thu 20 07 29</div>
+            <div class="text-[10px] uppercase tracking-wider text-slate-300 font-bold flex items-center gap-1.5">
+              <span>END DATE</span>
+              <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+            </div>
+            <div class="text-base font-black font-mono text-indigo-300 flex items-center gap-1.5" id="row1EndDateDisplay">
+              <svg class="w-3.5 h-3.5 text-rose-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+              <span>END: Thu 06 09 29</span>
+            </div>
           </div>
           <span class="px-2 py-0.5 rounded text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-bold">Phase 07 Finish</span>
+        </div>
+
+        <!-- Start Date + End Date Duration Reconciliation Breakdown Card -->
+        <div class="col-span-1 sm:col-span-3 p-3 rounded-lg bg-slate-950/80 border border-emerald-500/30 text-xs shadow-inner">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-1.5 border-b border-white/10 pb-2 mb-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+                <span>⏱️ DURATION RECONCILIATION</span>
+              </span>
+              <span class="text-[11px] font-bold text-slate-200">
+                Total Allocated Duration: <span class="text-emerald-400 font-black">19 Months</span> (407 Working Days) across Phases 03, 02, 04, 01, 06, 07
+              </span>
+            </div>
+            <div class="text-[10px] font-mono text-slate-400 flex items-center gap-1.5">
+              <span>Program Span:</span>
+              <span class="text-emerald-300 font-bold" id="reconSpanStart">Tue 07 12 27</span>
+              <span>➔</span>
+              <span class="text-indigo-300 font-bold" id="reconSpanEnd">Thu 06 09 29</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 text-center text-xs">
+            <div class="p-2 rounded bg-white/5 border border-white/10 flex flex-col justify-between">
+              <div class="text-[10px] text-slate-300 font-semibold">1. Allocated Work Days</div>
+              <div class="text-xl font-black text-emerald-400 my-0.5" id="reconAllocatedWorkDays">407 days</div>
+              <div class="text-[9.5px] text-slate-400">19 Allocated Months</div>
+            </div>
+
+            <div class="p-2 rounded bg-rose-950/20 border border-rose-500/30 flex flex-col justify-between">
+              <div class="text-[10px] text-rose-300 font-semibold">2. + Observed Public Holidays</div>
+              <div class="text-xl font-black text-rose-400 my-0.5" id="reconMonFriHolidays">+18 days</div>
+              <div class="text-[9.5px] text-rose-300/80">Fell on Mon–Fri (Workable days)</div>
+            </div>
+
+            <div class="p-2 rounded bg-amber-950/20 border border-amber-500/30 flex flex-col justify-between">
+              <div class="text-[10px] text-amber-300 font-semibold">3. + Contractor Break Weekdays</div>
+              <div class="text-xl font-black text-amber-400 my-0.5" id="reconMonFriContractorBreak">+32 days</div>
+              <div class="text-[9.5px] text-amber-300/80">Mon–Fri 18 Dec–11 Jan (Non-holiday)</div>
+            </div>
+
+            <div class="p-2 rounded bg-emerald-950/30 border border-emerald-500/40 flex flex-col justify-between">
+              <div class="text-[10px] text-emerald-300 font-bold">Total Elapsed Weekdays</div>
+              <div class="text-xl font-black text-white my-0.5" id="reconTotalWeekdays">457 days</div>
+              <div class="text-[9.5px] text-emerald-400 font-mono font-bold" id="reconTotalCalendarDays">640 Calendar Days (+178 weekends)</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -502,6 +560,23 @@
     }
 
     // Specific format requested by user: e.g. "Tue 07 12 27" (DayOfWeek DD MM YY)
+    
+    // Compact format for Gantt pills
+    function formatCompactPillDate(dateStr, widthPct) {
+      if (!dateStr) return '';
+      const dateObj = parseDateParts(dateStr);
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const dayName = days[dateObj.getDay()];
+      const dayNum = String(dateObj.getDate()).padStart(2, '0');
+      const monthNum = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const yearShort = String(dateObj.getFullYear()).slice(-2);
+
+      if (widthPct >= 14) {
+        return `${dayName} ${dayNum} ${monthNum} ${yearShort}`;
+      }
+      return `${dayNum} ${monthNum} ${yearShort}`;
+    }
+
     function formatUserCustomDate(d) {
       if (!d) return '';
       const dateObj = (typeof d === 'string') ? parseDateParts(d) : d;
@@ -597,7 +672,7 @@
     }
 
     const allHolidays = {};
-    [2026, 2027, 2028, 2029].forEach(y => {
+    [2026, 2027, 2028, 2029, 2030].forEach(y => {
       getSouthAfricaHolidays(y).forEach(h => {
         if (!allHolidays[h.dateStr]) {
           allHolidays[h.dateStr] = [];
@@ -655,10 +730,10 @@
       return curr;
     }
 
-    // Month list from Nov 2026 to Jan 2029 (27 months)
+    // Month list from Nov 2026 to Dec 2030 (50 months to cover both 2026 and 2027 start dates)
     const monthList = [];
     const startYear = 2026, startMonth = 11;
-    const endYear = 2029, endMonth = 1;
+    const endYear = 2030, endMonth = 12;
 
     let curY = startYear;
     let curM = startMonth;
@@ -685,6 +760,7 @@
       {
         id: "Phase 03",
         name: "Phase 03 - Demolition and Rehabilitation",
+        allocatedMonths: 3,
         themeColor: "emerald",
         colorClass: "text-emerald-700 bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300",
         badgeColor: "bg-emerald-600",
@@ -705,6 +781,7 @@
       {
         id: "Phase 02",
         name: "Phase 02 - Demolition and Rehabilitation",
+        allocatedMonths: 3,
         themeColor: "blue",
         colorClass: "text-blue-700 bg-blue-100 dark:bg-blue-950 dark:text-blue-300 border-blue-300",
         badgeColor: "bg-blue-600",
@@ -723,6 +800,7 @@
       {
         id: "Phase 04",
         name: "Phase 04 - Demolition and Rehabilitation",
+        allocatedMonths: 2,
         themeColor: "amber",
         colorClass: "text-amber-700 bg-amber-100 dark:bg-amber-950 dark:text-amber-300 border-amber-300",
         badgeColor: "bg-amber-600",
@@ -744,6 +822,7 @@
       {
         id: "Phase 01",
         name: "Phase 01 - Demolition and Rehabilitation",
+        allocatedMonths: 4,
         themeColor: "indigo",
         colorClass: "text-indigo-700 bg-indigo-100 dark:bg-indigo-950 dark:text-indigo-300 border-indigo-300",
         badgeColor: "bg-indigo-600",
@@ -762,6 +841,7 @@
       {
         id: "Phase 06",
         name: "Phase 06 - Demolition and Rehabilitation",
+        allocatedMonths: 4,
         themeColor: "rose",
         colorClass: "text-rose-700 bg-rose-100 dark:bg-rose-950 dark:text-rose-300 border-rose-300",
         badgeColor: "bg-rose-600",
@@ -781,6 +861,7 @@
       {
         id: "Phase 07",
         name: "Phase 07 - Demolition and Rehabilitation",
+        allocatedMonths: 3,
         themeColor: "teal",
         colorClass: "text-teal-700 bg-teal-100 dark:bg-teal-950 dark:text-teal-300 border-teal-300",
         badgeColor: "bg-teal-600",
@@ -898,11 +979,27 @@
       }
     });
 
+    
+    function updatePresetButtonsUI() {
+      const val = masterStartDateInput.value;
+      if (val === '2027-12-07') {
+        btnSetStartTue27.className = "mt-3.5 px-3 py-1 rounded bg-emerald-600 ring-2 ring-emerald-400 text-white text-xs font-black transition-all shadow-md flex items-center gap-1";
+        btnSetStartMon26.className = "mt-3.5 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-all";
+      } else if (val === '2026-12-07') {
+        btnSetStartMon26.className = "mt-3.5 px-3 py-1 rounded bg-emerald-600 ring-2 ring-emerald-400 text-white text-xs font-black transition-all shadow-md flex items-center gap-1";
+        btnSetStartTue27.className = "mt-3.5 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-all";
+      } else {
+        btnSetStartTue27.className = "mt-3.5 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-all";
+        btnSetStartMon26.className = "mt-3.5 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-all";
+      }
+    }
+
     // Preset Date Buttons
     btnSetStartTue27.addEventListener('click', () => {
       masterStartDateInput.value = '2027-12-07';
-      currentMonthIndex = 13; // Dec 2027
+      currentMonthIndex = 13; // Dec 2027 (Nov 2026 is idx 0)
       monthSelect.value = 13;
+      updatePresetButtonsUI();
       recalculateSchedule();
       renderCalendar();
       triggerCopiedFeedback("Master start set to Tue 07 12 27!");
@@ -910,8 +1007,9 @@
 
     btnSetStartMon26.addEventListener('click', () => {
       masterStartDateInput.value = '2026-12-07';
-      currentMonthIndex = 1; // Dec 2026
+      currentMonthIndex = 1; // Dec 2026 (Nov 2026 is idx 0)
       monthSelect.value = 1;
+      updatePresetButtonsUI();
       recalculateSchedule();
       renderCalendar();
       triggerCopiedFeedback("Master start set to Mon 07 12 26!");
@@ -953,7 +1051,13 @@
       // Clear mappings
       for (const k in dateToPhaseMap) delete dateToPhaseMap[k];
       for (const k in dateToActivityMap) delete dateToActivityMap[k];
-      monthList.forEach(m => workingDaysSelections[m.key].clear());
+      monthList.forEach(m => {
+        if (workingDaysSelections[m.key]) {
+          workingDaysSelections[m.key].clear();
+        } else {
+          workingDaysSelections[m.key] = new Set();
+        }
+      });
 
       const rawMasterDate = parseDateParts(masterStartDateInput.value || "2027-12-07");
       let currentChainDate = getFirstWorkingDayOnOrAfter(rawMasterDate);
@@ -961,8 +1065,13 @@
       let totalProjectWorkingDays = 0;
       let overallFirstDate = null;
       let overallLastDate = null;
+      let totalMonFriHolidays = 0;
+      let totalMonFriContractorBreak = 0;
+      let totalWeekends = 0;
+      let totalAllocatedMonths = 0;
 
       projectPhases.forEach((phase, pIdx) => {
+        totalAllocatedMonths += (phase.allocatedMonths || 0);
         let phaseWorkingDaysSet = new Set();
         let phaseStartDate = null;
         let phaseEndDate = null;
@@ -997,9 +1106,8 @@
                 dateToActivityMap[dStr].push(`${phase.id}: ${act.name}`);
                 
                 const mKey = dStr.substring(0, 7);
-                if (workingDaysSelections[mKey]) {
-                  workingDaysSelections[mKey].add(dStr);
-                }
+                if (!workingDaysSelections[mKey]) workingDaysSelections[mKey] = new Set();
+                workingDaysSelections[mKey].add(dStr);
               }
               scan.setDate(scan.getDate() + 1);
             }
@@ -1017,12 +1125,48 @@
         phase.endDateStr = phaseEndDate ? formatDateISO(phaseEndDate) : '';
         phase.totalWorkingDays = phaseWorkingDaysSet.size;
         totalProjectWorkingDays += phase.totalWorkingDays;
+
+        // Calculate phase non-working days reconciliation
+        let pHols = 0, pCB = 0, pWknd = 0, pWork = 0;
+        if (phaseStartDate && phaseEndDate) {
+          let sScan = new Date(phaseStartDate);
+          while (sScan <= phaseEndDate) {
+            if (isWeekend(sScan)) {
+              pWknd++;
+            } else {
+              if (isValidWorkingDay(sScan)) {
+                pWork++;
+              } else if (isHoliday(sScan)) {
+                pHols++;
+              } else if (isContractorBreakDate(sScan)) {
+                pCB++;
+              }
+            }
+            sScan.setDate(sScan.getDate() + 1);
+          }
+          phase.calendarDays = Math.round((phaseEndDate - phaseStartDate) / (1000 * 60 * 60 * 24)) + 1;
+        } else {
+          phase.calendarDays = 0;
+        }
+        phase.monFriHolidays = pHols;
+        phase.monFriContractorBreak = pCB;
+        phase.weekendDays = pWknd;
+        phase.totalWeekdaysElapsed = pWork + pHols + pCB;
+
+        totalMonFriHolidays += pHols;
+        totalMonFriContractorBreak += pCB;
+        totalWeekends += pWknd;
       });
 
       // Update Row 1 Master Project State
       masterProjectData.totalWorkingDays = totalProjectWorkingDays;
       masterProjectData.startDateStr = overallFirstDate ? formatDateISO(overallFirstDate) : masterStartDateInput.value;
       masterProjectData.endDateStr = overallLastDate ? formatDateISO(overallLastDate) : '';
+      masterProjectData.monFriHolidays = totalMonFriHolidays;
+      masterProjectData.monFriContractorBreak = totalMonFriContractorBreak;
+      masterProjectData.weekendDays = totalWeekends;
+      masterProjectData.totalWeekdaysElapsed = totalProjectWorkingDays + totalMonFriHolidays + totalMonFriContractorBreak;
+      masterProjectData.totalAllocatedMonths = totalAllocatedMonths;
       
       if (overallFirstDate && overallLastDate) {
         masterProjectData.totalCalendarDays = Math.round((overallLastDate - overallFirstDate) / (1000 * 60 * 60 * 24)) + 1;
@@ -1033,9 +1177,26 @@
       // Update Row 1 UI Callouts
       row1WorkingDaysDisplay.textContent = `${masterProjectData.totalWorkingDays} days`;
       row1CalendarDaysDisplay.textContent = `(${masterProjectData.totalCalendarDays} calendar days)`;
-      row1StartDateDisplay.textContent = `sTART: ${formatUserCustomDate(masterProjectData.startDateStr)}`;
-      row1EndDateDisplay.textContent = `END: ${formatUserCustomDate(masterProjectData.endDateStr)}`;
+      row1StartDateDisplay.innerHTML = `<svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><span>sTART: ${formatUserCustomDate(masterProjectData.startDateStr)}</span>`;
+      row1EndDateDisplay.innerHTML = `<svg class="w-3.5 h-3.5 text-rose-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg><span>END: ${formatUserCustomDate(masterProjectData.endDateStr)}</span>`;
 
+      // Update Duration Reconciliation Card
+      const spanStartEl = document.getElementById('reconSpanStart');
+      if (spanStartEl) spanStartEl.textContent = formatUserCustomDate(masterProjectData.startDateStr);
+      const spanEndEl = document.getElementById('reconSpanEnd');
+      if (spanEndEl) spanEndEl.textContent = formatUserCustomDate(masterProjectData.endDateStr);
+      const allocEl = document.getElementById('reconAllocatedWorkDays');
+      if (allocEl) allocEl.textContent = `${masterProjectData.totalWorkingDays} days`;
+      const holsEl = document.getElementById('reconMonFriHolidays');
+      if (holsEl) holsEl.textContent = `+${masterProjectData.monFriHolidays} days`;
+      const cbEl = document.getElementById('reconMonFriContractorBreak');
+      if (cbEl) cbEl.textContent = `+${masterProjectData.monFriContractorBreak} days`;
+      const totWkEl = document.getElementById('reconTotalWeekdays');
+      if (totWkEl) totWkEl.textContent = `${masterProjectData.totalWeekdaysElapsed} days`;
+      const totCalEl = document.getElementById('reconTotalCalendarDays');
+      if (totCalEl) totCalEl.textContent = `${masterProjectData.totalCalendarDays} Calendar Days (+${masterProjectData.weekendDays} weekends)`;
+
+      if (typeof updatePresetButtonsUI === 'function') updatePresetButtonsUI();
       renderPhasesAccordions();
       renderTimeline();
     }
@@ -1058,24 +1219,33 @@
             <span class="w-3 h-3 rounded-full ${phase.badgeColor}"></span>
             <span class="font-extrabold text-xs text-[var(--foreground,#0f172a)]">${phase.name}</span>
             <span class="text-[10px] px-2 py-0.5 rounded font-bold ${phase.colorClass}">#${pIdx + 1}</span>
+            <span class="text-[10px] px-2 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold">${phase.allocatedMonths || 3} Months Alloc</span>
           </div>
-          <div class="flex flex-wrap items-center gap-2.5 text-xs">
-            <span class="font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-              ${phase.totalWorkingDays} days
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <span class="font-bold px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800" title="Reconciliation: ${phase.totalWorkingDays} work days + ${phase.monFriHolidays} Mon-Fri hols + ${phase.monFriContractorBreak} Mon-Fri break = ${phase.totalWeekdaysElapsed} weekdays (${phase.calendarDays} cal days)">
+              ${phase.totalWorkingDays}d work
             </span>
-            <span class="font-mono text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
-              sTART: ${formatUserCustomDate(phase.startDateStr)}
+            <span class="font-mono text-[10.5px] text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-1.5 py-0.5 rounded border border-rose-200 dark:border-rose-900" title="Observed Public Holidays on Mon-Fri">
+              +${phase.monFriHolidays}d hols
             </span>
-            <span class="font-mono text-[11px] font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800">
-              END: ${formatUserCustomDate(phase.endDateStr)}
+            <span class="font-mono text-[10.5px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-900" title="Contractor Break Weekdays (Mon-Fri)">
+              +${phase.monFriContractorBreak}d break
             </span>
+            <span class="font-mono text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+              <svg class="w-3 h-3 text-emerald-500" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              <span>sTART: ${formatUserCustomDate(phase.startDateStr)}</span>
+            </span>
+            <span class="font-mono text-[11px] font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800 flex items-center gap-1">
+              <svg class="w-3 h-3 text-rose-500" viewBox="0 0 24 24" fill="currentColor"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+              <span>END: ${formatUserCustomDate(phase.endDateStr)}</span>
+            </span>
+            <span class="text-[10px] text-slate-400 font-mono">(${phase.calendarDays} cal days)</span>
             <button class="px-2 py-0.5 rounded text-[11px] text-blue-600 hover:bg-blue-50 font-semibold" data-jump-phase="${phase.startDateStr}">
               View Month
             </button>
             <span class="text-slate-400 group-open:rotate-180 transition-transform text-xs">▼</span>
           </div>
         `;
-
         summary.querySelector('[data-jump-phase]').addEventListener('click', (e) => {
           e.stopPropagation();
           const targetKey = phase.startDateStr.substring(0, 7);
@@ -1198,7 +1368,7 @@
       // Calculate total days on time scale
       const timeScaleStart = new Date(startYr, startMo, 1);
       const timeScaleEnd = new Date(endYr, endMo + 1, 0); // last day of finish month
-      const totalTimelineDays = Math.round((timeScaleEnd - timeScaleStart) / (1000 * 60 * 60 * 24)) + 1;
+      const totalTimelineDays = Math.max(1, Math.round((timeScaleEnd - timeScaleStart) / (1000 * 60 * 60 * 24)) + 1);
 
       // Build header row with months
       let headerHtml = `<div class="flex border-b border-slate-300 dark:border-slate-700 text-[11px] font-bold text-slate-500">`;
@@ -1250,15 +1420,38 @@
       // 1. Master Program Row (Row 1)
       const r1Coords = getBarCoordinates(masterProjectData.startDateStr, masterProjectData.endDateStr);
       let rowsHtml = `
-        <div class="flex items-center text-xs py-1.5 border-b border-slate-300 dark:border-slate-700 bg-slate-900 text-white rounded-lg">
+        <div class="flex items-center text-xs py-1.5 border-b border-slate-300 dark:border-slate-700 bg-slate-900 text-white rounded-lg relative">
           <div class="w-64 shrink-0 px-3 font-black truncate text-[11px] flex items-center justify-between">
             <span title="${masterProjectData.name}">ROW 1: Joel Plant Program</span>
             <span class="text-[10px] text-emerald-400 font-bold">${masterProjectData.totalWorkingDays}d</span>
           </div>
-          <div class="relative flex-1 h-6">
+          <div class="relative flex-1 h-7 flex items-center">
             ${nonWorkingBandsHtml}
-            <div style="left: ${r1Coords.leftPct}%; width: ${r1Coords.widthPct}%;" class="absolute top-1 h-4 rounded-md bg-gradient-to-r from-emerald-500 to-indigo-500 shadow-xs flex items-center px-2 text-[9px] font-black text-white truncate z-10">
-              Row 1 • ${masterProjectData.totalWorkingDays} days | sTART: ${formatUserCustomDate(masterProjectData.startDateStr)} | END: ${formatUserCustomDate(masterProjectData.endDateStr)}
+            
+            <!-- Row 1 Gantt Bar (Pill showing only start and end date with icons) -->
+            <div style="left: ${r1Coords.leftPct}%; width: ${r1Coords.widthPct}%;" 
+                 class="absolute h-5 rounded-md bg-gradient-to-r from-emerald-600 via-indigo-600 to-purple-600 shadow-md flex items-center justify-between px-2 text-[9px] font-black text-white z-10 overflow-hidden" 
+                 title="ROW 1 • Master Program (${masterProjectData.totalWorkingDays} working days)&#10;▶ Start: ${formatUserCustomDate(masterProjectData.startDateStr)}&#10;🏁 Finish: ${formatUserCustomDate(masterProjectData.endDateStr)}&#10;Reconciliation: ${masterProjectData.totalWorkingDays} work days + ${masterProjectData.monFriHolidays} Mon-Fri holidays + ${masterProjectData.monFriContractorBreak} Mon-Fri break = ${masterProjectData.totalWeekdaysElapsed} weekdays (${masterProjectData.totalCalendarDays} calendar days)">
+              
+              <span class="flex items-center gap-1 font-mono text-emerald-200 shrink-0">
+                <svg class="w-3 h-3 text-emerald-300" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                <span>${formatCompactPillDate(masterProjectData.startDateStr, r1Coords.widthPct)}</span>
+              </span>
+
+              <span class="flex items-center gap-1 font-mono text-rose-200 shrink-0">
+                <svg class="w-3 h-3 text-rose-300" viewBox="0 0 24 24" fill="currentColor"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+                <span>${formatCompactPillDate(masterProjectData.endDateStr, r1Coords.widthPct)}</span>
+              </span>
+            </div>
+
+            <!-- Start Date Marker on Timeline [where date is] -->
+            <div style="left: ${r1Coords.leftPct}%;" class="absolute top-0 bottom-0 w-0.5 bg-emerald-400 z-20 pointer-events-none flex flex-col items-center" title="Project Start Marker: ${formatUserCustomDate(masterProjectData.startDateStr)}">
+              <div class="w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-emerald-200 -mt-1 shadow-xs"></div>
+            </div>
+
+            <!-- End Date Marker on Timeline [where date is] -->
+            <div style="left: ${r1Coords.leftPct + r1Coords.widthPct}%;" class="absolute top-0 bottom-0 w-0.5 bg-rose-400 z-20 pointer-events-none flex flex-col items-center" title="Project Finish Marker: ${formatUserCustomDate(masterProjectData.endDateStr)}">
+              <div class="w-2 h-2 rounded-full bg-rose-400 ring-2 ring-rose-200 -mt-1 shadow-xs"></div>
             </div>
           </div>
         </div>
@@ -1268,18 +1461,41 @@
       projectPhases.forEach((phase, idx) => {
         const pCoords = getBarCoordinates(phase.startDateStr, phase.endDateStr);
         rowsHtml += `
-          <div class="flex items-center text-xs py-1 border-b border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40">
+          <div class="flex items-center text-xs py-1 border-b border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 relative">
             <div class="w-64 shrink-0 px-3 font-bold truncate flex items-center justify-between text-[11px]">
-              <span class="truncate flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full ${phase.badgeColor}"></span>
+              <span class="truncate flex items-center gap-1.5" title="${phase.name}">
+                <span class="w-2.5 h-2.5 rounded-full ${phase.badgeColor}"></span>
                 ${phase.name}
               </span>
-              <span class="font-mono text-[10px] text-slate-500">${phase.totalWorkingDays}d</span>
+              <span class="font-mono text-[10px] text-slate-500 font-bold">${phase.totalWorkingDays}d</span>
             </div>
-            <div class="relative flex-1 h-6">
+            <div class="relative flex-1 h-6 flex items-center">
               ${nonWorkingBandsHtml}
-              <div style="left: ${pCoords.leftPct}%; width: ${pCoords.widthPct}%;" class="absolute top-1 h-4 rounded-md ${phase.badgeColor} shadow-xs flex items-center px-1.5 text-[8.5px] font-extrabold text-white truncate z-10" title="${phase.name}: ${phase.totalWorkingDays} days (${formatUserCustomDate(phase.startDateStr)} to ${formatUserCustomDate(phase.endDateStr)})">
-                ${phase.id}: ${phase.totalWorkingDays}d | sTART: ${formatUserCustomDate(phase.startDateStr)} | END: ${formatUserCustomDate(phase.endDateStr)}
+
+              <!-- Phase Gantt Bar (Pill showing only start and end date with icons) -->
+              <div style="left: ${pCoords.leftPct}%; width: ${pCoords.widthPct}%;" 
+                   class="absolute h-4 rounded-md ${phase.badgeColor} shadow-xs flex items-center justify-between px-1.5 text-[8.5px] font-black text-white z-10 overflow-hidden transition-all hover:brightness-110" 
+                   title="${phase.name} (${phase.id})&#10;Duration: ${phase.totalWorkingDays} working days&#10;▶ Start: ${formatUserCustomDate(phase.startDateStr)}&#10;🏁 Finish: ${formatUserCustomDate(phase.endDateStr)}&#10;Reconciliation: ${phase.totalWorkingDays} work days + ${phase.monFriHolidays} Mon-Fri holidays + ${phase.monFriContractorBreak} Mon-Fri contractor break = ${phase.totalWeekdaysElapsed} weekdays (${phase.calendarDays} cal days)">
+                
+                <span class="flex items-center gap-0.5 font-mono text-[8.5px] font-black text-white shrink-0">
+                  <svg class="w-2.5 h-2.5 text-emerald-300" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                  <span>${formatCompactPillDate(phase.startDateStr, pCoords.widthPct)}</span>
+                </span>
+
+                <span class="flex items-center gap-0.5 font-mono text-[8.5px] font-black text-white shrink-0">
+                  <svg class="w-2.5 h-2.5 text-rose-200" viewBox="0 0 24 24" fill="currentColor"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+                  <span>${formatCompactPillDate(phase.endDateStr, pCoords.widthPct)}</span>
+                </span>
+              </div>
+
+              <!-- Start Marker on Timeline [where date is] -->
+              <div style="left: ${pCoords.leftPct}%;" class="absolute top-0 bottom-0 w-0.5 bg-emerald-500/90 z-20 pointer-events-none flex flex-col items-center" title="Start Marker: ${formatUserCustomDate(phase.startDateStr)}">
+                <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 ring-1 ring-white -mt-0.5 shadow-xs"></div>
+              </div>
+
+              <!-- End Marker on Timeline [where date is] -->
+              <div style="left: ${pCoords.leftPct + pCoords.widthPct}%;" class="absolute top-0 bottom-0 w-0.5 bg-rose-500/90 z-20 pointer-events-none flex flex-col items-center" title="Finish Marker: ${formatUserCustomDate(phase.endDateStr)}">
+                <div class="w-1.5 h-1.5 rounded-full bg-rose-400 ring-1 ring-white -mt-0.5 shadow-xs"></div>
               </div>
             </div>
           </div>
@@ -1711,7 +1927,8 @@
       const contractorBreaks = [
         { name: "Contractor Break 2026-2027", from: "2026-12-18T00:00:00", to: "2027-01-11T23:59:00" },
         { name: "Contractor Break 2027-2028", from: "2027-12-18T00:00:00", to: "2028-01-11T23:59:00" },
-        { name: "Contractor Break 2028-2029", from: "2028-12-18T00:00:00", to: "2029-01-11T23:59:00" }
+        { name: "Contractor Break 2028-2029", from: "2028-12-18T00:00:00", to: "2029-01-11T23:59:00" },
+        { name: "Contractor Break 2029-2030", from: "2029-12-18T00:00:00", to: "2030-01-11T23:59:00" }
       ];
 
       contractorBreaks.forEach(cb => {
