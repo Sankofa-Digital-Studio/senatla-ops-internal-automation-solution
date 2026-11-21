@@ -57,6 +57,17 @@ A workable weekday is defined as any Monday through Friday. When computing the t
 - **Weekend Days**: Saturdays and Sundays (+178 days in 2027 start / +180 days in 2026 start).
 - **Total Calendar Days**: 640 calendar days (Span: Tue 07 12 27 to Thu 06 09 29).
 
+
+### 2.4 Constraint-Based Activity Duration Auto-Balancing & Phase Budget Editing
+1. **Activity Duration Editing with Auto-Balance**:
+   - When an individual activity duration is edited (e.g., Activity 1 from 20 to 7), the delta is absorbed proportionally across all remaining non-milestone activities in the phase.
+   - The phase total duration stays strictly fixed at its allocated budget (e.g., 71d), preventing inadvertent phase drift while planning task-level trade-offs.
+   - Proportional distribution uses the Largest Remainder Method (Hare-Niemeyer) ensuring integer durations with zero remainder.
+
+2. **Click-to-Edit Phase Total Budget**:
+   - The phase total pill ([ 71 ] d work ✏️) is directly editable.
+   - Clicking or typing a new budget (e.g. from 71 to 90 or 60) proportionally scales all activities in the phase to match the new envelope, cascading dates forward across all subsequent phases.
+
 ## 3. Implementation Plan (`/plan`) & Task Breakdown
 
 ### Task 1: Baseline Registration & Documentation
