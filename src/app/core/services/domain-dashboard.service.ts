@@ -1539,16 +1539,32 @@ export class DomainDashboardService {
     this.persistToStorage();
   }
 
+  private secureRandomInt(min: number, maxExclusive: number): number {
+    const range = maxExclusive - min;
+    if (range <= 0) return min;
+
+    const bytes = new Uint32Array(1);
+    const maxUnbiased = Math.floor(0x100000000 / range) * range;
+    let value: number;
+
+    do {
+      globalThis.crypto.getRandomValues(bytes);
+      value = bytes[0];
+    } while (value >= maxUnbiased);
+
+    return min + (value % range);
+  }
+
   createJobCard(data: Partial<EngineeringOrderRecord>): EngineeringOrderRecord {
-    const jobCardNum = data.jobCardNumber || ('JC-ENG-' + Math.floor(215 + Math.random() * 50));
-    const poNum = data.poNumber || ('HAR-PO-2026-' + Math.floor(8850 + Math.random() * 100));
+    const jobCardNum = data.jobCardNumber || ('JC-ENG-' + this.secureRandomInt(215, 265));
+    const poNum = data.poNumber || ('HAR-PO-2026-' + this.secureRandomInt(8850, 8950));
     const val = data.value || 500000;
 
     const newOrder: EngineeringOrderRecord = {
-      id: 'EOR-' + Math.floor(105 + Math.random() * 50),
+      id: 'EOR-' + this.secureRandomInt(105, 155),
       poNumber: poNum,
       client: data.client || 'Harmony Gold Mining Co.',
-      quoteNumber: data.quoteNumber || ('QUO-26-' + Math.floor(960 + Math.random() * 40)),
+      quoteNumber: data.quoteNumber || ('QUO-26-' + this.secureRandomInt(960, 1000)),
       invoiceNumber: data.invoiceNumber || 'INV-PENDING',
       jobCardNumber: jobCardNum,
       scopeDescription: data.scopeDescription || 'New engineering fabrication scope',
