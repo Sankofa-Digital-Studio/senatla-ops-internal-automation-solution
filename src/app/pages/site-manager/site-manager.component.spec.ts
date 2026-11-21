@@ -252,6 +252,7 @@ describe('SiteManagerComponent', () => {
 
   it('blocks workshop start when the assigned employee is not present', async () => {
     const employee = component.service.employees()[0];
+    component.service.updateStatus(employee.id, component.selectedDateStr, 'absent');
     const item = { id: 'work-attendance-test', title: 'Inspect pump', workstation: 'Bay 2', assignedEmployeeId: employee.id, dueDate: component.selectedDateStr, status: 'ready' as const };
     component.workshopWorkItems = [item];
     component.workstationReadiness = { machine: true, tools: true, materials: true, operator: true, instruction: true, inspection: true };
