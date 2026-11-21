@@ -6,15 +6,16 @@ export type ErpExportFormat = 'xlsx' | 'pdf' | 'csv';
 @Component({
   selector: 'app-erp-export-trigger',
   standalone: true,
+  host: { class: 'block' },
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="relative inline-block text-left">
+    <div class="relative flex text-left">
       <button
         type="button"
         (click)="toggleMenu()"
         [disabled]="busy()"
-        class="inline-flex items-center gap-2 px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-gray-700 bg-gray-900 text-gray-200 hover:bg-gray-800 focus:outline-none disabled:opacity-50 transition-colors"
+        class="h-11 inline-flex items-center gap-2 px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-gray-700 bg-gray-900 text-gray-200 hover:bg-gray-800 focus:outline-none disabled:opacity-50 transition-colors"
         aria-haspopup="true"
         [attr.aria-expanded]="menuOpen()"
       >

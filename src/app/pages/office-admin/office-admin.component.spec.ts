@@ -24,6 +24,43 @@ describe('OfficeAdminComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('pages all matching assets without duplicates and resets after filtering or deletion', async () => {
+    await TestBed.inject(AuthService).login('thosontula+office@gmail.com', 'test-password');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const assets = Array.from({ length: 13 }, (_, index) => ({
+      id: `asset-${index}`, make: 'Test', model: `Model ${index}`, type: 'Heavy Duty' as const,
+      registrationNumber: `REG-${index}`, status: 'Active' as const, licenseExpiry: '2027-01-01',
+    }));
+    component.service.assets.set(assets);
+    expect(component.pagedAssets().length).toBe(6);
+    component.selectTab('assets');
+    fixture.detectChanges();
+    const next = fixture.nativeElement.querySelector('nav[aria-label="Asset pages"] button:last-child') as HTMLButtonElement;
+    expect(next.disabled).toBeFalse();
+    expect(fixture.nativeElement.querySelectorAll('button[title="Delete or archive asset"]').length).toBe(6);
+    next.click();
+    fixture.detectChanges();
+    expect(component.pagedAssets().map(asset => asset.id)).toEqual(assets.slice(6, 12).map(asset => asset.id));
+    component.changeAssetPage(99);
+    expect(component.pagedAssets().map(asset => asset.id)).toEqual(['asset-12']);
+    expect(component.assetRangeEnd()).toBe(13);
+    component.assetSearchTerm.set('REG-0');
+    expect(component.assetPage()).toBe(1);
+    expect(component.pagedAssets().map(asset => asset.id)).toEqual(['asset-0']);
+    component.assetSearchTerm.set('');
+    component.changeAssetPage(3);
+    component.service.assets.set(assets.slice(0, 12));
+    expect(component.assetPage()).toBe(1);
+    expect(component.assetPageCount()).toBe(2);
+    component.assetSearchTerm.set('no matching asset');
+    expect(component.pagedAssets()).toEqual([]);
+    expect(component.assetRangeStart()).toBe(0);
+    expect(component.assetRangeEnd()).toBe(0);
+    component.changeAssetPage(-1);
+    expect(component.assetPage()).toBe(1);
+  });
+
   it('forces new email invitations to minimum site access', async () => {
     await TestBed.inject(AuthService).login('thosontula+office@gmail.com', 'test-password');
     component.inviteForm = { email: 'new@senatlatrading.com', displayName: 'New User', role: 'director' };

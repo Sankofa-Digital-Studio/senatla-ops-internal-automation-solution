@@ -207,6 +207,16 @@
           <button type="button" (click)="manageOpen.set(true)">Review</button>
         </div>
 
+        @if (service.evaluateAssetReadiness(asset); as readiness) {
+          @if (readiness.reasons.length) {
+            <ul aria-label="Asset readiness reasons">
+              @for (reason of readiness.reasons; track $index) {
+                <li>{{ reason.message }}</li>
+              }
+            </ul>
+          }
+        }
+
         <dl class="detail-grid">
           <div><dt>Location</dt><dd>{{ service.getSiteName(asset.assignedSiteId || '') || 'Unassigned' }}</dd></div>
           <div><dt>Custodian</dt><dd>{{ asset.custodianName || 'Unassigned' }}</dd></div>

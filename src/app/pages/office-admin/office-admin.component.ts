@@ -10,7 +10,7 @@ import { MultiDomainDashboardComponent } from '../dashboards/multi-domain-dashbo
 import { WorkspaceActionStripComponent } from '../../components/workspace-action-strip.component';
 
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { UiButtonComponent } from '../../components/ui-button.component';
@@ -402,6 +402,20 @@ export class OfficeAdminComponent {
       return matchesTerm && matchesSite && matchesType && matchesStatus;
     });
   });
+
+  readonly assetPageSize = 6;
+  // Reset when filters or source data change, including deletion on the final page.
+  readonly assetPage = linkedSignal({ source: this.filteredAssets, computation: () => 1 });
+  readonly assetPageCount = computed(() => Math.max(1, Math.ceil(this.filteredAssets().length / this.assetPageSize)));
+  readonly pagedAssets = computed(() => this.filteredAssets().slice(
+    (this.assetPage() - 1) * this.assetPageSize, this.assetPage() * this.assetPageSize,
+  ));
+  readonly assetRangeStart = computed(() => this.filteredAssets().length ? (this.assetPage() - 1) * this.assetPageSize + 1 : 0);
+  readonly assetRangeEnd = computed(() => Math.min(this.assetPage() * this.assetPageSize, this.filteredAssets().length));
+
+  changeAssetPage(page: number): void {
+    this.assetPage.set(Math.max(1, Math.min(page, this.assetPageCount())));
+  }
 
   employeeName(employeeId: string) {
     const employee = this.service.employees().find((entry) => entry.id === employeeId);

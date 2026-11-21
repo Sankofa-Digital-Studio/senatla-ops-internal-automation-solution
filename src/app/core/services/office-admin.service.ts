@@ -1,3 +1,6 @@
+import { evaluateAssetReadiness } from '../readiness/readiness-policy';
+import { VendorWorkspace, VendorAccountInput, VendorInvoiceInput, VendorAccountRow, VendorInvoiceRow, mapVendorAccount, mapVendorInvoice, vendorAccountPayload, vendorInvoicePayload } from '../vendors/vendor-workspace';
+import { decodeEmployeeRates, encodeEmployeeRates } from '../models/employee-rate-metadata';
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { RUNTIME_CONFIG, RuntimeConfig } from '../config/runtime-config';
 import {
@@ -34,7 +37,6 @@ import {
   SENATLA_TRADING_ORGANIZATION_ID,
   SavedAdminView,
   Site,
-  VendorAccount,
   VendorInvoiceRecord,
   VehicleAsset,
   ExecutiveOperationalReport,
@@ -241,8 +243,6 @@ type PpeIssueRow = { id: string; organization_id: string; employee_id: string; i
 type AssetFuelRow = { id: string; organization_id: string; asset_id: string; fuel_date: string; litres: number; unit_cost: number; total_cost: number; odometer_km: number | null; engine_hours: number | null; supplier: string | null; reference_number: string | null; recorded_by: string; created_at: string };
 type AttendanceQueueRow = { id: string; organization_id: string; submitted_by: string; site_id: string; work_date: string; status: AttendanceQueueSubmission['status']; outcome: AttendanceQueueSubmission['outcome']; attempts: number; idempotency_key: string; last_error: string | null; diagnostic_context: Record<string, unknown> | null; created_at: string; processed_at: string | null };
 type OutboxRow = { id: string; organization_id: string; event_type: string; aggregate_type: string; aggregate_id: string; payload: Record<string, unknown>; status: IntegrationOutboxEvent['status']; idempotency_key: string; attempts: number; last_error: string | null; created_at: string; processed_at: string | null };
-type VendorAccountRow = { id: string; organization_id: string; name: string; description: string; tax_number: string | null; is_active: boolean; total_owing_amount: number; created_at: string; updated_at: string };
-type VendorInvoiceRow = { id: string; organization_id: string; vendor_id: string; invoice_date: string; order_number: string; invoice_number: string | null; supplier_order_number: string | null; internal_order_number: string | null; items_purchased: string; total: number; responsible_person: string; status: VendorInvoiceRecord['status']; requested_by: string; requested_by_name: string; director_reviewed_by: string | null; director_reviewed_at: string | null; created_at: string; updated_at: string };
 
 const LOCAL_STORAGE_KEY = 'senatla_office_workspace_v1';
 const SENATLA_TRADING_ORGANIZATION: Organization = {
@@ -276,10 +276,46 @@ export class OfficeAdminService {
   readonly assetComplianceRecords = signal<AssetComplianceRecord[]>([]);
   readonly assetMeterReadings = signal<AssetMeterReading[]>([]);
   readonly assetWorkOrders = signal<AssetWorkOrder[]>([]);
+  private readonly readinessRecords = computed(() => {
+    const groupByAsset = <T extends { assetId: string }>(records: readonly T[]) => {
+      const indexed = new Map<string, T[]>();
+      for (const record of records) {
+        const group = indexed.get(record.assetId);
+        if (group) group.push(record);
+        else indexed.set(record.assetId, [record]);
+      }
+      return indexed;
+    };
+
+    return {
+      compliance: groupByAsset(this.assetComplianceRecords()),
+      workOrders: groupByAsset(this.assetWorkOrders()),
+    };
+  });
+
+  private readonly readinessDateFormat = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Africa/Johannesburg' });
+
+  evaluateAssetReadiness(asset: VehicleAsset, asOf = this.readinessDateFormat.format(new Date())) {
+    const records = this.readinessRecords();
+    return evaluateAssetReadiness({
+      asset,
+      complianceRecords: records.compliance.get(asset.id),
+      workOrders: records.workOrders.get(asset.id),
+    }, { asOf });
+  }
+
+  assetReadiness(asset: VehicleAsset) {
+    const evaluation = this.evaluateAssetReadiness(asset);
+
+    if (evaluation.status === 'ready') return 'ready';
+    return evaluation.canProceed ? 'attention' : 'blocked';
+  }
+
   readonly assetMaintenancePlans = signal<AssetMaintenancePlan[]>([]);
   readonly assetFuelEntries = signal<AssetFuelEntry[]>([]);
-  readonly vendorAccounts = signal<VendorAccount[]>([]);
-  readonly vendorInvoices = signal<VendorInvoiceRecord[]>([]);
+  private readonly vendorWorkspace = new VendorWorkspace();
+  readonly vendorAccounts = this.vendorWorkspace.accounts;
+  readonly vendorInvoices = this.vendorWorkspace.invoices;
   readonly integrationOutbox = signal<IntegrationOutboxEvent[]>([]);
   readonly attendanceQueue = signal<AttendanceQueueSubmission[]>([]);
   readonly activity = signal<AdminActivityEvent[]>([]);
@@ -312,8 +348,8 @@ export class OfficeAdminService {
     ];
   });
   readonly pendingApprovals = computed(() => this.approvals().filter((approval) => approval.status === 'pending'));
-  readonly pendingVendorInvoices = computed(() => this.vendorInvoices().filter((invoice) => invoice.status === 'pending_director'));
-  readonly totalVendorOwing = computed(() => this.vendorAccounts().reduce((total, vendor) => total + vendor.totalOwingAmount, 0));
+  readonly pendingVendorInvoices = this.vendorWorkspace.pendingInvoices;
+  readonly totalVendorOwing = this.vendorWorkspace.totalOwing;
   readonly anomalies = computed<AdminAnomaly[]>(() => {
     const anomalies: AdminAnomaly[] = [];
 
@@ -745,7 +781,7 @@ export class OfficeAdminService {
         basic_rate: normalized.basicRate,
         pay_rate_unit: normalized.payRateUnit ?? 'daily',
         safety_qualifications: normalized.safetyQualifications ?? [],
-        additional_fields: normalized.additionalFields ?? {},
+        additional_fields: encodeEmployeeRates(normalized),
         salary_advances: normalized.salaryAdvances,
         financials: normalized.financials,
         logs: normalized.logs,
@@ -775,7 +811,7 @@ export class OfficeAdminService {
         id_number: employee.idNumber, company_number: employee.companyNumber ?? null, role: employee.role, designation: employee.designation ?? null,
         site_id: employee.siteId, group_id: employee.groupId ?? null, employment_status: employee.employmentStatus ?? 'active',
         start_date: employee.startDate, basic_rate: employee.basicRate, pay_rate_unit: employee.payRateUnit ?? 'daily',
-        safety_qualifications: employee.safetyQualifications ?? [], additional_fields: employee.additionalFields ?? {},
+        safety_qualifications: employee.safetyQualifications ?? [], additional_fields: encodeEmployeeRates(employee),
         salary_advances: employee.salaryAdvances, financials: employee.financials, logs: employee.logs,
         adjustments: employee.adjustments, tax_ref_number: employee.taxRefNumber ?? null,
       })));
@@ -892,95 +928,36 @@ export class OfficeAdminService {
     await this.logActivity('asset_fuel_recorded', 'asset', normalized.assetId, { litres, totalCost: normalized.totalCost });
     return normalized;
   }
-  async saveVendorAccount(record: Omit<VendorAccount, 'id' | 'organizationId' | 'createdAt' | 'updatedAt'> & { id?: string }) {
+  async saveVendorAccount(record: VendorAccountInput) {
     const session = this.auth.currentSession();
     if (!session) throw new Error('You must be signed in.');
     const now = new Date().toISOString();
-    const normalized: VendorAccount = {
-      id: record.id || this.createId(),
-      organizationId: SENATLA_TRADING_ORGANIZATION_ID,
-      name: record.name.trim(),
-      description: record.description.trim(),
-      taxNumber: record.taxNumber?.trim() || undefined,
-      isActive: record.isActive !== false,
-      totalOwingAmount: Math.max(0, Number(record.totalOwingAmount) || 0),
-      createdAt: this.vendorAccounts().find((vendor) => vendor.id === record.id)?.createdAt || now,
-      updatedAt: now,
-    };
-    if (!normalized.name) throw new Error('Vendor name is required.');
+    const normalized = this.vendorWorkspace.prepareAccount(record, { now, createId: () => this.createId() });
 
     if (this.supabase) {
-      const { error } = await this.supabase.from('vendor_accounts').upsert({
-        id: normalized.id,
-        organization_id: normalized.organizationId,
-        name: normalized.name,
-        description: normalized.description,
-        tax_number: normalized.taxNumber || null,
-        is_active: normalized.isActive !== false,
-        total_owing_amount: normalized.totalOwingAmount,
-      });
+      const { error } = await this.supabase.from('vendor_accounts').upsert(vendorAccountPayload(normalized));
       if (error) throw error;
     }
 
-    this.vendorAccounts.update((vendors) => [normalized, ...vendors.filter((entry) => entry.id !== normalized.id)]);
+    this.vendorWorkspace.recordAccount(normalized);
     await this.persistLocalWorkspace();
     await this.logActivity('vendor_saved', 'vendor_account', normalized.id, { name: normalized.name, totalOwingAmount: normalized.totalOwingAmount });
     return normalized;
   }
 
-  async submitVendorInvoice(record: Omit<VendorInvoiceRecord, 'id' | 'organizationId' | 'status' | 'requestedBy' | 'requestedByName' | 'directorReviewedBy' | 'directorReviewedAt' | 'createdAt' | 'updatedAt'> & { id?: string }) {
+  async submitVendorInvoice(record: VendorInvoiceInput) {
     const session = this.auth.currentSession();
     if (!session) throw new Error('You must be signed in.');
     const vendor = this.vendorAccounts().find((entry) => entry.id === record.vendorId);
     if (!vendor) throw new Error('Vendor is required before invoice submission.');
-    const total = Math.max(0, Number(record.total) || 0);
-    const now = new Date().toISOString();
-    const normalized: VendorInvoiceRecord = {
-      id: record.id || this.createId(),
-      organizationId: SENATLA_TRADING_ORGANIZATION_ID,
-      vendorId: record.vendorId,
-      invoiceDate: record.invoiceDate,
-      orderNumber: (record.supplierOrderNumber || record.invoiceNumber || record.orderNumber).trim(),
-      invoiceNumber: record.invoiceNumber?.trim() || undefined,
-      supplierOrderNumber: record.supplierOrderNumber?.trim() || undefined,
-      internalOrderNumber: record.internalOrderNumber?.trim() || undefined,
-      itemsPurchased: record.itemsPurchased.trim(),
-      total,
-      responsiblePerson: record.responsiblePerson.trim(),
-      status: 'pending_director',
-      requestedBy: session.userId,
-      requestedByName: session.displayName,
-      directorReviewedBy: null,
-      directorReviewedAt: null,
-      createdAt: now,
-      updatedAt: now,
-    };
-    if (!normalized.invoiceDate || !normalized.internalOrderNumber || !(normalized.invoiceNumber || normalized.supplierOrderNumber) || !normalized.itemsPurchased || !normalized.responsiblePerson || total <= 0) {
-      throw new Error('Invoice date, internal order number, supplier invoice or order reference, items, requester, and total are required.');
-    }
+    const normalized = this.vendorWorkspace.prepareInvoice(record, { now: new Date().toISOString(), createId: () => this.createId(), userId: session.userId, displayName: session.displayName });
 
     if (this.supabase) {
-      const { error } = await this.supabase.from('vendor_invoice_records').insert({
-        id: normalized.id,
-        organization_id: normalized.organizationId,
-        vendor_id: normalized.vendorId,
-        invoice_date: normalized.invoiceDate,
-        order_number: normalized.orderNumber,
-        invoice_number: normalized.invoiceNumber || null,
-        supplier_order_number: normalized.supplierOrderNumber || null,
-        internal_order_number: normalized.internalOrderNumber || null,
-        items_purchased: normalized.itemsPurchased,
-        total: normalized.total,
-        responsible_person: normalized.responsiblePerson,
-        status: normalized.status,
-        requested_by: normalized.requestedBy,
-        requested_by_name: normalized.requestedByName,
-      });
+      const { error } = await this.supabase.from('vendor_invoice_records').insert(vendorInvoicePayload(normalized));
       if (error) throw error;
     }
 
-    this.vendorInvoices.update((invoices) => [normalized, ...invoices.filter((entry) => entry.id !== normalized.id)]);
-    this.vendorAccounts.update((vendors) => vendors.map((entry) => entry.id === normalized.vendorId ? { ...entry, totalOwingAmount: Number((entry.totalOwingAmount + normalized.total).toFixed(2)), updatedAt: now } : entry));
+    this.vendorWorkspace.recordInvoice(normalized);
     await this.persistLocalWorkspace();
     await this.submitApprovalRequest('vendor_invoice_approval', { invoiceId: normalized.id, vendorId: normalized.vendorId, total: normalized.total, orderNumber: normalized.orderNumber, vendorName: vendor.name });
     await this.logActivity('vendor_invoice_submitted', 'vendor_invoice', normalized.id, { vendorId: normalized.vendorId, total: normalized.total, orderNumber: normalized.orderNumber });
@@ -1575,7 +1552,8 @@ export class OfficeAdminService {
   }
 
   updateDesignationBaselineRate(role: string, hourlyRate: number): void {
-    const rate = Math.max(0, Number(hourlyRate));
+    const rate = Number(hourlyRate);
+    if (!Number.isFinite(rate) || rate < 0) return;
     this.designationRates.update((list) =>
       list.map((item) =>
         item.role.toLowerCase() === role.toLowerCase()
@@ -1584,6 +1562,7 @@ export class OfficeAdminService {
       )
     );
     this.saveDesignationRates();
+    void this.persistLocalWorkspace();
   }
 
   private loadStoredDesignationRates(): DesignationRateConfig[] {
@@ -1706,8 +1685,8 @@ export class OfficeAdminService {
       assetWorkOrders: (workOrderResult.data as AssetWorkOrderRow[]).map((row) => this.mapWorkOrder(row)),
       assetMaintenancePlans: (maintenancePlanResult.data as AssetPlanRow[]).map((row) => this.mapMaintenancePlan(row)),
       assetFuelEntries: (fuelResult.data as AssetFuelRow[]).map((row) => ({ id: row.id, organizationId: row.organization_id, assetId: row.asset_id, fuelDate: row.fuel_date, litres: row.litres, unitCost: row.unit_cost, totalCost: row.total_cost, odometerKm: row.odometer_km, engineHours: row.engine_hours, supplier: row.supplier || '', referenceNumber: row.reference_number || '', recordedBy: row.recorded_by, createdAt: row.created_at })),
-      vendorAccounts: (vendorResult.data as VendorAccountRow[]).map((row) => this.mapVendorAccount(row)),
-      vendorInvoices: (vendorInvoiceResult.data as VendorInvoiceRow[]).map((row) => this.mapVendorInvoice(row)),
+      vendorAccounts: (vendorResult.data as VendorAccountRow[]).map((row) => mapVendorAccount(row)),
+      vendorInvoices: (vendorInvoiceResult.data as VendorInvoiceRow[]).map((row) => mapVendorInvoice(row)),
       integrationOutbox: (outboxResult.data as OutboxRow[]).map((row) => this.mapOutbox(row)),
       attendanceQueue: (attendanceQueueResult.data as AttendanceQueueRow[]).map((row) => this.mapAttendanceQueue(row)),
       activity: (activityResult.data as ActivityRow[]).map((row) => this.mapActivity(row)),
@@ -1907,7 +1886,7 @@ export class OfficeAdminService {
       savedViews: [],
       organizations: [SENATLA_TRADING_ORGANIZATION],
       anomalies: [],
-      designationRates: DEFAULT_DESIGNATION_RATES,
+      designationRates: this.loadStoredDesignationRates(),
     };
   }
 
@@ -2097,6 +2076,7 @@ export class OfficeAdminService {
       payRateUnit: row.pay_rate_unit || 'daily',
       safetyQualifications: row.safety_qualifications || [],
       additionalFields: row.additional_fields || {},
+      ...decodeEmployeeRates(row.additional_fields),
       salaryAdvances: Number(row.salary_advances || 0),
       financials: row.financials || {},
       logs: row.logs || {},
@@ -2209,13 +2189,6 @@ export class OfficeAdminService {
   private mapAttendanceQueue(row: AttendanceQueueRow): AttendanceQueueSubmission {
     return { id: row.id, organizationId: row.organization_id, submittedBy: row.submitted_by, siteId: row.site_id, workDate: row.work_date, status: row.status, outcome: row.outcome, attempts: row.attempts, idempotencyKey: row.idempotency_key, lastError: row.last_error, diagnosticContext: row.diagnostic_context, createdAt: row.created_at, processedAt: row.processed_at };
    }
-  private mapVendorAccount(row: VendorAccountRow): VendorAccount {
-    return { id: row.id, organizationId: row.organization_id, name: row.name, description: row.description || '', taxNumber: row.tax_number || undefined, isActive: row.is_active, totalOwingAmount: Number(row.total_owing_amount || 0), createdAt: row.created_at, updatedAt: row.updated_at };
-  }
-  
-   private mapVendorInvoice(row: VendorInvoiceRow): VendorInvoiceRecord {
-    return { id: row.id, organizationId: row.organization_id, vendorId: row.vendor_id, invoiceDate: row.invoice_date, orderNumber: row.order_number, invoiceNumber: row.invoice_number || undefined, supplierOrderNumber: row.supplier_order_number || undefined, internalOrderNumber: row.internal_order_number || undefined, itemsPurchased: row.items_purchased, total: Number(row.total || 0), responsiblePerson: row.responsible_person, status: row.status, requestedBy: row.requested_by, requestedByName: row.requested_by_name, directorReviewedBy: row.director_reviewed_by, directorReviewedAt: row.director_reviewed_at, createdAt: row.created_at, updatedAt: row.updated_at };
-  }
   private mapOutbox(row: OutboxRow): IntegrationOutboxEvent {
     return { id: row.id, organizationId: row.organization_id, eventType: row.event_type, aggregateType: row.aggregate_type, aggregateId: row.aggregate_id, payload: row.payload || {}, status: row.status, idempotencyKey: row.idempotency_key, attempts: row.attempts, lastError: row.last_error, createdAt: row.created_at, processedAt: row.processed_at };
   }
@@ -2419,7 +2392,7 @@ export class OfficeAdminService {
         const { error } = await this.supabase.from('vendor_invoice_records').update({ status: approved.status, director_reviewed_by: approved.directorReviewedBy, director_reviewed_at: approved.directorReviewedAt }).eq('id', invoiceId);
         if (error) throw error;
       }
-      this.vendorInvoices.update((invoices) => [approved, ...invoices.filter((entry) => entry.id !== invoiceId)]);
+      this.vendorWorkspace.replaceInvoice(approved);
       await this.persistLocalWorkspace();
       await this.markApprovalExecuted(request.id);
       return;

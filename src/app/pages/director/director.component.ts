@@ -9,7 +9,7 @@ import { AccessibleDialogDirective } from 'src/app/core/accessibility/accessible
 import { AuthService } from 'src/app/core/services/auth.service';
 import { MultiDomainDashboardComponent } from '../dashboards/multi-domain-dashboard.component';
 import { WorkspaceActionStripComponent } from '../../components/workspace-action-strip.component';
-import { ApprovalRequest, ExecutiveOperationalReport, IntegrationOutboxEvent, VendorInvoiceRecord } from 'src/app/core/models/app.models';
+import { ApprovalRequest, ExecutiveOperationalReport, IntegrationOutboxEvent, VehicleAsset, VendorInvoiceRecord } from 'src/app/core/models/app.models';
 
 export type DirectorViewTab = 'approvals' | 'domains' | 'costs' | 'workforce' | 'all';
 type DirectorQueueKind = 'report' | 'approval' | 'invoice' | 'integration';
@@ -290,12 +290,8 @@ export class DirectorComponent {
 
   vendorName(vendorId: string) { return this.office.vendorAccounts().find((vendor) => vendor.id === vendorId)?.name || 'Unknown vendor'; }
   private attendance(status: 'present' | 'absent') { return this.staff().filter((employee) => employee.logs[this.today()]?.status === status).length; }
-  private assetState(asset: { id: string; status: string; lifecycleState?: string; licenseExpiry: string }) {
-    if (asset.status === 'Expired' || ['retired', 'disposed'].includes(asset.lifecycleState || '')) return 'blocked';
-    const work = this.office.assetWorkOrders().some((item) => item.assetId === asset.id && !['completed', 'cancelled'].includes(item.status) && ['critical', 'high'].includes(item.priority));
-    if (work) return 'blocked';
-    const compliance = this.office.assetComplianceRecords().some((item) => item.assetId === asset.id && ['due', 'expired'].includes(item.status));
-    return asset.status === 'Maintenance' || compliance || new Date(`${asset.licenseExpiry}T23:59:59`).getTime() < Date.now() ? 'attention' : 'ready';
+  private assetState(asset: VehicleAsset) {
+    return this.office.assetReadiness(asset);
   }
   private inPeriod(value: string) { const today = this.today(); return this.viewMode() === 'day' ? value === today : this.viewMode() === 'month' ? value.startsWith(today.slice(0, 7)) : value.startsWith(today.slice(0, 4)); }
   private today() { const now = this.service.currentTime(); return `${now.getFullYear()}-${`${now.getMonth() + 1}`.padStart(2, '0')}-${`${now.getDate()}`.padStart(2, '0')}`; }
