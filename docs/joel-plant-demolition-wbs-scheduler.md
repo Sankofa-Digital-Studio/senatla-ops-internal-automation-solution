@@ -47,6 +47,16 @@ The project executes sequentially through the defined operational phases:
 
 ---
 
+
+### 2.3 Duration Reconciliation Math (Workable Days vs Non-Working Weekdays)
+A workable weekday is defined as any Monday through Friday. When computing the total program duration:
+- **Base Working Days**: Statutory days worked according to task durations (e.g., 407 days across 19 allocated months).
+- **Observed Public Holidays**: Statutory and Sunday-rollover public holidays falling on a Monday–Friday (+18 days in 2027 start / +19 days in 2026 start).
+- **Contractor Break Weekdays**: Days during 18 Dec – 11 Jan shutdown falling on a Monday–Friday that are not public holidays (+32 days in 2027 start / +31 days in 2026 start).
+- **Total Workable Weekdays Elapsed**: Working Days + Observed Mon-Fri Holidays + Mon-Fri Contractor Break = 457 weekdays.
+- **Weekend Days**: Saturdays and Sundays (+178 days in 2027 start / +180 days in 2026 start).
+- **Total Calendar Days**: 640 calendar days (Span: Tue 07 12 27 to Thu 06 09 29).
+
 ## 3. Implementation Plan (`/plan`) & Task Breakdown
 
 ### Task 1: Baseline Registration & Documentation
