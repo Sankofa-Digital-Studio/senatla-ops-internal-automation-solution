@@ -169,8 +169,22 @@ jobs:
           node-version: ${{ inputs.node-version }}
           cache: npm
       - run: npm ci
-      - name: Start isolated Supabase browser database
-        run: npx --yes supabase@${{ inputs.supabase-version }} start -x realtime,storage-api,imgproxy,studio
+      - name: Start isolated Supabase browser database with bounded retries
+        run: |
+          for attempt in 1 2 3; do
+            if npx --yes supabase@${{ inputs.supabase-version }} start -x realtime,storage-api,imgproxy,studio; then
+              exit 0
+            fi
+
+            npx --yes supabase@${{ inputs.supabase-version }} stop --no-backup || true
+
+            if [ "$attempt" -eq 3 ]; then
+              echo "Unable to start Supabase browser database after $attempt attempts." >&2
+              exit 1
+            fi
+
+            sleep $((attempt * 30))
+          done
       - run: npx --yes supabase@${{ inputs.supabase-version }} db reset --local
       - name: Export local browser-test connection
         shell: bash

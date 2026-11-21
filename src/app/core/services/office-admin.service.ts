@@ -246,6 +246,35 @@ type AttendanceQueueRow = { id: string; organization_id: string; submitted_by: s
 type OutboxRow = { id: string; organization_id: string; event_type: string; aggregate_type: string; aggregate_id: string; payload: Record<string, unknown>; status: IntegrationOutboxEvent['status']; idempotency_key: string; attempts: number; last_error: string | null; created_at: string; processed_at: string | null };
 
 const LOCAL_STORAGE_KEY = 'senatla_office_workspace_v1';
+
+function encryptSensitiveWorkspaceData(plainText: string): string {
+  try {
+    const key = 0x5a;
+    const utf8Str = encodeURIComponent(plainText);
+    let cipher = '';
+    for (let i = 0; i < utf8Str.length; i++) {
+      cipher += String.fromCharCode(utf8Str.charCodeAt(i) ^ key);
+    }
+    return btoa(cipher);
+  } catch {
+    return plainText;
+  }
+}
+
+function decryptSensitiveWorkspaceData(cipherText: string): string {
+  try {
+    const key = 0x5a;
+    const decoded = atob(cipherText);
+    let plain = '';
+    for (let i = 0; i < decoded.length; i++) {
+      plain += String.fromCharCode(decoded.charCodeAt(i) ^ key);
+    }
+    return decodeURIComponent(plain);
+  } catch {
+    return cipherText;
+  }
+}
+
 const SENATLA_TRADING_ORGANIZATION: Organization = {
   id: SENATLA_TRADING_ORGANIZATION_ID,
   name: 'Senatla Trading',
@@ -1699,15 +1728,23 @@ export class OfficeAdminService {
   private loadFromLocal(): OfficeAdminWorkspace {
     const raw = sessionStorage.getItem(LOCAL_STORAGE_KEY);
     if (!raw) return this.createDefaultWorkspace();
-    const parsed = JSON.parse(raw) as OfficeAdminWorkspace;
-    if (parsed && Array.isArray(parsed.assets)) {
-      const existingIds = new Set(parsed.assets.map((a) => a.id));
-      const missingClientAssets = CLIENT_INITIAL_ASSETS.filter((a) => !existingIds.has(a.id));
-      if (missingClientAssets.length > 0) {
-        parsed.assets = [...parsed.assets, ...missingClientAssets];
-      }
+    let jsonStr = raw;
+    if (!raw.startsWith('{')) {
+      jsonStr = decryptSensitiveWorkspaceData(raw);
     }
-    return parsed;
+    try {
+      const parsed = JSON.parse(jsonStr) as OfficeAdminWorkspace;
+      if (parsed && Array.isArray(parsed.assets)) {
+        const existingIds = new Set(parsed.assets.map((a) => a.id));
+        const missingClientAssets = CLIENT_INITIAL_ASSETS.filter((a) => !existingIds.has(a.id));
+        if (missingClientAssets.length > 0) {
+          parsed.assets = [...parsed.assets, ...missingClientAssets];
+        }
+      }
+      return parsed;
+    } catch {
+      return this.createDefaultWorkspace();
+    }
   }
 
   private applyWorkspace(workspace: OfficeAdminWorkspace) {
@@ -1898,7 +1935,7 @@ export class OfficeAdminService {
 
   private async persistLocalWorkspace() {
     if (this.supabase) return;
-    sessionStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({
+    const serialized = JSON.stringify({
       users: this.users(),
       sites: this.sites(),
       groups: this.groups(),
@@ -1927,7 +1964,8 @@ export class OfficeAdminService {
       anomalies: this.anomalies(),
       directorReports: this.directorReports(),
       designationRates: this.designationRates(),
-    } satisfies OfficeAdminWorkspace));
+    } satisfies OfficeAdminWorkspace);
+    sessionStorage.setItem(LOCAL_STORAGE_KEY, encryptSensitiveWorkspaceData(serialized));
   }
 
   private async logActivity(action: string, entityType: string, entityId: string, details?: Record<string, unknown>) {
