@@ -760,6 +760,7 @@
       {
         id: "Phase 03",
         name: "Phase 03 - Demolition and Rehabilitation",
+        targetWorkingDays: 71,
         allocatedMonths: 3,
         themeColor: "emerald",
         colorClass: "text-emerald-700 bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300",
@@ -781,6 +782,7 @@
       {
         id: "Phase 02",
         name: "Phase 02 - Demolition and Rehabilitation",
+        targetWorkingDays: 63,
         allocatedMonths: 3,
         themeColor: "blue",
         colorClass: "text-blue-700 bg-blue-100 dark:bg-blue-950 dark:text-blue-300 border-blue-300",
@@ -800,6 +802,7 @@
       {
         id: "Phase 04",
         name: "Phase 04 - Demolition and Rehabilitation",
+        targetWorkingDays: 50,
         allocatedMonths: 2,
         themeColor: "amber",
         colorClass: "text-amber-700 bg-amber-100 dark:bg-amber-950 dark:text-amber-300 border-amber-300",
@@ -822,6 +825,7 @@
       {
         id: "Phase 01",
         name: "Phase 01 - Demolition and Rehabilitation",
+        targetWorkingDays: 88,
         allocatedMonths: 4,
         themeColor: "indigo",
         colorClass: "text-indigo-700 bg-indigo-100 dark:bg-indigo-950 dark:text-indigo-300 border-indigo-300",
@@ -841,6 +845,7 @@
       {
         id: "Phase 06",
         name: "Phase 06 - Demolition and Rehabilitation",
+        targetWorkingDays: 72,
         allocatedMonths: 4,
         themeColor: "rose",
         colorClass: "text-rose-700 bg-rose-100 dark:bg-rose-950 dark:text-rose-300 border-rose-300",
@@ -861,6 +866,7 @@
       {
         id: "Phase 07",
         name: "Phase 07 - Demolition and Rehabilitation",
+        targetWorkingDays: 63,
         allocatedMonths: 3,
         themeColor: "teal",
         colorClass: "text-teal-700 bg-teal-100 dark:bg-teal-950 dark:text-teal-300 border-teal-300",
@@ -1046,6 +1052,116 @@
       document.querySelectorAll('#phasesAccordionContainer details').forEach(d => d.open = false);
     });
 
+    
+    // --- CONSTRAINT-BASED ACTIVITY REALLOCATION ENGINE ---
+    // Auto-balances remaining activities in a phase when one activity is edited, keeping targetTotal fixed
+    function reallocatePhaseRemaining(phase, editedIdx, newDuration, targetTotal) {
+      const nonMilestoneIndices = [];
+      phase.activities.forEach((act, idx) => {
+        if (!act.isMilestone && idx !== editedIdx) {
+          nonMilestoneIndices.push(idx);
+        }
+      });
+
+      if (nonMilestoneIndices.length === 0) {
+        phase.activities[editedIdx].durationDays = newDuration;
+        phase.targetWorkingDays = newDuration;
+        return;
+      }
+
+      const remainingTarget = Math.max(nonMilestoneIndices.length, targetTotal - newDuration);
+      const currentRemainingSum = nonMilestoneIndices.reduce((sum, idx) => sum + phase.activities[idx].durationDays, 0);
+
+      phase.activities[editedIdx].durationDays = newDuration;
+
+      if (currentRemainingSum <= 0) {
+        const base = Math.floor(remainingTarget / nonMilestoneIndices.length);
+        const rem = remainingTarget % nonMilestoneIndices.length;
+        nonMilestoneIndices.forEach((idx, k) => {
+          phase.activities[idx].durationDays = base + (k < rem ? 1 : 0);
+        });
+      } else {
+        // Largest Remainder Method (Hare-Niemeyer) for exact integer distribution
+        const rawVals = nonMilestoneIndices.map(idx => phase.activities[idx].durationDays * (remainingTarget / currentRemainingSum));
+        const floored = rawVals.map(v => Math.max(1, Math.floor(v)));
+        let diff = remainingTarget - floored.reduce((a, b) => a + b, 0);
+
+        const remainderOrder = nonMilestoneIndices
+          .map((_, i) => ({ i, rem: rawVals[i] - floored[i] }))
+          .sort((a, b) => b.rem - a.rem);
+
+        if (diff > 0) {
+          for (let k = 0; k < diff; k++) {
+            floored[remainderOrder[k % floored.length].i]++;
+          }
+        } else if (diff < 0) {
+          const reduceOrder = nonMilestoneIndices
+            .map((_, i) => ({ i, rem: rawVals[i] - floored[i] }))
+            .sort((a, b) => a.rem - b.rem);
+          for (let k = 0; k < -diff; k++) {
+            const targetIdx = reduceOrder[k % floored.length].i;
+            if (floored[targetIdx] > 1) {
+              floored[targetIdx]--;
+            }
+          }
+        }
+
+        nonMilestoneIndices.forEach((idx, k) => {
+          phase.activities[idx].durationDays = floored[k];
+        });
+      }
+
+      phase.targetWorkingDays = targetTotal;
+    }
+
+    // Scales all non-milestone activities in a phase proportionally when the user edits the phase budget total (e.g. clicks 71d)
+    function scaleEntirePhase(phase, newTarget) {
+      const nonMilestoneIndices = [];
+      phase.activities.forEach((act, idx) => {
+        if (!act.isMilestone && act.durationDays > 0) {
+          nonMilestoneIndices.push(idx);
+        }
+      });
+
+      if (nonMilestoneIndices.length === 0) {
+        phase.targetWorkingDays = newTarget;
+        return;
+      }
+
+      const target = Math.max(nonMilestoneIndices.length, newTarget);
+      const currentSum = nonMilestoneIndices.reduce((sum, idx) => sum + phase.activities[idx].durationDays, 0);
+
+      const rawVals = nonMilestoneIndices.map(idx => phase.activities[idx].durationDays * (target / currentSum));
+      const floored = rawVals.map(v => Math.max(1, Math.floor(v)));
+      let diff = target - floored.reduce((a, b) => a + b, 0);
+
+      const remainderOrder = nonMilestoneIndices
+        .map((_, i) => ({ i, rem: rawVals[i] - floored[i] }))
+        .sort((a, b) => b.rem - a.rem);
+
+      if (diff > 0) {
+        for (let k = 0; k < diff; k++) {
+          floored[remainderOrder[k % floored.length].i]++;
+        }
+      } else if (diff < 0) {
+        const reduceOrder = nonMilestoneIndices
+          .map((_, i) => ({ i, rem: rawVals[i] - floored[i] }))
+          .sort((a, b) => a.rem - b.rem);
+        for (let k = 0; k < -diff; k++) {
+          const targetIdx = reduceOrder[k % floored.length].i;
+          if (floored[targetIdx] > 1) {
+            floored[targetIdx]--;
+          }
+        }
+      }
+
+      nonMilestoneIndices.forEach((idx, k) => {
+        phase.activities[idx].durationDays = floored[k];
+      });
+
+      phase.targetWorkingDays = target;
+    }
+
     // --- AUTO-CALCULATE ENGINE (Row 1 Master + Phase 03 Task 01 to the End) ---
     function recalculateSchedule() {
       // Clear mappings
@@ -1222,9 +1338,17 @@
             <span class="text-[10px] px-2 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold">${phase.allocatedMonths || 3} Months Alloc</span>
           </div>
           <div class="flex flex-wrap items-center gap-2 text-xs">
-            <span class="font-bold px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800" title="Reconciliation: ${phase.totalWorkingDays} work days + ${phase.monFriHolidays} Mon-Fri hols + ${phase.monFriContractorBreak} Mon-Fri break = ${phase.totalWeekdaysElapsed} weekdays (${phase.calendarDays} cal days)">
-              ${phase.totalWorkingDays}d work
-            </span>
+            <div class="flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border-2 border-emerald-400 dark:border-emerald-600 rounded-md px-2 py-0.5 shadow-xs font-bold" 
+                 title="Click number to change total phase working days (${phase.targetWorkingDays || phase.totalWorkingDays}d). Activities will proportionally reallocate within this envelope!" 
+                 onclick="event.stopPropagation();">
+              <span class="text-[10px] text-emerald-500 font-extrabold uppercase tracking-tight">Phase Budget:</span>
+              <input type="number" min="${phase.activities.filter(a => !a.isMilestone).length}" max="999" 
+                     value="${phase.targetWorkingDays || phase.totalWorkingDays}" 
+                     class="phase-budget-input w-12 bg-white dark:bg-slate-900 border border-emerald-400 dark:border-emerald-500 rounded px-1 py-0.2 text-center text-xs font-black text-emerald-800 dark:text-emerald-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-inner" 
+                     data-phase="${pIdx}">
+              <span class="text-[11px] font-black text-emerald-700 dark:text-emerald-300">d work</span>
+              <span class="text-[10px] text-emerald-600 dark:text-emerald-400" title="Click to edit phase total">✏️</span>
+            </div>
             <span class="font-mono text-[10.5px] text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-1.5 py-0.5 rounded border border-rose-200 dark:border-rose-900" title="Observed Public Holidays on Mon-Fri">
               +${phase.monFriHolidays}d hols
             </span>
@@ -1517,15 +1641,50 @@
         });
       });
 
+      // Activity Duration Edit with Auto-Balance (keeps phase total fixed)
       document.querySelectorAll('[data-action="edit-duration"]').forEach(input => {
         input.addEventListener('change', (e) => {
           const pIdx = parseInt(e.target.dataset.phase, 10);
           const aIdx = parseInt(e.target.dataset.act, 10);
           const val = Math.max(0, parseInt(e.target.value, 10) || 0);
-          projectPhases[pIdx].activities[aIdx].durationDays = val;
-          projectPhases[pIdx].activities[aIdx].isMilestone = (val === 0);
+          const phase = projectPhases[pIdx];
+          
+          if (val === 0) {
+            phase.activities[aIdx].isMilestone = true;
+          } else {
+            phase.activities[aIdx].isMilestone = false;
+          }
+
+          const targetTotal = phase.targetWorkingDays || phase.totalWorkingDays || 71;
+          
+          // Auto-reallocate remaining activities so phase total stays strictly equal to targetTotal
+          reallocatePhaseRemaining(phase, aIdx, val, targetTotal);
+          
           recalculateSchedule();
           renderCalendar();
+          triggerCopiedFeedback(`Act #${aIdx + 1} set to ${val}d. Remaining tasks auto-balanced to keep ${targetTotal}d total!`);
+        });
+      });
+
+      // Phase Total Budget Edit (e.g. clicking/editing the 71d work badge)
+      document.querySelectorAll('.phase-budget-input').forEach(input => {
+        input.addEventListener('click', (e) => e.stopPropagation());
+        input.addEventListener('change', (e) => {
+          const pIdx = parseInt(e.target.dataset.phase, 10);
+          const newTarget = Math.max(1, parseInt(e.target.value, 10) || 1);
+          const phase = projectPhases[pIdx];
+          
+          // Reallocate all activities in the phase proportionally to match the new target
+          scaleEntirePhase(phase, newTarget);
+          
+          recalculateSchedule();
+          renderCalendar();
+          triggerCopiedFeedback(`Phase ${phase.id} budget updated to ${newTarget}d. All activities proportionally reallocated!`);
+        });
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.target.blur();
+          }
         });
       });
 
