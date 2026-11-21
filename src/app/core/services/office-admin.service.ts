@@ -1,4 +1,5 @@
 import { loadOfficeWorkspaceRows } from '../workspace/office-workspace-loader';
+import { evaluateAssetReadiness } from '../readiness/readiness-policy';
 import { VendorWorkspace, VendorAccountInput, VendorInvoiceInput, VendorAccountRow, VendorInvoiceRow, mapVendorAccount, mapVendorInvoice, vendorAccountPayload, vendorInvoicePayload } from '../vendors/vendor-workspace';
 import { decodeEmployeeRates, encodeEmployeeRates } from '../models/employee-rate-metadata';
 import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
@@ -277,6 +278,41 @@ export class OfficeAdminService {
   readonly assetComplianceRecords = signal<AssetComplianceRecord[]>([]);
   readonly assetMeterReadings = signal<AssetMeterReading[]>([]);
   readonly assetWorkOrders = signal<AssetWorkOrder[]>([]);
+  private readonly readinessRecords = computed(() => {
+    const groupByAsset = <T extends { assetId: string }>(records: readonly T[]) => {
+      const indexed = new Map<string, T[]>();
+      for (const record of records) {
+        const group = indexed.get(record.assetId);
+        if (group) group.push(record);
+        else indexed.set(record.assetId, [record]);
+      }
+      return indexed;
+    };
+
+    return {
+      compliance: groupByAsset(this.assetComplianceRecords()),
+      workOrders: groupByAsset(this.assetWorkOrders()),
+    };
+  });
+
+  private readonly readinessDateFormat = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Africa/Johannesburg' });
+
+  evaluateAssetReadiness(asset: VehicleAsset, asOf = this.readinessDateFormat.format(new Date())) {
+    const records = this.readinessRecords();
+    return evaluateAssetReadiness({
+      asset,
+      complianceRecords: records.compliance.get(asset.id),
+      workOrders: records.workOrders.get(asset.id),
+    }, { asOf });
+  }
+
+  assetReadiness(asset: VehicleAsset) {
+    const evaluation = this.evaluateAssetReadiness(asset);
+
+    if (evaluation.status === 'ready') return 'ready';
+    return evaluation.canProceed ? 'attention' : 'blocked';
+  }
+
   readonly assetMaintenancePlans = signal<AssetMaintenancePlan[]>([]);
   readonly assetFuelEntries = signal<AssetFuelEntry[]>([]);
   private readonly vendorWorkspace = new VendorWorkspace();
