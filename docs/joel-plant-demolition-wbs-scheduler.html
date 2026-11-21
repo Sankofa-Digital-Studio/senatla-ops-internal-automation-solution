@@ -1,0 +1,2401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>South Africa WBS Scheduler & Gantt Timeline</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.03);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(150, 150, 150, 0.35);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(150, 150, 150, 0.55);
+    }
+    .calendar-cell {
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+    }
+    /* Distinct contractor break diagonal warning stripes */
+    .contractor-break-cell {
+      background-color: rgba(254, 243, 199, 0.45);
+      background-image: repeating-linear-gradient(
+        -45deg,
+        rgba(245, 158, 11, 0.08),
+        rgba(245, 158, 11, 0.08) 7px,
+        rgba(245, 158, 11, 0.20) 7px,
+        rgba(245, 158, 11, 0.20) 14px
+      );
+    }
+    .dark .contractor-break-cell {
+      background-color: rgba(69, 26, 3, 0.3);
+      background-image: repeating-linear-gradient(
+        -45deg,
+        rgba(245, 158, 11, 0.1),
+        rgba(245, 158, 11, 0.1) 7px,
+        rgba(245, 158, 11, 0.25) 7px,
+        rgba(245, 158, 11, 0.25) 14px
+      );
+    }
+    /* Timeline Non-working column patterns */
+    .tl-weekend {
+      background-color: rgba(226, 232, 240, 0.7);
+    }
+    .dark .tl-weekend {
+      background-color: rgba(30, 41, 59, 0.7);
+    }
+    .tl-contractor-break {
+      background-color: rgba(254, 215, 170, 0.85);
+      background-image: repeating-linear-gradient(
+        -45deg,
+        rgba(249, 115, 22, 0.15),
+        rgba(249, 115, 22, 0.15) 5px,
+        rgba(249, 115, 22, 0.35) 5px,
+        rgba(249, 115, 22, 0.35) 10px
+      );
+    }
+    .dark .tl-contractor-break {
+      background-color: rgba(124, 45, 18, 0.6);
+      background-image: repeating-linear-gradient(
+        -45deg,
+        rgba(249, 115, 22, 0.2),
+        rgba(249, 115, 22, 0.2) 5px,
+        rgba(249, 115, 22, 0.45) 5px,
+        rgba(249, 115, 22, 0.45) 10px
+      );
+    }
+    .tl-holiday {
+      background-color: rgba(254, 240, 138, 0.75);
+    }
+    .dark .tl-holiday {
+      background-color: rgba(113, 63, 18, 0.6);
+    }
+    /* Phase specific cell styling */
+    .cell-phase-03 { background-color: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.65); }
+    .cell-phase-02 { background-color: rgba(59, 130, 246, 0.12); border-color: rgba(59, 130, 246, 0.65); }
+    .cell-phase-04 { background-color: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.65); }
+    .cell-phase-01 { background-color: rgba(99, 102, 241, 0.12); border-color: rgba(99, 102, 241, 0.65); }
+    .cell-phase-06 { background-color: rgba(244, 63, 94, 0.12); border-color: rgba(244, 63, 94, 0.65); }
+    .cell-phase-07 { background-color: rgba(14, 165, 233, 0.12); border-color: rgba(14, 165, 233, 0.65); }
+  </style>
+</head>
+<body class="bg-transparent text-[var(--foreground,#1e293b)] antialiased p-0 m-0 text-sm">
+  <div class="max-w-6xl mx-auto p-4 space-y-4">
+    
+    <!-- Top Static Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-2 border-b border-[var(--card-border,#e2e8f0)]">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🇿🇦</span>
+          <h1 class="text-lg font-bold tracking-tight text-[var(--foreground,#0f172a)]">
+            Joel Gold Plant: Demolition & Rehabilitation Program
+          </h1>
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold">
+            MS Project XML Ready
+          </span>
+        </div>
+        <p class="text-xs text-[var(--muted-foreground,#64748b)] mt-0.5">
+          Integrated Work Breakdown Structure, Gantt Timeline & Statutory Calendar (excludes weekends, RSA holidays & breaks).
+        </p>
+      </div>
+
+      <!-- Quick Export & Timeline Jump -->
+      <div class="flex items-center gap-2">
+        <button id="btnJumpToTimeline" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5">
+          <span>📈 View Timeline</span>
+        </button>
+        <button id="btnQuickExportXml" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5">
+          <span>📊 Export MS Project (.xml)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- SCOPE: MASTER PROGRAM SUMMARY (AS REQUESTED) -->
+    <div class="p-4 rounded-xl bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white shadow-md border border-slate-700 space-y-3">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-500 text-slate-950">SCOPE • Master Program</span>
+            <span class="text-xs font-mono text-slate-300">WBS 1.0</span>
+          </div>
+          <h2 class="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-2">
+            <span>Demolition and Rehabilitation of Joel Plant Gold Plant: Phase 03-07</span>
+          </h2>
+        </div>
+
+        <!-- Master Start Date Controls -->
+        <div class="flex flex-wrap items-center gap-2 bg-white/10 p-2 rounded-lg border border-white/15 text-xs">
+          <div>
+            <label class="block text-[10px] uppercase font-bold text-slate-300">Start Date Input:</label>
+            <input id="masterStartDateInput" type="date" value="2026-12-07" class="bg-slate-950 text-emerald-400 border border-slate-600 rounded px-2.5 py-1 text-xs font-mono font-bold focus:ring-1 focus:ring-emerald-400" />
+          </div>
+       
+          <button id="btnSetStartMon26" class="mt-3.5 px-2.5 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium transition-all">
+            Mon 07 12 26
+          </button>
+        </div>
+      </div>
+
+      <!-- Row 1 Metric Callouts: Total Days, Start, and End + Duration Reconciliation Card -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-white/10 text-xs">
+        <div class="p-2.5 rounded-lg bg-white/5 border border-white/10 flex items-center justify-between">
+          <div>
+            <div class="text-[10px] uppercase tracking-wider text-slate-300 font-bold">Total Working Days</div>
+            <div class="text-2xl font-black text-emerald-400" id="row1WorkingDaysDisplay">407 days</div>
+          </div>
+          <span class="text-[11px] font-mono text-slate-400" id="row1CalendarDaysDisplay">(640 calendar days)</span>
+        </div>
+
+        <div class="p-2.5 rounded-lg bg-white/5 border border-white/10 flex items-center justify-between">
+          <div>
+            <div class="text-[10px] uppercase tracking-wider text-slate-300 font-bold flex items-center gap-1.5">
+              <span>START DATE</span>
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            </div>
+            <div class="text-base font-black font-mono text-white flex items-center gap-1.5" id="row1StartDateDisplay">
+              <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              <span>START: Mon 07 12 26</span>
+            </div>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">Phase 03 Start</span>
+        </div>
+
+        <div class="p-2.5 rounded-lg bg-white/5 border border-white/10 flex items-center justify-between">
+          <div>
+            <div class="text-[10px] uppercase tracking-wider text-slate-300 font-bold flex items-center gap-1.5">
+              <span>END DATE</span>
+              <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+            </div>
+            <div class="text-base font-black font-mono text-indigo-300 flex items-center gap-1.5" id="row1EndDateDisplay">
+              <svg class="w-3.5 h-3.5 text-rose-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+              <span>END: Thu 06 09 29</span>
+            </div>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-bold">Phase 07 Finish</span>
+        </div>
+
+        <!-- Start Date + End Date Duration Reconciliation Breakdown Card -->
+        <div class="col-span-1 sm:col-span-3 p-3 rounded-lg bg-slate-950/80 border border-emerald-500/30 text-xs shadow-inner">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-1.5 border-b border-white/10 pb-2 mb-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+                <span>⏱️ DURATION RECONCILIATION</span>
+              </span>
+              <span class="text-[11px] font-bold text-slate-200">
+                Total Allocated Duration: <span class="text-emerald-400 font-black">19 Months</span> (407 Working Days) across Phases 03, 02, 04, 01, 06, 07
+              </span>
+            </div>
+            <div class="text-[10px] font-mono text-slate-400 flex items-center gap-1.5">
+              <span>Program Span:</span>
+              <span class="text-emerald-300 font-bold" id="reconSpanStart">Mon 07 12 26</span>
+              <span>➔</span>
+              <span class="text-indigo-300 font-bold" id="reconSpanEnd">Thu 06 09 29</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 text-center text-xs">
+            <div class="p-2 rounded bg-white/5 border border-white/10 flex flex-col justify-between">
+              <div class="text-[10px] text-slate-300 font-semibold">1. Allocated Work Days</div>
+              <div class="text-xl font-black text-emerald-400 my-0.5" id="reconAllocatedWorkDays">407 days</div>
+              <div class="text-[9.5px] text-slate-400">19 Allocated Months</div>
+            </div>
+
+            <div class="p-2 rounded bg-rose-950/20 border border-rose-500/30 flex flex-col justify-between">
+              <div class="text-[10px] text-rose-300 font-semibold">2. + Observed Public Holidays</div>
+              <div class="text-xl font-black text-rose-400 my-0.5" id="reconMonFriHolidays">+18 days</div>
+              <div class="text-[9.5px] text-rose-300/80">Fell on Mon–Fri (Workable days)</div>
+            </div>
+
+            <div class="p-2 rounded bg-amber-950/20 border border-amber-500/30 flex flex-col justify-between">
+              <div class="text-[10px] text-amber-300 font-semibold">3. + Contractor Break Weekdays</div>
+              <div class="text-xl font-black text-amber-400 my-0.5" id="reconMonFriContractorBreak">+32 days</div>
+              <div class="text-[9.5px] text-amber-300/80">Mon–Fri 18 Dec–11 Jan (Non-holiday)</div>
+            </div>
+
+            <div class="p-2 rounded bg-emerald-950/30 border border-emerald-500/40 flex flex-col justify-between">
+              <div class="text-[10px] text-emerald-300 font-bold">Total Elapsed Weekdays</div>
+              <div class="text-xl font-black text-white my-0.5" id="reconTotalWeekdays">457 days</div>
+              <div class="text-[9.5px] text-emerald-400 font-mono font-bold" id="reconTotalCalendarDays">640 Calendar Days (+178 weekends)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISUAL GANTT TIMELINE WITH DISTINCTLY COLOURED NON-WORKING DAYS -->
+    <div id="timelineCard" class="p-4 rounded-xl bg-[var(--card,#ffffff)] border border-[var(--card-border,#e2e8f0)] shadow-sm space-y-3">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--card-border,#f1f5f9)] pb-2.5">
+        <div>
+          <div class="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-2">
+            <span>📈 Master Schedule Timeline (Gantt Chart)</span>
+            <span class="text-[10px] px-2 py-0.2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold">
+              Row 1 + All Phases + Non-working Days
+            </span>
+          </div>
+          <p class="text-[11px] text-[var(--muted-foreground,#64748b)] mt-0.5">
+            Non-working days are distinctly highlighted across the timeline (weekends in slate, contractor breaks in striped orange, holidays in gold).
+          </p>
+        </div>
+
+        <!-- Timeline Legend -->
+        <div class="flex flex-wrap items-center gap-2 text-[10px]">
+          <div class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium">
+            <span class="w-2.5 h-2.5 rounded bg-slate-400"></span>
+            <span>Weekend</span>
+          </div>
+          <div class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 font-bold border border-amber-300">
+            <span class="w-2.5 h-2.5 rounded bg-amber-500"></span>
+            <span>Contractor Break (18 Dec – 11 Jan)</span>
+          </div>
+          <div class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-yellow-100 dark:bg-yellow-950 text-yellow-900 dark:text-yellow-300 font-medium border border-yellow-300">
+            <span class="w-2.5 h-2.5 rounded bg-yellow-500"></span>
+            <span>Holiday</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gantt Canvas Container -->
+      <div class="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl" id="timelineScrollContainer">
+        <div id="timelineContentWrapper" class="min-w-[950px] p-2 space-y-2 select-none">
+          <!-- Rendered dynamically by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- FLOATING STICKY MONTH NAVIGATION BAR -->
+    <div class="sticky top-2 z-40 bg-[var(--card,#ffffff)]/95 backdrop-blur-md p-3 rounded-xl border border-[var(--card-border,#cbd5e1)] shadow-lg transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <button id="prevMonthBtn" class="px-3 py-1.5 rounded-lg border border-[var(--card-border,#cbd5e1)] hover:bg-[var(--card,#f1f5f9)] active:scale-95 text-xs font-bold flex items-center gap-1 transition-all shadow-xs">
+          ◀ Prev
+        </button>
+        <select id="monthSelect" class="bg-[var(--card,#ffffff)] text-[var(--foreground,#0f172a)] border border-[var(--card-border,#cbd5e1)] rounded-lg px-3 py-1.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs cursor-pointer">
+          <!-- Populated by JS -->
+        </select>
+        <button id="nextMonthBtn" class="px-3 py-1.5 rounded-lg border border-[var(--card-border,#cbd5e1)] hover:bg-[var(--card,#f1f5f9)] active:scale-95 text-xs font-bold flex items-center gap-1 transition-all shadow-xs">
+          Next ▶
+        </button>
+      </div>
+
+      <!-- Quick month status pill -->
+      <div class="flex items-center gap-2 text-xs">
+        <span class="font-extrabold text-sm text-[var(--foreground,#0f172a)]" id="floatingMonthTitle">
+          December 2027
+        </span>
+        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold text-white bg-emerald-600" id="floatingPhaseBadge">
+          Phase 03
+        </span>
+        <span class="text-slate-500 font-medium" id="floatingWorkingDaysLabel">
+          9 working days
+        </span>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-1.5">
+        <button id="btnExpandAllAccordions" class="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-semibold transition-colors">
+          Expand All Details
+        </button>
+        <button id="btnCollapseAllAccordions" class="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-semibold transition-colors">
+          Collapse Details
+        </button>
+      </div>
+    </div>
+
+    <!-- DYNAMIC PHASE COLLAPSE ROWS & ACTIVITY EDITORS -->
+    <div class="p-4 rounded-xl bg-[var(--card,#ffffff)] border border-[var(--card-border,#e2e8f0)] shadow-sm space-y-3">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--card-border,#f1f5f9)] pb-2.5">
+        <div>
+          <div class="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+            <span>📋 Project Phase Collapse Rows (Order: 03 → 02 → 04 → 01 → 06 → 07)</span>
+          </div>
+          <p class="text-[11px] text-[var(--muted-foreground,#64748b)] mt-0.5">
+            Every phase collapse row displays: <strong>Total Days</strong>, <strong>START: [Day DD MM YY]</strong>, and <strong>END: [Day DD MM YY]</strong>.
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btnResetToDefaults" class="text-xs text-rose-600 dark:text-rose-400 font-semibold hover:underline">
+            Reset All Activities to Template
+          </button>
+        </div>
+      </div>
+
+      <!-- Phase Accordions Container -->
+      <div class="space-y-3" id="phasesAccordionContainer">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- Enhanced Modern Legend -->
+    <div class="p-3.5 rounded-xl bg-[var(--card,#ffffff)] border border-[var(--card-border,#e2e8f0)] shadow-sm space-y-2">
+      <div class="flex items-center justify-between text-xs font-bold text-[var(--muted-foreground,#64748b)] uppercase tracking-wider">
+        <span>Calendar Legend & Status Categories</span>
+        <span class="text-[11px] font-normal text-slate-400">Statutory rules active</span>
+      </div>
+      
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-xs">
+        
+        <!-- Non-working days (Weekend) -->
+        <div class="flex items-start gap-2 p-2 rounded-lg bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
+          <div class="w-3.5 h-3.5 rounded bg-slate-400 dark:bg-slate-500 mt-0.5 shrink-0 flex items-center justify-center text-[9px] text-white font-bold">✕</div>
+          <div>
+            <div class="font-bold text-slate-700 dark:text-slate-200">Non-working</div>
+            <div class="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">Saturday & Sunday</div>
+          </div>
+        </div>
+
+        <!-- Contractor's Break -->
+        <div class="flex items-start gap-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800">
+          <div class="w-3.5 h-3.5 rounded bg-amber-500 mt-0.5 shrink-0 flex items-center justify-center text-[9px] text-white font-bold">🚧</div>
+          <div>
+            <div class="font-bold text-amber-900 dark:text-amber-300">Contractor Break</div>
+            <div class="text-[10px] text-amber-700 dark:text-amber-400 leading-tight">18 Dec – 11 Jan</div>
+          </div>
+        </div>
+
+        <!-- Actual Public Holiday -->
+        <div class="flex items-start gap-2 p-2 rounded-lg bg-yellow-50 dark:bg-yellow-950/40 border border-yellow-300 dark:border-yellow-800">
+          <div class="w-3.5 h-3.5 rounded-full bg-yellow-500 mt-0.5 shrink-0 flex items-center justify-center text-[9px] text-white font-bold">★</div>
+          <div>
+            <div class="font-bold text-yellow-900 dark:text-yellow-300">Actual Holiday</div>
+            <div class="text-[10px] text-yellow-700 dark:text-yellow-400 leading-tight">RSA Statutory Holiday</div>
+          </div>
+        </div>
+
+        <!-- Observed Public Holiday -->
+        <div class="flex items-start gap-2 p-2 rounded-lg bg-purple-50 dark:bg-purple-950/40 border border-purple-300 dark:border-purple-800">
+          <div class="w-3.5 h-3.5 rounded-full bg-purple-500 mt-0.5 shrink-0 flex items-center justify-center text-[9px] text-white font-bold">🔄</div>
+          <div>
+            <div class="font-bold text-purple-900 dark:text-purple-300">Observed Holiday</div>
+            <div class="text-[10px] text-purple-700 dark:text-purple-400 leading-tight">Monday substitution</div>
+          </div>
+        </div>
+
+        <!-- Phase Working Day -->
+        <div class="flex items-start gap-2 p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 col-span-2 sm:col-span-1">
+          <div class="w-3.5 h-3.5 rounded bg-emerald-600 mt-0.5 shrink-0 flex items-center justify-center text-[9px] text-white font-bold">✓</div>
+          <div>
+            <div class="font-bold text-emerald-900 dark:text-emerald-300">Phase Work Day</div>
+            <div class="text-[10px] text-emerald-700 dark:text-emerald-400 leading-tight">Color-coded by phase</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Main Calendar Grid -->
+    <div class="bg-[var(--card,#ffffff)] rounded-xl border border-[var(--card-border,#e2e8f0)] p-3 shadow-sm overflow-x-auto">
+      <!-- Weekday headers (Monday start as per SA standard) -->
+      <div class="grid grid-cols-7 gap-1.5 min-w-[560px] mb-1.5 text-center font-semibold text-xs text-[var(--muted-foreground,#64748b)]">
+        <div class="py-1">Mon</div>
+        <div class="py-1">Tue</div>
+        <div class="py-1">Wed</div>
+        <div class="py-1">Thu</div>
+        <div class="py-1">Fri</div>
+        <div class="py-1 text-slate-500 font-bold bg-slate-100/70 dark:bg-slate-800/60 rounded">Sat (Non-work)</div>
+        <div class="py-1 text-slate-500 font-bold bg-slate-100/70 dark:bg-slate-800/60 rounded">Sun (Non-work)</div>
+      </div>
+
+      <!-- Calendar day cells -->
+      <div id="calendarGrid" class="grid grid-cols-7 gap-1.5 min-w-[560px]">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- Monthly Summary Bar -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div class="p-2.5 rounded-lg bg-[var(--card,#ffffff)] border border-[var(--card-border,#e2e8f0)] shadow-xs">
+        <div class="text-xs text-[var(--muted-foreground,#64748b)]">Working Days (Month)</div>
+        <div class="text-xl font-black text-emerald-600 dark:text-emerald-400" id="statWorkingDays">9</div>
+      </div>
+      <div class="p-2.5 rounded-lg bg-[var(--card,#ffffff)] border border-[var(--card-border,#e2e8f0)] shadow-xs">
+        <div class="text-xs text-[var(--muted-foreground,#64748b)]">Weekend Days</div>
+        <div class="text-xl font-black text-slate-600 dark:text-slate-300" id="statWeekendDays">8</div>
+      </div>
+      <div class="p-2.5 rounded-lg bg-[var(--card,#ffffff)] border border-[var(--card-border,#e2e8f0)] shadow-xs">
+        <div class="text-xs text-amber-900 dark:text-amber-300 font-semibold">Contractor Break</div>
+        <div class="text-xl font-black text-amber-700 dark:text-amber-400" id="statContractorBreakDays">14</div>
+      </div>
+      <div class="p-2.5 rounded-lg bg-[var(--card,#ffffff)] border border-[var(--card-border,#e2e8f0)] shadow-xs">
+        <div class="text-xs text-[var(--muted-foreground,#64748b)]">Public Holidays</div>
+        <div class="text-xl font-black text-yellow-700 dark:text-yellow-400" id="statTotalHolidays">3</div>
+      </div>
+    </div>
+
+    <!-- ACCORDION 1: Total Amount Calculator (CLOSED BY DEFAULT) -->
+    <details class="group rounded-xl border border-[var(--card-border,#e2e8f0)] bg-[var(--card,#ffffff)] shadow-sm overflow-hidden">
+      <summary class="cursor-pointer p-3.5 flex items-center justify-between font-bold text-xs uppercase tracking-wider text-[var(--foreground,#1e293b)] hover:bg-slate-50 dark:hover:bg-slate-800/40 select-none transition-colors">
+        <div class="flex items-center gap-2">
+          <span>💰 Total Amount Calculator</span>
+          <span class="text-[10px] font-normal text-slate-400 normal-case">(Click to expand)</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold text-blue-600" id="accordionAmountPreview">R 0.00</span>
+          <span class="text-slate-400 group-open:rotate-180 transition-transform text-xs">▼</span>
+        </div>
+      </summary>
+      
+      <div class="p-4 border-t border-[var(--card-border,#e2e8f0)] bg-slate-50/50 dark:bg-slate-900/20 space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-[var(--foreground,#1e293b)] mb-1">
+              Rate per working day (ZAR R):
+            </label>
+            <input id="dailyRateInput" type="number" min="0" step="50" placeholder="e.g. 1500" class="w-full bg-[var(--card,#ffffff)] text-[var(--foreground,#0f172a)] border border-[var(--card-border,#cbd5e1)] rounded-lg px-3 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" />
+          </div>
+          <div class="flex flex-col justify-end">
+            <div class="p-2.5 rounded-lg bg-[var(--card,#ffffff)] border border-[var(--card-border,#e2e8f0)] flex items-center justify-between">
+              <div>
+                <div class="text-xs text-[var(--muted-foreground,#64748b)]">Month Total:</div>
+                <div class="text-[11px] text-slate-400" id="rateFormulaLabel">9 days × R 0</div>
+              </div>
+              <div class="text-xl font-black text-[var(--foreground,#0f172a)]" id="totalAmountDisplay">
+                R 0.00
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <!-- ACCORDION 2: EXPORT MS PROJECT XML & JSON DATA (CLOSED BY DEFAULT) -->
+    <details class="group rounded-xl border border-[var(--card-border,#e2e8f0)] bg-[var(--card,#ffffff)] shadow-sm overflow-hidden">
+      <summary class="cursor-pointer p-3.5 flex items-center justify-between font-bold text-xs uppercase tracking-wider text-[var(--foreground,#1e293b)] hover:bg-slate-50 dark:hover:bg-slate-800/40 select-none transition-colors">
+        <div class="flex items-center gap-2">
+          <span>📦 EXPORT MICROSOFT PROJECT (.XML) & JSON DATA</span>
+          <span class="text-[10px] font-normal text-slate-400 normal-case">(Click to expand)</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] font-semibold text-emerald-600 opacity-0 transition-opacity" id="copyFeedback">Copied!</span>
+          <span class="text-slate-400 group-open:rotate-180 transition-transform text-xs">▼</span>
+        </div>
+      </summary>
+
+      <div class="p-4 border-t border-[var(--card-border,#e2e8f0)] space-y-3 bg-slate-50/50 dark:bg-slate-900/20">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p class="text-xs text-[var(--muted-foreground,#64748b)]">
+            Export the updated WBS schedule directly into Microsoft Project (.xml) or structured JSON.
+          </p>
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="btnDownloadMsProjectXml" class="py-2 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5">
+              <span>📊 Download MS Project XML (.xml)</span>
+            </button>
+            <button id="btnCopyMonthJson" class="py-1.5 px-3 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-lg text-xs font-semibold transition-all shadow-xs flex items-center gap-1">
+              📋 Copy Month JSON
+            </button>
+            <button id="btnDownloadMonthJson" class="py-1.5 px-3 bg-slate-800 hover:bg-slate-900 active:scale-95 text-white rounded-lg text-xs font-semibold transition-all shadow-xs flex items-center gap-1">
+              💾 Download Month (.json)
+            </button>
+            <button id="btnDownloadAllJson" class="py-1.5 px-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-lg text-xs font-semibold transition-all shadow-xs flex items-center gap-1">
+              🌐 Download All 27 Months (.json)
+            </button>
+          </div>
+        </div>
+
+        <div class="pt-2">
+          <div class="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1 flex justify-between">
+            <span id="previewHeading">Active Month JSON Output Preview:</span>
+            <div class="flex items-center gap-2">
+              <button id="btnToggleXmlPreview" class="text-emerald-600 font-semibold hover:underline">View MS Project XML Preview</button>
+              <span>•</span>
+              <button id="btnToggleFullJsonExport" class="text-blue-600 hover:underline">Toggle Full JSON</button>
+            </div>
+          </div>
+          <pre id="codeDisplay" class="bg-slate-900 text-slate-100 p-3.5 rounded-lg text-[11px] font-mono overflow-x-auto max-h-72 leading-relaxed shadow-inner"></pre>
+        </div>
+      </div>
+    </details>
+
+    <!-- Modal for Copying Activity to Another Phase -->
+    <div id="copyModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+      <div class="bg-[var(--card,#ffffff)] rounded-xl border border-[var(--card-border,#e2e8f0)] p-4 max-w-md w-full shadow-2xl space-y-3">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+          <h3 class="font-bold text-sm text-[var(--foreground,#0f172a)]">Copy Activity to Phase</h3>
+          <button id="btnCloseCopyModal" class="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+        </div>
+        <p class="text-xs text-slate-500" id="copyModalActivityName">Activity Name</p>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            Destination Phase:
+          </label>
+          <select id="copyTargetPhaseSelect" class="w-full bg-[var(--card,#ffffff)] border border-slate-300 dark:border-slate-600 rounded-lg p-2 text-xs font-bold focus:ring-2 focus:ring-blue-500">
+            <!-- Populated by JS -->
+          </select>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button id="btnCancelCopy" class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs font-semibold">
+            Cancel
+          </button>
+          <button id="btnConfirmCopy" class="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs">
+            Confirm & Copy
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // --- SAFE LOCAL DATE UTILITIES ---
+    function parseDateParts(str) {
+      if (!str) return new Date();
+      const parts = str.split('-').map(Number);
+      return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+
+    function formatDateISO(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    // Specific format requested by user: e.g. "Mon 07 12 26" (DayOfWeek DD MM YY)
+    
+    // Compact format for Gantt pills
+    function formatCompactPillDate(dateStr, widthPct) {
+      if (!dateStr) return '';
+      const dateObj = parseDateParts(dateStr);
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const dayName = days[dateObj.getDay()];
+      const dayNum = String(dateObj.getDate()).padStart(2, '0');
+      const monthNum = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const yearShort = String(dateObj.getFullYear()).slice(-2);
+
+      if (widthPct >= 14) {
+        return `${dayName} ${dayNum} ${monthNum} ${yearShort}`;
+      }
+      return `${dayNum} ${monthNum} ${yearShort}`;
+    }
+
+    function formatUserCustomDate(d) {
+      if (!d) return '';
+      const dateObj = (typeof d === 'string') ? parseDateParts(d) : d;
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const dayName = days[dateObj.getDay()];
+      const dayNum = String(dateObj.getDate()).padStart(2, '0');
+      const monthNum = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const yearShort = String(dateObj.getFullYear()).slice(-2);
+      return `${dayName} ${dayNum} ${monthNum} ${yearShort}`;
+    }
+
+    // --- CONTRACTOR'S BREAK RULE (18 December to 11 January) ---
+    function isContractorBreakDate(date) {
+      const month = date.getMonth(); // 0 is Jan, 11 is Dec
+      const day = date.getDate();
+      if (month === 11 && day >= 18) return true; // Dec 18-31
+      if (month === 0 && day <= 11) return true;  // Jan 1-11
+      return false;
+    }
+
+    // --- EASTER & HOLIDAY GENERATION FOR SOUTH AFRICA (Public Holidays Act 36 of 1994) ---
+    function getEaster(year) {
+      const a = year % 19;
+      const b = Math.floor(year / 100);
+      const c = year % 100;
+      const d = Math.floor(b / 4);
+      const e = b % 4;
+      const f = Math.floor((b + 8) / 25);
+      const g = Math.floor((b - f + 1) / 3);
+      const h = (19 * a + b - d - g + 15) % 30;
+      const i = Math.floor(c / 4);
+      const k = c % 4;
+      const l = (32 + 2 * e + 2 * i - h - k) % 7;
+      const m = Math.floor((a + 11 * h + 22 * l) / 451);
+      const month = Math.floor((h + l - 7 * m + 114) / 31);
+      const day = ((h + l - 7 * m + 114) % 31) + 1;
+      return new Date(year, month - 1, day);
+    }
+
+    function getSouthAfricaHolidays(year) {
+      const easter = getEaster(year);
+      
+      const goodFriday = new Date(easter);
+      goodFriday.setDate(easter.getDate() - 2);
+
+      const familyDay = new Date(easter);
+      familyDay.setDate(easter.getDate() + 1);
+
+      const fixed = [
+        { date: new Date(year, 0, 1), name: "New Year's Day" },
+        { date: new Date(year, 2, 21), name: "Human Rights Day" },
+        { date: goodFriday, name: "Good Friday" },
+        { date: familyDay, name: "Family Day" },
+        { date: new Date(year, 3, 27), name: "Freedom Day" },
+        { date: new Date(year, 4, 1), name: "Workers' Day" },
+        { date: new Date(year, 5, 16), name: "Youth Day" },
+        { date: new Date(year, 7, 9), name: "National Women's Day" },
+        { date: new Date(year, 8, 24), name: "Heritage Day" },
+        { date: new Date(year, 11, 16), name: "Day of Reconciliation" },
+        { date: new Date(year, 11, 25), name: "Christmas Day" },
+        { date: new Date(year, 11, 26), name: "Day of Goodwill" }
+      ];
+
+      const holidays = [];
+
+      fixed.forEach(h => {
+        const dStr = formatDateISO(h.date);
+        holidays.push({
+          dateStr: dStr,
+          name: h.name,
+          type: 'actual',
+          dayOfWeek: h.date.getDay()
+        });
+
+        // Sunday holiday rollover to Monday
+        if (h.date.getDay() === 0) {
+          const obsDate = new Date(h.date);
+          if (h.date.getMonth() === 11 && h.date.getDate() === 25) {
+            obsDate.setDate(h.date.getDate() + 2);
+          } else {
+            obsDate.setDate(h.date.getDate() + 1);
+          }
+          holidays.push({
+            dateStr: formatDateISO(obsDate),
+            name: `${h.name} (Observed)`,
+            type: 'observed',
+            dayOfWeek: obsDate.getDay()
+          });
+        }
+      });
+
+      return holidays;
+    }
+
+    const allHolidays = {};
+    [2026, 2027, 2028, 2029, 2030].forEach(y => {
+      getSouthAfricaHolidays(y).forEach(h => {
+        if (!allHolidays[h.dateStr]) {
+          allHolidays[h.dateStr] = [];
+        }
+        allHolidays[h.dateStr].push(h);
+      });
+    });
+
+    function isHoliday(date) {
+      const dStr = formatDateISO(date);
+      return Boolean(allHolidays[dStr] && allHolidays[dStr].length > 0);
+    }
+
+    function isWeekend(date) {
+      const dow = date.getDay();
+      return (dow === 0 || dow === 6);
+    }
+
+    function isValidWorkingDay(date) {
+      if (isWeekend(date)) return false;
+      if (isContractorBreakDate(date)) return false;
+      if (isHoliday(date)) return false;
+      return true;
+    }
+
+    function addWorkingDays(startDate, workingDaysCount) {
+      let curr = new Date(startDate);
+      if (workingDaysCount <= 0) return new Date(startDate);
+      let accumulated = 0;
+      
+      while (accumulated < workingDaysCount) {
+        if (isValidWorkingDay(curr)) {
+          accumulated++;
+          if (accumulated >= workingDaysCount) break;
+        }
+        curr.setDate(curr.getDate() + 1);
+      }
+      return curr;
+    }
+
+    function getFirstWorkingDayOnOrAfter(date) {
+      let curr = new Date(date);
+      while (!isValidWorkingDay(curr)) {
+        curr.setDate(curr.getDate() + 1);
+      }
+      return curr;
+    }
+
+    function getNextWorkingDay(date) {
+      let curr = new Date(date);
+      curr.setDate(curr.getDate() + 1);
+      while (!isValidWorkingDay(curr)) {
+        curr.setDate(curr.getDate() + 1);
+      }
+      return curr;
+    }
+
+    // Month list from Nov 2026 to Dec 2030 (50 months to cover both 2026 and 2027 start dates)
+    const monthList = [];
+    const startYear = 2026, startMonth = 11;
+    const endYear = 2030, endMonth = 12;
+
+    let curY = startYear;
+    let curM = startMonth;
+
+    while (curY < endYear || (curY === endYear && curM <= endMonth)) {
+      const key = `${curY}-${String(curM).padStart(2, '0')}`;
+      const d = new Date(curY, curM - 1, 1);
+      const monthName = d.toLocaleString('en-ZA', { month: 'long', year: 'numeric' });
+      monthList.push({
+        key,
+        year: curY,
+        month: curM,
+        name: monthName
+      });
+      curM++;
+      if (curM > 12) {
+        curM = 1;
+        curY++;
+      }
+    }
+
+    // --- PHASE & ACTIVITY DATA MODEL (ORDER: 03, 02, 04, 01, 06, 07) ---
+    const initialProjectStructure = [
+      {
+        id: "Phase 03",
+        name: "Phase 03 - Demolition and Rehabilitation",
+        targetWorkingDays: 71,
+        allocatedMonths: 3,
+        themeColor: "emerald",
+        colorClass: "text-emerald-700 bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300",
+        badgeColor: "bg-emerald-600",
+        cellClass: "cell-phase-03",
+        activities: [
+          { name: "Health & Safety and Environmental Compliance", durationDays: 20, isMilestone: false },
+          { name: "Site Establishment", durationDays: 5, isMilestone: false },
+          { name: "Confirm Phase 03 workfront release and isolation", durationDays: 2, isMilestone: false },
+          { name: "Break up and pulverise above-ground concrete and brickwork", durationDays: 12, isMilestone: false },
+          { name: "Expose, break up and pulverise below-ground concrete and brickwork", durationDays: 10, isMilestone: false },
+          { name: "Cut, segregate and remove reinforcement and steel structures", durationDays: 8, isMilestone: false },
+          { name: "Load, haul and stockpile pulverised material on site", durationDays: 7, isMilestone: false },
+          { name: "Shape, level and clean the work area", durationDays: 5, isMilestone: false },
+          { name: "Inspect rehabilitated area and close Phase 03", durationDays: 2, isMilestone: false },
+          { name: "Phase 03 complete", durationDays: 0, isMilestone: true }
+        ]
+      },
+      {
+        id: "Phase 02",
+        name: "Phase 02 - Demolition and Rehabilitation",
+        targetWorkingDays: 63,
+        allocatedMonths: 3,
+        themeColor: "blue",
+        colorClass: "text-blue-700 bg-blue-100 dark:bg-blue-950 dark:text-blue-300 border-blue-300",
+        badgeColor: "bg-blue-600",
+        cellClass: "cell-phase-02",
+        activities: [
+          { name: "Confirm Phase 02 workfront release and isolation", durationDays: 3, isMilestone: false },
+          { name: "Break up and pulverise above-ground concrete and brickwork", durationDays: 16, isMilestone: false },
+          { name: "Expose, break up and pulverise below-ground concrete and brickwork", durationDays: 15, isMilestone: false },
+          { name: "Cut, segregate and remove reinforcement and steel structures", durationDays: 12, isMilestone: false },
+          { name: "Load, haul and stockpile pulverised material on site", durationDays: 10, isMilestone: false },
+          { name: "Shape, level and clean the work area", durationDays: 5, isMilestone: false },
+          { name: "Inspect rehabilitated area and close Phase 02", durationDays: 2, isMilestone: false },
+          { name: "Phase 02 complete", durationDays: 0, isMilestone: true }
+        ]
+      },
+      {
+        id: "Phase 04",
+        name: "Phase 04 - Demolition and Rehabilitation",
+        targetWorkingDays: 50,
+        allocatedMonths: 2,
+        themeColor: "amber",
+        colorClass: "text-amber-700 bg-amber-100 dark:bg-amber-950 dark:text-amber-300 border-amber-300",
+        badgeColor: "bg-amber-600",
+        cellClass: "cell-phase-04",
+        activities: [
+          { name: "Confirm Phase 04 workfront release and isolation", durationDays: 2, isMilestone: false },
+          { name: "Confirm dam workfront release and environmental controls", durationDays: 3, isMilestone: false },
+          { name: "Break up and pulverise above-ground concrete and brickwork", durationDays: 8, isMilestone: false },
+          { name: "Expose, break up and pulverise below-ground concrete and brickwork", durationDays: 8, isMilestone: false },
+          { name: "Demolish and pulverise the on-site dam structures", durationDays: 8, isMilestone: false },
+          { name: "Cut, segregate and remove reinforcement and steel structures", durationDays: 5, isMilestone: false },
+          { name: "Load, haul and stockpile pulverised material on site", durationDays: 4, isMilestone: false },
+          { name: "Load and haul designated material from Joel Gold Plant to Target Gold Plant", durationDays: 6, isMilestone: false },
+          { name: "Shape, level and clean the work area", durationDays: 4, isMilestone: false },
+          { name: "Inspect rehabilitated area and close Phase 04", durationDays: 2, isMilestone: false },
+          { name: "Phase 04 complete", durationDays: 0, isMilestone: true }
+        ]
+      },
+      {
+        id: "Phase 01",
+        name: "Phase 01 - Demolition and Rehabilitation",
+        targetWorkingDays: 88,
+        allocatedMonths: 4,
+        themeColor: "indigo",
+        colorClass: "text-indigo-700 bg-indigo-100 dark:bg-indigo-950 dark:text-indigo-300 border-indigo-300",
+        badgeColor: "bg-indigo-600",
+        cellClass: "cell-phase-01",
+        activities: [
+          { name: "Confirm Phase 01 workfront release and isolation", durationDays: 3, isMilestone: false },
+          { name: "Break up and pulverise above-ground concrete and brickwork", durationDays: 24, isMilestone: false },
+          { name: "Expose, break up and pulverise below-ground concrete and brickwork", durationDays: 22, isMilestone: false },
+          { name: "Cut, segregate and remove reinforcement and steel structures", durationDays: 16, isMilestone: false },
+          { name: "Load and haul pulverised material to Target Plant and stockpile on site", durationDays: 14, isMilestone: false },
+          { name: "Shape, level and clean the work area", durationDays: 6, isMilestone: false },
+          { name: "Inspect rehabilitated area and close Phase 01", durationDays: 3, isMilestone: false },
+          { name: "Phase 01 complete", durationDays: 0, isMilestone: true }
+        ]
+      },
+      {
+        id: "Phase 06",
+        name: "Phase 06 - Demolition and Rehabilitation",
+        targetWorkingDays: 72,
+        allocatedMonths: 4,
+        themeColor: "rose",
+        colorClass: "text-rose-700 bg-rose-100 dark:bg-rose-950 dark:text-rose-300 border-rose-300",
+        badgeColor: "bg-rose-600",
+        cellClass: "cell-phase-06",
+        activities: [
+          { name: "Confirm Phase 06 workfront release and isolation", durationDays: 3, isMilestone: false },
+          { name: "Break up and pulverise above-ground concrete and brickwork", durationDays: 18, isMilestone: false },
+          { name: "Expose, break up and pulverise below-ground silo foundations", durationDays: 18, isMilestone: false },
+          { name: "Cut, segregate and remove reinforcement and steel structures", durationDays: 12, isMilestone: false },
+          { name: "Load, haul and stockpile pulverised material on site", durationDays: 8, isMilestone: false },
+          { name: "Load and haul designated material from Joel Gold Plant to Target Gold Plant", durationDays: 7, isMilestone: false },
+          { name: "Shape, level and clean the work area", durationDays: 4, isMilestone: false },
+          { name: "Inspect rehabilitated area and close Phase 06", durationDays: 2, isMilestone: false },
+          { name: "Phase 06 complete", durationDays: 0, isMilestone: true }
+        ]
+      },
+      {
+        id: "Phase 07",
+        name: "Phase 07 - Demolition and Rehabilitation",
+        targetWorkingDays: 63,
+        allocatedMonths: 3,
+        themeColor: "teal",
+        colorClass: "text-teal-700 bg-teal-100 dark:bg-teal-950 dark:text-teal-300 border-teal-300",
+        badgeColor: "bg-teal-600",
+        cellClass: "cell-phase-07",
+        activities: [
+          { name: "Confirm Phase 07 workfront release and isolation", durationDays: 3, isMilestone: false },
+          { name: "Break up and pulverise above-ground concrete and brickwork", durationDays: 16, isMilestone: false },
+          { name: "Expose, break up and pulverise below-ground concrete and brickwork", durationDays: 16, isMilestone: false },
+          { name: "Cut, segregate and remove reinforcement and steel structures", durationDays: 12, isMilestone: false },
+          { name: "Load, haul and stockpile pulverised material on site", durationDays: 9, isMilestone: false },
+          { name: "Shape, level and clean the work area", durationDays: 5, isMilestone: false },
+          { name: "Inspect rehabilitated area and close Phase 07", durationDays: 2, isMilestone: false },
+          { name: "Phase 07 complete", durationDays: 0, isMilestone: true }
+        ]
+      }
+    ];
+
+    let projectPhases = JSON.parse(JSON.stringify(initialProjectStructure));
+    let activityToCopy = null;
+
+    const workingDaysSelections = {};
+    const dateToPhaseMap = {};
+    const dateToActivityMap = {};
+
+    monthList.forEach(m => {
+      workingDaysSelections[m.key] = new Set();
+    });
+
+    // Default start view: December 2027 (index 13 in monthList: 2026-11 is idx 0, 2027-12 is idx 13)
+    let currentMonthIndex = 13;
+    let dailyRate = 0;
+    let currentPreviewMode = 'json';
+
+    // Master Program State
+    let masterProjectData = {
+      name: "Demolition and Rehabilitation of Joel Plant Gold Plant: Phase 03-07",
+      totalWorkingDays: 0,
+      totalCalendarDays: 0,
+      startDateStr: "2027-12-07",
+      endDateStr: ""
+    };
+
+    // DOM Elements
+    const masterStartDateInput = document.getElementById('masterStartDateInput');
+   // const btnSetStartTue27 = document.getElementById('btnSetStartTue27');
+    const btnSetStartMon26 = document.getElementById('btnSetStartMon26');
+    const row1WorkingDaysDisplay = document.getElementById('row1WorkingDaysDisplay');
+    const row1CalendarDaysDisplay = document.getElementById('row1CalendarDaysDisplay');
+    const row1StartDateDisplay = document.getElementById('row1StartDateDisplay');
+    const row1EndDateDisplay = document.getElementById('row1EndDateDisplay');
+    const timelineContentWrapper = document.getElementById('timelineContentWrapper');
+    const btnJumpToTimeline = document.getElementById('btnJumpToTimeline');
+    
+    const monthSelect = document.getElementById('monthSelect');
+    const prevMonthBtn = document.getElementById('prevMonthBtn');
+    const nextMonthBtn = document.getElementById('nextMonthBtn');
+    const floatingMonthTitle = document.getElementById('floatingMonthTitle');
+    const floatingPhaseBadge = document.getElementById('floatingPhaseBadge');
+    const floatingWorkingDaysLabel = document.getElementById('floatingWorkingDaysLabel');
+    const phasesAccordionContainer = document.getElementById('phasesAccordionContainer');
+    const calendarGrid = document.getElementById('calendarGrid');
+    
+    // Stats
+    const statWorkingDays = document.getElementById('statWorkingDays');
+    const statWeekendDays = document.getElementById('statWeekendDays');
+    const statContractorBreakDays = document.getElementById('statContractorBreakDays');
+    const statTotalHolidays = document.getElementById('statTotalHolidays');
+    
+    // Rate
+    const dailyRateInput = document.getElementById('dailyRateInput');
+    const totalAmountDisplay = document.getElementById('totalAmountDisplay');
+    const rateFormulaLabel = document.getElementById('rateFormulaLabel');
+    const accordionAmountPreview = document.getElementById('accordionAmountPreview');
+    
+    // Code Display
+    const codeDisplay = document.getElementById('codeDisplay');
+    const previewHeading = document.getElementById('previewHeading');
+    const copyFeedback = document.getElementById('copyFeedback');
+
+    // Copy Modal elements
+    const copyModal = document.getElementById('copyModal');
+    const copyModalActivityName = document.getElementById('copyModalActivityName');
+    const copyTargetPhaseSelect = document.getElementById('copyTargetPhaseSelect');
+    const btnCloseCopyModal = document.getElementById('btnCloseCopyModal');
+    const btnCancelCopy = document.getElementById('btnCancelCopy');
+    const btnConfirmCopy = document.getElementById('btnConfirmCopy');
+
+    // Populate month dropdown
+    monthList.forEach((m, idx) => {
+      const opt = document.createElement('option');
+      opt.value = idx;
+      opt.textContent = m.name;
+      monthSelect.appendChild(opt);
+    });
+    monthSelect.value = currentMonthIndex;
+
+    monthSelect.addEventListener('change', (e) => {
+      currentMonthIndex = parseInt(e.target.value, 10);
+      renderCalendar();
+    });
+
+    prevMonthBtn.addEventListener('click', () => {
+      if (currentMonthIndex > 0) {
+        currentMonthIndex--;
+        monthSelect.value = currentMonthIndex;
+        renderCalendar();
+      }
+    });
+
+    nextMonthBtn.addEventListener('click', () => {
+      if (currentMonthIndex < monthList.length - 1) {
+        currentMonthIndex++;
+        monthSelect.value = currentMonthIndex;
+        renderCalendar();
+      }
+    });
+
+    
+    function updatePresetButtonsUI() {
+      const val = masterStartDateInput.value;
+      if (val === '2027-12-07') {
+     //   btnSetStartTue27.className = "mt-3.5 px-3 py-1 rounded bg-emerald-600 ring-2 ring-emerald-400 text-white text-xs font-black transition-all shadow-md flex items-center gap-1";
+        btnSetStartMon26.className = "mt-3.5 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-all";
+      } else if (val === '2026-12-07') {
+        btnSetStartMon26.className = "mt-3.5 px-3 py-1 rounded bg-emerald-600 ring-2 ring-emerald-400 text-white text-xs font-black transition-all shadow-md flex items-center gap-1";
+    //    btnSetStartTue27.className = "mt-3.5 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-all";
+      } else {
+      //  btnSetStartTue27.className = "mt-3.5 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-all";
+        btnSetStartMon26.className = "mt-3.5 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-all";
+      }
+    }
+
+    // Preset Date Buttons
+   //
+
+    btnSetStartMon26.addEventListener('click', () => {
+      masterStartDateInput.value = '2026-12-07';
+      currentMonthIndex = 1; // Dec 2026 (Nov 2026 is idx 0)
+      monthSelect.value = 1;
+      updatePresetButtonsUI();
+      recalculateSchedule();
+      renderCalendar();
+      triggerCopiedFeedback("Master start set to Mon 07 12 26!");
+    });
+
+    masterStartDateInput.addEventListener('change', () => {
+      recalculateSchedule();
+      renderCalendar();
+    });
+
+    btnJumpToTimeline.addEventListener('click', () => {
+      document.getElementById('timelineCard').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    dailyRateInput.addEventListener('input', (e) => {
+      dailyRate = parseFloat(e.target.value) || 0;
+      updateCalculations();
+    });
+
+    document.getElementById('btnResetToDefaults').addEventListener('click', () => {
+      if (confirm("Reset all phases and activities back to default template?")) {
+        projectPhases = JSON.parse(JSON.stringify(initialProjectStructure));
+        recalculateSchedule();
+        renderCalendar();
+        triggerCopiedFeedback("Reset to default activities!");
+      }
+    });
+
+    document.getElementById('btnExpandAllAccordions').addEventListener('click', () => {
+      document.querySelectorAll('#phasesAccordionContainer details').forEach(d => d.open = true);
+    });
+
+    document.getElementById('btnCollapseAllAccordions').addEventListener('click', () => {
+      document.querySelectorAll('#phasesAccordionContainer details').forEach(d => d.open = false);
+    });
+
+    
+    // --- CONSTRAINT-BASED ACTIVITY REALLOCATION ENGINE ---
+    // Auto-balances remaining activities in a phase when one activity is edited, keeping targetTotal fixed
+    function reallocatePhaseRemaining(phase, editedIdx, newDuration, targetTotal) {
+      const nonMilestoneIndices = [];
+      phase.activities.forEach((act, idx) => {
+        if (!act.isMilestone && idx !== editedIdx) {
+          nonMilestoneIndices.push(idx);
+        }
+      });
+
+      if (nonMilestoneIndices.length === 0) {
+        phase.activities[editedIdx].durationDays = newDuration;
+        phase.targetWorkingDays = newDuration;
+        return;
+      }
+
+      const remainingTarget = Math.max(nonMilestoneIndices.length, targetTotal - newDuration);
+      const currentRemainingSum = nonMilestoneIndices.reduce((sum, idx) => sum + phase.activities[idx].durationDays, 0);
+
+      phase.activities[editedIdx].durationDays = newDuration;
+
+      if (currentRemainingSum <= 0) {
+        const base = Math.floor(remainingTarget / nonMilestoneIndices.length);
+        const rem = remainingTarget % nonMilestoneIndices.length;
+        nonMilestoneIndices.forEach((idx, k) => {
+          phase.activities[idx].durationDays = base + (k < rem ? 1 : 0);
+        });
+      } else {
+        // Largest Remainder Method (Hare-Niemeyer) for exact integer distribution
+        const rawVals = nonMilestoneIndices.map(idx => phase.activities[idx].durationDays * (remainingTarget / currentRemainingSum));
+        const floored = rawVals.map(v => Math.max(1, Math.floor(v)));
+        let diff = remainingTarget - floored.reduce((a, b) => a + b, 0);
+
+        const remainderOrder = nonMilestoneIndices
+          .map((_, i) => ({ i, rem: rawVals[i] - floored[i] }))
+          .sort((a, b) => b.rem - a.rem);
+
+        if (diff > 0) {
+          for (let k = 0; k < diff; k++) {
+            floored[remainderOrder[k % floored.length].i]++;
+          }
+        } else if (diff < 0) {
+          const reduceOrder = nonMilestoneIndices
+            .map((_, i) => ({ i, rem: rawVals[i] - floored[i] }))
+            .sort((a, b) => a.rem - b.rem);
+          for (let k = 0; k < -diff; k++) {
+            const targetIdx = reduceOrder[k % floored.length].i;
+            if (floored[targetIdx] > 1) {
+              floored[targetIdx]--;
+            }
+          }
+        }
+
+        nonMilestoneIndices.forEach((idx, k) => {
+          phase.activities[idx].durationDays = floored[k];
+        });
+      }
+
+      phase.targetWorkingDays = targetTotal;
+    }
+
+    // Scales all non-milestone activities in a phase proportionally when the user edits the phase budget total (e.g. clicks 71d)
+    function scaleEntirePhase(phase, newTarget) {
+      const nonMilestoneIndices = [];
+      phase.activities.forEach((act, idx) => {
+        if (!act.isMilestone && act.durationDays > 0) {
+          nonMilestoneIndices.push(idx);
+        }
+      });
+
+      if (nonMilestoneIndices.length === 0) {
+        phase.targetWorkingDays = newTarget;
+        return;
+      }
+
+      const target = Math.max(nonMilestoneIndices.length, newTarget);
+      const currentSum = nonMilestoneIndices.reduce((sum, idx) => sum + phase.activities[idx].durationDays, 0);
+
+      const rawVals = nonMilestoneIndices.map(idx => phase.activities[idx].durationDays * (target / currentSum));
+      const floored = rawVals.map(v => Math.max(1, Math.floor(v)));
+      let diff = target - floored.reduce((a, b) => a + b, 0);
+
+      const remainderOrder = nonMilestoneIndices
+        .map((_, i) => ({ i, rem: rawVals[i] - floored[i] }))
+        .sort((a, b) => b.rem - a.rem);
+
+      if (diff > 0) {
+        for (let k = 0; k < diff; k++) {
+          floored[remainderOrder[k % floored.length].i]++;
+        }
+      } else if (diff < 0) {
+        const reduceOrder = nonMilestoneIndices
+          .map((_, i) => ({ i, rem: rawVals[i] - floored[i] }))
+          .sort((a, b) => a.rem - b.rem);
+        for (let k = 0; k < -diff; k++) {
+          const targetIdx = reduceOrder[k % floored.length].i;
+          if (floored[targetIdx] > 1) {
+            floored[targetIdx]--;
+          }
+        }
+      }
+
+      nonMilestoneIndices.forEach((idx, k) => {
+        phase.activities[idx].durationDays = floored[k];
+      });
+
+      phase.targetWorkingDays = target;
+    }
+
+    // --- AUTO-CALCULATE ENGINE (Row 1 Master + Phase 03 Task 01 to the End) ---
+    function recalculateSchedule() {
+      // Clear mappings
+      for (const k in dateToPhaseMap) delete dateToPhaseMap[k];
+      for (const k in dateToActivityMap) delete dateToActivityMap[k];
+      monthList.forEach(m => {
+        if (workingDaysSelections[m.key]) {
+          workingDaysSelections[m.key].clear();
+        } else {
+          workingDaysSelections[m.key] = new Set();
+        }
+      });
+
+      const rawMasterDate = parseDateParts(masterStartDateInput.value || "2027-12-07");
+      let currentChainDate = getFirstWorkingDayOnOrAfter(rawMasterDate);
+
+      let totalProjectWorkingDays = 0;
+      let overallFirstDate = null;
+      let overallLastDate = null;
+      let totalMonFriHolidays = 0;
+      let totalMonFriContractorBreak = 0;
+      let totalWeekends = 0;
+      let totalAllocatedMonths = 0;
+
+      projectPhases.forEach((phase, pIdx) => {
+        totalAllocatedMonths += (phase.allocatedMonths || 0);
+        let phaseWorkingDaysSet = new Set();
+        let phaseStartDate = null;
+        let phaseEndDate = null;
+
+        phase.activities.forEach((act, aIdx) => {
+          let actStart = new Date(currentChainDate);
+
+          let actEnd;
+          if (act.durationDays === 0 || act.isMilestone) {
+            actEnd = new Date(actStart);
+          } else {
+            actEnd = addWorkingDays(actStart, act.durationDays);
+          }
+
+          act.startDateStr = formatDateISO(actStart);
+          act.endDateStr = formatDateISO(actEnd);
+
+          if (!phaseStartDate) phaseStartDate = new Date(actStart);
+          if (!overallFirstDate) overallFirstDate = new Date(actStart);
+          phaseEndDate = new Date(actEnd);
+          overallLastDate = new Date(actEnd);
+
+          // Mark valid working days on the calendar map
+          if (act.durationDays > 0 && !act.isMilestone) {
+            let scan = new Date(actStart);
+            while (scan <= actEnd) {
+              if (isValidWorkingDay(scan)) {
+                const dStr = formatDateISO(scan);
+                phaseWorkingDaysSet.add(dStr);
+                dateToPhaseMap[dStr] = phase;
+                if (!dateToActivityMap[dStr]) dateToActivityMap[dStr] = [];
+                dateToActivityMap[dStr].push(`${phase.id}: ${act.name}`);
+                
+                const mKey = dStr.substring(0, 7);
+                if (!workingDaysSelections[mKey]) workingDaysSelections[mKey] = new Set();
+                workingDaysSelections[mKey].add(dStr);
+              }
+              scan.setDate(scan.getDate() + 1);
+            }
+          }
+
+          // Advance chain: next task starts on the next working day after actEnd
+          if (act.durationDays === 0 || act.isMilestone) {
+            currentChainDate = new Date(actEnd);
+          } else {
+            currentChainDate = getNextWorkingDay(actEnd);
+          }
+        });
+
+        phase.startDateStr = phaseStartDate ? formatDateISO(phaseStartDate) : '';
+        phase.endDateStr = phaseEndDate ? formatDateISO(phaseEndDate) : '';
+        phase.totalWorkingDays = phaseWorkingDaysSet.size;
+        totalProjectWorkingDays += phase.totalWorkingDays;
+
+        // Calculate phase non-working days reconciliation
+        let pHols = 0, pCB = 0, pWknd = 0, pWork = 0;
+        if (phaseStartDate && phaseEndDate) {
+          let sScan = new Date(phaseStartDate);
+          while (sScan <= phaseEndDate) {
+            if (isWeekend(sScan)) {
+              pWknd++;
+            } else {
+              if (isValidWorkingDay(sScan)) {
+                pWork++;
+              } else if (isHoliday(sScan)) {
+                pHols++;
+              } else if (isContractorBreakDate(sScan)) {
+                pCB++;
+              }
+            }
+            sScan.setDate(sScan.getDate() + 1);
+          }
+          phase.calendarDays = Math.round((phaseEndDate - phaseStartDate) / (1000 * 60 * 60 * 24)) + 1;
+        } else {
+          phase.calendarDays = 0;
+        }
+        phase.monFriHolidays = pHols;
+        phase.monFriContractorBreak = pCB;
+        phase.weekendDays = pWknd;
+        phase.totalWeekdaysElapsed = pWork + pHols + pCB;
+
+        totalMonFriHolidays += pHols;
+        totalMonFriContractorBreak += pCB;
+        totalWeekends += pWknd;
+      });
+
+      // Update Row 1 Master Project State
+      masterProjectData.totalWorkingDays = totalProjectWorkingDays;
+      masterProjectData.startDateStr = overallFirstDate ? formatDateISO(overallFirstDate) : masterStartDateInput.value;
+      masterProjectData.endDateStr = overallLastDate ? formatDateISO(overallLastDate) : '';
+      masterProjectData.monFriHolidays = totalMonFriHolidays;
+      masterProjectData.monFriContractorBreak = totalMonFriContractorBreak;
+      masterProjectData.weekendDays = totalWeekends;
+      masterProjectData.totalWeekdaysElapsed = totalProjectWorkingDays + totalMonFriHolidays + totalMonFriContractorBreak;
+      masterProjectData.totalAllocatedMonths = totalAllocatedMonths;
+      
+      if (overallFirstDate && overallLastDate) {
+        masterProjectData.totalCalendarDays = Math.round((overallLastDate - overallFirstDate) / (1000 * 60 * 60 * 24)) + 1;
+      } else {
+        masterProjectData.totalCalendarDays = 0;
+      }
+
+      // Update Row 1 UI Callouts
+      row1WorkingDaysDisplay.textContent = `${masterProjectData.totalWorkingDays} days`;
+      row1CalendarDaysDisplay.textContent = `(${masterProjectData.totalCalendarDays} calendar days)`;
+      row1StartDateDisplay.innerHTML = `<svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><span>START: ${formatUserCustomDate(masterProjectData.startDateStr)}</span>`;
+      row1EndDateDisplay.innerHTML = `<svg class="w-3.5 h-3.5 text-rose-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg><span>END: ${formatUserCustomDate(masterProjectData.endDateStr)}</span>`;
+
+      // Update Duration Reconciliation Card
+      const spanStartEl = document.getElementById('reconSpanStart');
+      if (spanStartEl) spanStartEl.textContent = formatUserCustomDate(masterProjectData.startDateStr);
+      const spanEndEl = document.getElementById('reconSpanEnd');
+      if (spanEndEl) spanEndEl.textContent = formatUserCustomDate(masterProjectData.endDateStr);
+      const allocEl = document.getElementById('reconAllocatedWorkDays');
+      if (allocEl) allocEl.textContent = `${masterProjectData.totalWorkingDays} days`;
+      const holsEl = document.getElementById('reconMonFriHolidays');
+      if (holsEl) holsEl.textContent = `+${masterProjectData.monFriHolidays} days`;
+      const cbEl = document.getElementById('reconMonFriContractorBreak');
+      if (cbEl) cbEl.textContent = `+${masterProjectData.monFriContractorBreak} days`;
+      const totWkEl = document.getElementById('reconTotalWeekdays');
+      if (totWkEl) totWkEl.textContent = `${masterProjectData.totalWeekdaysElapsed} days`;
+      const totCalEl = document.getElementById('reconTotalCalendarDays');
+      if (totCalEl) totCalEl.textContent = `${masterProjectData.totalCalendarDays} Calendar Days (+${masterProjectData.weekendDays} weekends)`;
+
+      if (typeof updatePresetButtonsUI === 'function') updatePresetButtonsUI();
+      renderPhasesAccordions();
+      renderTimeline();
+    }
+
+    // --- RENDER DYNAMIC PHASE COLLAPSE ROWS & EDITORS ---
+    function renderPhasesAccordions() {
+      phasesAccordionContainer.innerHTML = '';
+
+      projectPhases.forEach((phase, pIdx) => {
+        const details = document.createElement('details');
+        details.className = 'group rounded-xl border border-[var(--card-border,#e2e8f0)] bg-[var(--card,#ffffff)] shadow-xs overflow-hidden transition-all';
+        if (pIdx === 0) details.open = true;
+
+        const summary = document.createElement('summary');
+        summary.className = 'cursor-pointer p-3 flex flex-col md:flex-row md:items-center justify-between gap-2 hover:bg-slate-50 dark:hover:bg-slate-800/40 select-none';
+
+        // Custom phase row format: Phase Name, Total Days, START: Day DD MM YY, END: Day DD MM YY
+        summary.innerHTML = `
+          <div class="flex items-center gap-2.5">
+            <span class="w-3 h-3 rounded-full ${phase.badgeColor}"></span>
+            <span class="font-extrabold text-xs text-[var(--foreground,#0f172a)]">${phase.name}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded font-bold ${phase.colorClass}">#${pIdx + 1}</span>
+            <span class="text-[10px] px-2 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold">${phase.allocatedMonths || 3} Months Alloc</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <div class="flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border-2 border-emerald-400 dark:border-emerald-600 rounded-md px-2 py-0.5 shadow-xs font-bold" 
+                 title="Click number to change total phase working days (${phase.targetWorkingDays || phase.totalWorkingDays}d). Activities will proportionally reallocate within this envelope!" 
+                 onclick="event.stopPropagation();">
+              <span class="text-[10px] text-emerald-500 font-extrabold uppercase tracking-tight">Phase Budget:</span>
+              <input type="number" min="${phase.activities.filter(a => !a.isMilestone).length}" max="999" 
+                     value="${phase.targetWorkingDays || phase.totalWorkingDays}" 
+                     class="phase-budget-input w-12 bg-white dark:bg-slate-900 border border-emerald-400 dark:border-emerald-500 rounded px-1 py-0.2 text-center text-xs font-black text-emerald-800 dark:text-emerald-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-inner" 
+                     data-phase="${pIdx}">
+              <span class="text-[11px] font-black text-emerald-700 dark:text-emerald-300">d work</span>
+              <span class="text-[10px] text-emerald-600 dark:text-emerald-400" title="Click to edit phase total">✏️</span>
+            </div>
+            <span class="font-mono text-[10.5px] text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-1.5 py-0.5 rounded border border-rose-200 dark:border-rose-900" title="Observed Public Holidays on Mon-Fri">
+              +${phase.monFriHolidays}d hols
+            </span>
+            <span class="font-mono text-[10.5px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-900" title="Contractor Break Weekdays (Mon-Fri)">
+              +${phase.monFriContractorBreak}d break
+            </span>
+            <span class="font-mono text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+              <svg class="w-3 h-3 text-emerald-500" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              <span>START: ${formatUserCustomDate(phase.startDateStr)}</span>
+            </span>
+            <span class="font-mono text-[11px] font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800 flex items-center gap-1">
+              <svg class="w-3 h-3 text-rose-500" viewBox="0 0 24 24" fill="currentColor"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+              <span>END: ${formatUserCustomDate(phase.endDateStr)}</span>
+            </span>
+            <span class="text-[10px] text-slate-400 font-mono">(${phase.calendarDays} cal days)</span>
+            <button class="px-2 py-0.5 rounded text-[11px] text-blue-600 hover:bg-blue-50 font-semibold" data-jump-phase="${phase.startDateStr}">
+              View Month
+            </button>
+            <span class="text-slate-400 group-open:rotate-180 transition-transform text-xs">▼</span>
+          </div>
+        `;
+        summary.querySelector('[data-jump-phase]').addEventListener('click', (e) => {
+          e.stopPropagation();
+          const targetKey = phase.startDateStr.substring(0, 7);
+          const foundIdx = monthList.findIndex(m => m.key === targetKey);
+          if (foundIdx !== -1) {
+            currentMonthIndex = foundIdx;
+            monthSelect.value = foundIdx;
+            renderCalendar();
+          }
+        });
+
+        // Activity breakdown & inline editor table
+        const content = document.createElement('div');
+        content.className = 'p-3 border-t border-[var(--card-border,#e2e8f0)] bg-slate-50/50 dark:bg-slate-900/20 space-y-3';
+
+        const tableWrapper = document.createElement('div');
+        tableWrapper.className = 'overflow-x-auto';
+
+        const table = document.createElement('table');
+        table.className = 'w-full text-left min-w-[620px] text-xs';
+
+        table.innerHTML = `
+          <thead>
+            <tr class="text-[10px] uppercase font-bold text-slate-400 border-b border-slate-200 dark:border-slate-800">
+              <th class="py-1.5 px-2 w-8">#</th>
+              <th class="py-1.5 px-2">Activity Name (Editable)</th>
+              <th class="py-1.5 px-2 text-center w-24">Duration</th>
+              <th class="py-1.5 px-2 text-right w-28">START</th>
+              <th class="py-1.5 px-2 text-right w-28">END</th>
+              <th class="py-1.5 px-2 text-center w-28">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="phaseTableBody-${pIdx}"></tbody>
+        `;
+
+        const tbody = table.querySelector('tbody');
+
+        phase.activities.forEach((act, aIdx) => {
+          const isMilestone = act.durationDays === 0 || act.isMilestone;
+          const tr = document.createElement('tr');
+          tr.className = 'border-b border-slate-200/60 dark:border-slate-800 hover:bg-white/80 dark:hover:bg-slate-800/60 transition-colors';
+
+          tr.innerHTML = `
+            <td class="py-1.5 px-2 font-mono text-slate-400 text-[11px]">${aIdx + 1}</td>
+            <td class="py-1.5 px-2">
+              <input type="text" value="${escapeHtml(act.name)}" data-action="edit-name" data-phase="${pIdx}" data-act="${aIdx}" class="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:bg-[var(--card,#ffffff)] px-1.5 py-0.5 rounded text-xs font-medium focus:outline-none transition-all ${isMilestone ? 'font-bold text-amber-700 dark:text-amber-400' : 'text-[var(--foreground,#0f172a)]'}" />
+            </td>
+            <td class="py-1.5 px-2 text-center">
+              <div class="inline-flex items-center gap-1">
+                <input type="number" min="0" max="200" value="${act.durationDays}" data-action="edit-duration" data-phase="${pIdx}" data-act="${aIdx}" class="w-14 text-center font-bold border border-slate-300 dark:border-slate-600 rounded px-1 py-0.5 bg-[var(--card,#ffffff)] text-xs focus:ring-1 focus:ring-blue-500 shadow-2xs" />
+                <span class="text-[10px] text-slate-400">d</span>
+              </div>
+            </td>
+            <td class="py-1.5 px-2 font-mono text-[11px] text-slate-600 dark:text-slate-400 text-right">${formatUserCustomDate(act.startDateStr)}</td>
+            <td class="py-1.5 px-2 font-mono text-[11px] text-slate-800 dark:text-slate-200 text-right font-bold">${formatUserCustomDate(act.endDateStr)}</td>
+            <td class="py-1.5 px-2 text-center">
+              <div class="flex items-center justify-center gap-1">
+                <button title="Duplicate or Copy to another phase" data-action="copy-act" data-phase="${pIdx}" data-act="${aIdx}" class="px-1.5 py-0.5 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-bold transition-colors">
+                  📋 Copy
+                </button>
+                <button title="Delete activity" data-action="delete-act" data-phase="${pIdx}" data-act="${aIdx}" class="px-1.5 py-0.5 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] font-bold transition-colors">
+                  🗑️
+                </button>
+              </div>
+            </td>
+          `;
+
+          tbody.appendChild(tr);
+        });
+
+        tableWrapper.appendChild(table);
+        content.appendChild(tableWrapper);
+
+        // Add Activity footer
+        const footerBar = document.createElement('div');
+        footerBar.className = 'flex flex-wrap items-center justify-between gap-2 pt-1';
+
+        footerBar.innerHTML = `
+          <button data-action="add-act" data-phase="${pIdx}" class="px-3 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-xs font-bold transition-all flex items-center gap-1 border border-emerald-300 dark:border-emerald-700">
+            ➕ Add Activity to ${phase.id}
+          </button>
+          <div class="text-[11px] text-slate-400">
+            ${phase.activities.length} activities scheduled
+          </div>
+        `;
+
+        content.appendChild(footerBar);
+        details.appendChild(summary);
+        details.appendChild(content);
+        phasesAccordionContainer.appendChild(details);
+      });
+
+      bindTableEventListeners();
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    // --- TIMELINE / GANTT VISUALIZER ---
+    function renderTimeline() {
+      if (!masterProjectData.startDateStr || !masterProjectData.endDateStr) return;
+
+      const pStart = parseDateParts(masterProjectData.startDateStr);
+      const pEnd = parseDateParts(masterProjectData.endDateStr);
+
+      // Month buckets from start month to end month
+      const startYr = pStart.getFullYear(), startMo = pStart.getMonth();
+      const endYr = pEnd.getFullYear(), endMo = pEnd.getMonth();
+
+      const timelineMonths = [];
+      let y = startYr, m = startMo;
+      while (y < endYr || (y === endYr && m <= endMo)) {
+        timelineMonths.push(new Date(y, m, 1));
+        m++;
+        if (m > 11) { m = 0; y++; }
+      }
+
+      // Calculate total days on time scale
+      const timeScaleStart = new Date(startYr, startMo, 1);
+      const timeScaleEnd = new Date(endYr, endMo + 1, 0); // last day of finish month
+      const totalTimelineDays = Math.max(1, Math.round((timeScaleEnd - timeScaleStart) / (1000 * 60 * 60 * 24)) + 1);
+
+      // Build header row with months
+      let headerHtml = `<div class="flex border-b border-slate-300 dark:border-slate-700 text-[11px] font-bold text-slate-500">`;
+      headerHtml += `<div class="w-64 shrink-0 px-2 py-1 bg-slate-100 dark:bg-slate-800 border-r border-slate-300 dark:border-slate-700 font-extrabold text-[var(--foreground,#0f172a)]">WBS Item / Phase</div>`;
+      headerHtml += `<div class="relative flex-1 flex">`;
+
+      timelineMonths.forEach(mObj => {
+        const daysInM = new Date(mObj.getFullYear(), mObj.getMonth() + 1, 0).getDate();
+        const pct = (daysInM / totalTimelineDays) * 100;
+        const mLabel = mObj.toLocaleString('en-ZA', { month: 'short', year: '2-digit' });
+        headerHtml += `<div style="width: ${pct}%" class="border-r border-slate-200 dark:border-slate-800 text-center py-1 truncate">${mLabel}</div>`;
+      });
+      headerHtml += `</div></div>`;
+
+      // Helper function to calculate left% and width%
+      function getBarCoordinates(startDateStr, endDateStr) {
+        const s = parseDateParts(startDateStr);
+        const e = parseDateParts(endDateStr);
+        const startDiff = Math.max(0, Math.round((s - timeScaleStart) / (1000 * 60 * 60 * 24)));
+        const spanDays = Math.max(1, Math.round((e - s) / (1000 * 60 * 60 * 24)) + 1);
+
+        const leftPct = (startDiff / totalTimelineDays) * 100;
+        const widthPct = (spanDays / totalTimelineDays) * 100;
+        return { leftPct, widthPct };
+      }
+
+      // Generate non-working days background overlay bands
+      let nonWorkingBandsHtml = '';
+      let scan = new Date(timeScaleStart);
+      while (scan <= timeScaleEnd) {
+        const isWk = isWeekend(scan);
+        const isCb = isContractorBreakDate(scan);
+        const isHol = isHoliday(scan);
+
+        if (isWk || isCb || isHol) {
+          const diffDays = Math.round((scan - timeScaleStart) / (1000 * 60 * 60 * 24));
+          const leftPct = (diffDays / totalTimelineDays) * 100;
+          const widthPct = (1 / totalTimelineDays) * 100;
+
+          let bandClass = 'tl-weekend';
+          if (isCb) bandClass = 'tl-contractor-break';
+          else if (isHol) bandClass = 'tl-holiday';
+
+          nonWorkingBandsHtml += `<div style="left: ${leftPct}%; width: ${widthPct}%;" class="absolute top-0 bottom-0 pointer-events-none ${bandClass}" title="${isCb ? 'Contractor Break (18 Dec - 11 Jan)' : isHol ? 'Public Holiday' : 'Weekend'}"></div>`;
+        }
+        scan.setDate(scan.getDate() + 1);
+      }
+
+      // 1. Master Program Row (Row 1)
+      const r1Coords = getBarCoordinates(masterProjectData.startDateStr, masterProjectData.endDateStr);
+      let rowsHtml = `
+        <div class="flex items-center text-xs py-1.5 border-b border-slate-300 dark:border-slate-700 bg-slate-900 text-white rounded-lg relative">
+          <div class="w-64 shrink-0 px-3 font-black truncate text-[11px] flex items-center justify-between">
+            <span title="${masterProjectData.name}">SCOPE: Joel Plant Program</span>
+            <span class="text-[10px] text-emerald-400 font-bold">${masterProjectData.totalWorkingDays}d</span>
+          </div>
+          <div class="relative flex-1 h-7 flex items-center">
+            ${nonWorkingBandsHtml}
+            
+            <!-- Row 1 Gantt Bar (Pill showing only start and end date with icons) -->
+            <div style="left: ${r1Coords.leftPct}%; width: ${r1Coords.widthPct}%;" 
+                 class="absolute h-5 rounded-md bg-gradient-to-r from-emerald-600 via-indigo-600 to-purple-600 shadow-md flex items-center justify-between px-2 text-[9px] font-black text-white z-10 overflow-hidden" 
+                 title="SCOPE • Master Program (${masterProjectData.totalWorkingDays} working days)&#10;▶ Start: ${formatUserCustomDate(masterProjectData.startDateStr)}&#10;🏁 Finish: ${formatUserCustomDate(masterProjectData.endDateStr)}&#10;Reconciliation: ${masterProjectData.totalWorkingDays} work days + ${masterProjectData.monFriHolidays} Mon-Fri holidays + ${masterProjectData.monFriContractorBreak} Mon-Fri break = ${masterProjectData.totalWeekdaysElapsed} weekdays (${masterProjectData.totalCalendarDays} calendar days)">
+              
+              <span class="flex items-center gap-1 font-mono text-emerald-200 shrink-0">
+                <svg class="w-3 h-3 text-emerald-300" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                <span>${formatCompactPillDate(masterProjectData.startDateStr, r1Coords.widthPct)}</span>
+              </span>
+
+              <span class="flex items-center gap-1 font-mono text-rose-200 shrink-0">
+                <svg class="w-3 h-3 text-rose-300" viewBox="0 0 24 24" fill="currentColor"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+                <span>${formatCompactPillDate(masterProjectData.endDateStr, r1Coords.widthPct)}</span>
+              </span>
+            </div>
+
+            <!-- Start Date Marker on Timeline [where date is] -->
+            <div style="left: ${r1Coords.leftPct}%;" class="absolute top-0 bottom-0 w-0.5 bg-emerald-400 z-20 pointer-events-none flex flex-col items-center" title="Project Start Marker: ${formatUserCustomDate(masterProjectData.startDateStr)}">
+              <div class="w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-emerald-200 -mt-1 shadow-xs"></div>
+            </div>
+
+            <!-- End Date Marker on Timeline [where date is] -->
+            <div style="left: ${r1Coords.leftPct + r1Coords.widthPct}%;" class="absolute top-0 bottom-0 w-0.5 bg-rose-400 z-20 pointer-events-none flex flex-col items-center" title="Project Finish Marker: ${formatUserCustomDate(masterProjectData.endDateStr)}">
+              <div class="w-2 h-2 rounded-full bg-rose-400 ring-2 ring-rose-200 -mt-1 shadow-xs"></div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // 2. Phase Rows
+      projectPhases.forEach((phase, idx) => {
+        const pCoords = getBarCoordinates(phase.startDateStr, phase.endDateStr);
+        rowsHtml += `
+          <div class="flex items-center text-xs py-1 border-b border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 relative">
+            <div class="w-64 shrink-0 px-3 font-bold truncate flex items-center justify-between text-[11px]">
+              <span class="truncate flex items-center gap-1.5" title="${phase.name}">
+                <span class="w-2.5 h-2.5 rounded-full ${phase.badgeColor}"></span>
+                ${phase.name}
+              </span>
+              <span class="font-mono text-[10px] text-slate-500 font-bold">${phase.totalWorkingDays}d</span>
+            </div>
+            <div class="relative flex-1 h-6 flex items-center">
+              ${nonWorkingBandsHtml}
+
+              <!-- Phase Gantt Bar (Pill showing only start and end date with icons) -->
+              <div style="left: ${pCoords.leftPct}%; width: ${pCoords.widthPct}%;" 
+                   class="absolute h-4 rounded-md ${phase.badgeColor} shadow-xs flex items-center justify-between px-1.5 text-[8.5px] font-black text-white z-10 overflow-hidden transition-all hover:brightness-110" 
+                   title="${phase.name} (${phase.id})&#10;Duration: ${phase.totalWorkingDays} working days&#10;▶ Start: ${formatUserCustomDate(phase.startDateStr)}&#10;🏁 Finish: ${formatUserCustomDate(phase.endDateStr)}&#10;Reconciliation: ${phase.totalWorkingDays} work days + ${phase.monFriHolidays} Mon-Fri holidays + ${phase.monFriContractorBreak} Mon-Fri contractor break = ${phase.totalWeekdaysElapsed} weekdays (${phase.calendarDays} cal days)">
+                
+                <span class="flex items-center gap-0.5 font-mono text-[8.5px] font-black text-white shrink-0">
+                  <svg class="w-2.5 h-2.5 text-emerald-300" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                  <span>${formatCompactPillDate(phase.startDateStr, pCoords.widthPct)}</span>
+                </span>
+
+                <span class="flex items-center gap-0.5 font-mono text-[8.5px] font-black text-white shrink-0">
+                  <svg class="w-2.5 h-2.5 text-rose-200" viewBox="0 0 24 24" fill="currentColor"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+                  <span>${formatCompactPillDate(phase.endDateStr, pCoords.widthPct)}</span>
+                </span>
+              </div>
+
+              <!-- Start Marker on Timeline [where date is] -->
+              <div style="left: ${pCoords.leftPct}%;" class="absolute top-0 bottom-0 w-0.5 bg-emerald-500/90 z-20 pointer-events-none flex flex-col items-center" title="Start Marker: ${formatUserCustomDate(phase.startDateStr)}">
+                <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 ring-1 ring-white -mt-0.5 shadow-xs"></div>
+              </div>
+
+              <!-- End Marker on Timeline [where date is] -->
+              <div style="left: ${pCoords.leftPct + pCoords.widthPct}%;" class="absolute top-0 bottom-0 w-0.5 bg-rose-500/90 z-20 pointer-events-none flex flex-col items-center" title="Finish Marker: ${formatUserCustomDate(phase.endDateStr)}">
+                <div class="w-1.5 h-1.5 rounded-full bg-rose-400 ring-1 ring-white -mt-0.5 shadow-xs"></div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      timelineContentWrapper.innerHTML = headerHtml + rowsHtml;
+    }
+
+    // Bind event listeners for editing, deleting, copying, and adding activities
+    function bindTableEventListeners() {
+      document.querySelectorAll('[data-action="edit-name"]').forEach(input => {
+        input.addEventListener('change', (e) => {
+          const pIdx = parseInt(e.target.dataset.phase, 10);
+          const aIdx = parseInt(e.target.dataset.act, 10);
+          projectPhases[pIdx].activities[aIdx].name = e.target.value.trim() || 'Untitled Activity';
+          recalculateSchedule();
+          renderCalendar();
+        });
+      });
+
+      // Activity Duration Edit with Auto-Balance (keeps phase total fixed)
+      document.querySelectorAll('[data-action="edit-duration"]').forEach(input => {
+        input.addEventListener('change', (e) => {
+          const pIdx = parseInt(e.target.dataset.phase, 10);
+          const aIdx = parseInt(e.target.dataset.act, 10);
+          const val = Math.max(0, parseInt(e.target.value, 10) || 0);
+          const phase = projectPhases[pIdx];
+          
+          if (val === 0) {
+            phase.activities[aIdx].isMilestone = true;
+          } else {
+            phase.activities[aIdx].isMilestone = false;
+          }
+
+          const targetTotal = phase.targetWorkingDays || phase.totalWorkingDays || 71;
+          
+          // Auto-reallocate remaining activities so phase total stays strictly equal to targetTotal
+          reallocatePhaseRemaining(phase, aIdx, val, targetTotal);
+          
+          recalculateSchedule();
+          renderCalendar();
+          triggerCopiedFeedback(`Act #${aIdx + 1} set to ${val}d. Remaining tasks auto-balanced to keep ${targetTotal}d total!`);
+        });
+      });
+
+      // Phase Total Budget Edit (e.g. clicking/editing the 71d work badge)
+      document.querySelectorAll('.phase-budget-input').forEach(input => {
+        input.addEventListener('click', (e) => e.stopPropagation());
+        input.addEventListener('change', (e) => {
+          const pIdx = parseInt(e.target.dataset.phase, 10);
+          const newTarget = Math.max(1, parseInt(e.target.value, 10) || 1);
+          const phase = projectPhases[pIdx];
+          
+          // Reallocate all activities in the phase proportionally to match the new target
+          scaleEntirePhase(phase, newTarget);
+          
+          recalculateSchedule();
+          renderCalendar();
+          triggerCopiedFeedback(`Phase ${phase.id} budget updated to ${newTarget}d. All activities proportionally reallocated!`);
+        });
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.target.blur();
+          }
+        });
+      });
+
+      document.querySelectorAll('[data-action="delete-act"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const pIdx = parseInt(e.currentTarget.dataset.phase, 10);
+          const aIdx = parseInt(e.currentTarget.dataset.act, 10);
+          const actName = projectPhases[pIdx].activities[aIdx].name;
+
+          if (projectPhases[pIdx].activities.length <= 1) {
+            alert("A phase must contain at least one activity.");
+            return;
+          }
+
+          if (confirm(`Delete activity: "${actName}"?`)) {
+            projectPhases[pIdx].activities.splice(aIdx, 1);
+            recalculateSchedule();
+            renderCalendar();
+            triggerCopiedFeedback("Activity deleted!");
+          }
+        });
+      });
+
+      document.querySelectorAll('[data-action="copy-act"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const pIdx = parseInt(e.currentTarget.dataset.phase, 10);
+          const aIdx = parseInt(e.currentTarget.dataset.act, 10);
+          openCopyModal(pIdx, aIdx);
+        });
+      });
+
+      document.querySelectorAll('[data-action="add-act"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const pIdx = parseInt(e.currentTarget.dataset.phase, 10);
+          projectPhases[pIdx].activities.push({
+            name: "New Demolition Activity",
+            durationDays: 5,
+            isMilestone: false
+          });
+          recalculateSchedule();
+          renderCalendar();
+          triggerCopiedFeedback(`Added activity to ${projectPhases[pIdx].id}!`);
+        });
+      });
+    }
+
+    // --- COPY MODAL LOGIC ---
+    function openCopyModal(pIdx, aIdx) {
+      activityToCopy = {
+        act: JSON.parse(JSON.stringify(projectPhases[pIdx].activities[aIdx])),
+        fromPhaseIdx: pIdx
+      };
+
+      copyModalActivityName.textContent = `Activity: "${activityToCopy.act.name}" (${activityToCopy.act.durationDays} days)`;
+      
+      copyTargetPhaseSelect.innerHTML = '';
+      projectPhases.forEach((p, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = `${p.id} - ${p.name.replace(/Phase \d+ - /, '')} ${idx === pIdx ? '(Duplicate in current phase)' : ''}`;
+        if (idx === pIdx) opt.selected = true;
+        copyTargetPhaseSelect.appendChild(opt);
+      });
+
+      copyModal.classList.remove('hidden');
+    }
+
+    function closeCopyModal() {
+      copyModal.classList.add('hidden');
+      activityToCopy = null;
+    }
+
+    btnCloseCopyModal.addEventListener('click', closeCopyModal);
+    btnCancelCopy.addEventListener('click', closeCopyModal);
+
+    btnConfirmCopy.addEventListener('click', () => {
+      if (!activityToCopy) return;
+      const targetPhaseIdx = parseInt(copyTargetPhaseSelect.value, 10);
+      const clonedAct = JSON.parse(JSON.stringify(activityToCopy.act));
+      
+      if (targetPhaseIdx === activityToCopy.fromPhaseIdx) {
+        clonedAct.name += " (Copy)";
+      }
+
+      projectPhases[targetPhaseIdx].activities.push(clonedAct);
+      closeCopyModal();
+      recalculateSchedule();
+      renderCalendar();
+      triggerCopiedFeedback(`Copied to ${projectPhases[targetPhaseIdx].id}!`);
+    });
+
+    // --- CALENDAR RENDER ---
+    function renderCalendar() {
+      const mObj = monthList[currentMonthIndex];
+      floatingMonthTitle.textContent = mObj.name;
+
+      prevMonthBtn.disabled = (currentMonthIndex === 0);
+      nextMonthBtn.disabled = (currentMonthIndex === monthList.length - 1);
+      prevMonthBtn.classList.toggle('opacity-40', currentMonthIndex === 0);
+      nextMonthBtn.classList.toggle('opacity-40', currentMonthIndex === monthList.length - 1);
+
+      const daysInMonth = new Date(mObj.year, mObj.month, 0).getDate();
+
+      // Determine active phase in month
+      let activePhaseInMonth = null;
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dStr = `${mObj.key}-${String(day).padStart(2, '0')}`;
+        if (dateToPhaseMap[dStr]) {
+          activePhaseInMonth = dateToPhaseMap[dStr];
+          break;
+        }
+      }
+
+      if (activePhaseInMonth) {
+        floatingPhaseBadge.textContent = activePhaseInMonth.id;
+        floatingPhaseBadge.className = `px-2.5 py-0.5 rounded-full text-xs font-bold text-white ${activePhaseInMonth.badgeColor}`;
+      } else {
+        floatingPhaseBadge.textContent = "Unassigned";
+        floatingPhaseBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300";
+      }
+
+      // Offset for Monday start
+      const firstDayDate = new Date(mObj.year, mObj.month - 1, 1);
+      let startOffset = firstDayDate.getDay() - 1;
+      if (startOffset === -1) startOffset = 6;
+
+      calendarGrid.innerHTML = '';
+
+      // Leading empty cells
+      for (let i = 0; i < startOffset; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'min-h-[88px] p-2 rounded-xl bg-slate-50/50 dark:bg-slate-900/20 border border-dashed border-slate-200 dark:border-slate-800/40 opacity-30';
+        calendarGrid.appendChild(emptyCell);
+      }
+
+      const selectedSet = workingDaysSelections[mObj.key];
+      let weekendCount = 0;
+      let contractorBreakCount = 0;
+      let actualHolidayCount = 0;
+      let observedHolidayCount = 0;
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const d = new Date(mObj.year, mObj.month - 1, day);
+        const dStr = formatDateISO(d);
+        const isWk = isWeekend(d);
+        const isCb = isContractorBreakDate(d);
+
+        if (isWk) weekendCount++;
+        if (isCb) contractorBreakCount++;
+
+        const hols = allHolidays[dStr] || [];
+        const isActual = hols.some(h => h.type === 'actual');
+        const isObserved = hols.some(h => h.type === 'observed');
+
+        if (isActual) actualHolidayCount++;
+        if (isObserved) observedHolidayCount++;
+
+        const isSelectedWorking = selectedSet.has(dStr);
+        const assignedPhase = dateToPhaseMap[dStr];
+        const assignedActivities = dateToActivityMap[dStr] || [];
+
+        // Day cell element
+        const cell = document.createElement('div');
+        
+        let cellBgClass = 'bg-[var(--card,#ffffff)] border-[var(--card-border,#e2e8f0)] hover:border-slate-400';
+        if (isSelectedWorking && assignedPhase) {
+          cellBgClass = `${assignedPhase.cellClass} shadow-xs ring-1 ring-black/5`;
+        } else if (isSelectedWorking) {
+          cellBgClass = 'bg-emerald-500/15 border-emerald-500/70 shadow-sm';
+        } else if (isCb) {
+          cellBgClass = 'contractor-break-cell border-amber-300 dark:border-amber-800';
+        } else if (isWk) {
+          cellBgClass = 'bg-slate-100/80 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700/60';
+        }
+
+        cell.className = `calendar-cell relative min-h-[92px] p-2 rounded-xl border flex flex-col justify-between cursor-pointer ${cellBgClass}`;
+
+        // Top row
+        const topRow = document.createElement('div');
+        topRow.className = 'flex items-center justify-between';
+
+        const dayNumSpan = document.createElement('span');
+        dayNumSpan.className = `text-sm font-black ${
+          isSelectedWorking
+            ? 'text-[var(--foreground,#0f172a)] font-black'
+            : isCb
+            ? 'text-amber-800 dark:text-amber-300'
+            : isWk
+            ? 'text-slate-400 dark:text-slate-500'
+            : 'text-[var(--foreground,#0f172a)]'
+        }`;
+        dayNumSpan.textContent = day;
+        topRow.appendChild(dayNumSpan);
+
+        // Checkmark badge
+        const checkBadge = document.createElement('div');
+        checkBadge.className = `w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold transition-all ${
+          isSelectedWorking && assignedPhase
+            ? `${assignedPhase.badgeColor} text-white shadow-xs`
+            : isSelectedWorking
+            ? 'bg-emerald-600 text-white shadow-xs'
+            : 'border border-slate-300 dark:border-slate-600 text-transparent hover:border-blue-500'
+        }`;
+        checkBadge.innerHTML = isSelectedWorking ? '✓' : '';
+        topRow.appendChild(checkBadge);
+
+        cell.appendChild(topRow);
+
+        // Center / Info badges
+        const infoCol = document.createElement('div');
+        infoCol.className = 'my-1 space-y-0.5';
+
+        // Contractor Break Badge
+        if (isCb) {
+          const cbBadge = document.createElement('div');
+          cbBadge.className = 'text-[8.5px] font-bold px-1 py-0.5 rounded bg-amber-200/80 dark:bg-amber-950 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 leading-tight';
+          cbBadge.textContent = "🚧 Contractor Break";
+          infoCol.appendChild(cbBadge);
+        }
+
+        // Weekend badge
+        if (isWk) {
+          const wkBadge = document.createElement('div');
+          wkBadge.className = 'text-[9px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-tight';
+          wkBadge.textContent = 'Non-working';
+          infoCol.appendChild(wkBadge);
+        }
+
+        // Holiday badges
+        hols.forEach(h => {
+          const hPill = document.createElement('div');
+          if (h.type === 'observed') {
+            hPill.className = 'text-[9px] font-bold px-1 py-0.5 rounded bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800 leading-tight truncate';
+            hPill.title = h.name;
+            hPill.textContent = '🔄 ' + h.name;
+          } else {
+            hPill.className = 'text-[9px] font-bold px-1 py-0.5 rounded bg-yellow-100 dark:bg-yellow-950 text-yellow-900 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-800 leading-tight truncate';
+            hPill.title = h.name;
+            hPill.textContent = '★ ' + h.name;
+          }
+          infoCol.appendChild(hPill);
+        });
+
+        // Activity Preview if active
+        if (assignedActivities.length > 0 && !isWk && !isCb) {
+          const actLabel = document.createElement('div');
+          actLabel.className = 'text-[8.5px] font-semibold text-slate-700 dark:text-slate-300 truncate';
+          actLabel.title = assignedActivities.join(', ');
+          actLabel.textContent = '⚙ ' + assignedActivities[0];
+          infoCol.appendChild(actLabel);
+        }
+
+        cell.appendChild(infoCol);
+
+        // Bottom label: Work vs Off + Phase Tag
+        const bottomStatus = document.createElement('div');
+        bottomStatus.className = `text-[10px] font-medium flex items-center justify-between ${
+          isSelectedWorking
+            ? 'font-bold'
+            : isCb
+            ? 'text-amber-800 dark:text-amber-400 font-semibold'
+            : 'text-slate-400 dark:text-slate-500'
+        }`;
+        
+        const phaseTagText = isSelectedWorking && assignedPhase ? assignedPhase.id : '';
+        bottomStatus.innerHTML = `<span>${isSelectedWorking ? 'Working' : 'Off'}</span><span class="text-[9px] font-bold opacity-80">${phaseTagText}</span>`;
+        cell.appendChild(bottomStatus);
+
+        // Cell click toggle
+        cell.addEventListener('click', () => {
+          if (selectedSet.has(dStr)) {
+            selectedSet.delete(dStr);
+          } else {
+            selectedSet.add(dStr);
+          }
+          renderCalendar();
+        });
+
+        calendarGrid.appendChild(cell);
+      }
+
+      // Update stats
+      statWeekendDays.textContent = weekendCount;
+      statContractorBreakDays.textContent = contractorBreakCount;
+      statTotalHolidays.textContent = actualHolidayCount + observedHolidayCount;
+
+      updateCalculations();
+    }
+
+    function updateCalculations() {
+      const mObj = monthList[currentMonthIndex];
+      const selectedSet = workingDaysSelections[mObj.key];
+      const count = selectedSet.size;
+
+      statWorkingDays.textContent = count;
+      floatingWorkingDaysLabel.textContent = `${count} working days`;
+
+      const totalAmount = count * dailyRate;
+      const formattedAmount = `R ${totalAmount.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      totalAmountDisplay.textContent = formattedAmount;
+      accordionAmountPreview.textContent = formattedAmount;
+      rateFormulaLabel.textContent = `${count} day${count === 1 ? '' : 's'} × R ${dailyRate.toLocaleString('en-ZA')}`;
+
+      // Refresh code preview
+      renderCodePreview();
+    }
+
+    function renderCodePreview() {
+      const mObj = monthList[currentMonthIndex];
+      if (currentPreviewMode === 'xml') {
+        previewHeading.textContent = "Microsoft Project XML (.xml) Preview:";
+        codeDisplay.textContent = generateMsProjectXml().substring(0, 3000) + "\n\n<!-- ... remaining tasks and calendar exceptions continue ... -->";
+      } else if (currentPreviewMode === 'allJson') {
+        previewHeading.textContent = "Full 27-Month JSON Output Preview:";
+        codeDisplay.textContent = JSON.stringify(buildAllMonthsJsonObject(), null, 2);
+      } else {
+        previewHeading.textContent = "Active Month JSON Output Preview:";
+        codeDisplay.textContent = JSON.stringify(buildMonthJsonObject(mObj), null, 2);
+      }
+    }
+
+    // --- MICROSOFT PROJECT XML (MSPDI) EXPORTER ---
+    function generateMsProjectXml() {
+      const projectStart = masterProjectData.startDateStr + "T08:00:00";
+      const projectFinish = masterProjectData.endDateStr + "T17:00:00";
+      const creationDate = new Date().toISOString();
+
+      let taskUid = 1;
+      let tasksXml = '';
+
+      // SCOPE: Master Program Task
+      tasksXml += `
+    <Task>
+      <UID>${taskUid}</UID>
+      <ID>${taskUid}</ID>
+      <Name>${escapeXml(masterProjectData.name)}</Name>
+      <Type>0</Type>
+      <CreateDate>${creationDate}</CreateDate>
+      <Start>${projectStart}</Start>
+      <Finish>${projectFinish}</Finish>
+      <Duration>PT${masterProjectData.totalWorkingDays * 8}H0M0S</Duration>
+      <Work>PT${masterProjectData.totalWorkingDays * 8}H0M0S</Work>
+      <OutlineLevel>1</OutlineLevel>
+      <Summary>1</Summary>
+      <Milestone>0</Milestone>
+      <Active>1</Active>
+    </Task>`;
+
+      projectPhases.forEach((phase) => {
+        taskUid++;
+        const phaseWorkHours = phase.totalWorkingDays * 8;
+
+        // Phase Summary Task
+        tasksXml += `
+    <Task>
+      <UID>${taskUid}</UID>
+      <ID>${taskUid}</ID>
+      <Name>${escapeXml(phase.name)}</Name>
+      <Type>0</Type>
+      <CreateDate>${creationDate}</CreateDate>
+      <Start>${phase.startDateStr}T08:00:00</Start>
+      <Finish>${phase.endDateStr}T17:00:00</Finish>
+      <Duration>PT${phaseWorkHours}H0M0S</Duration>
+      <Work>PT${phaseWorkHours}H0M0S</Work>
+      <OutlineLevel>2</OutlineLevel>
+      <Summary>1</Summary>
+      <Milestone>0</Milestone>
+      <Active>1</Active>
+    </Task>`;
+
+        // Child Activities
+        phase.activities.forEach((act) => {
+          taskUid++;
+          const isMilestone = act.isMilestone || act.durationDays === 0;
+          const durationHours = isMilestone ? 0 : act.durationDays * 8;
+
+          tasksXml += `
+    <Task>
+      <UID>${taskUid}</UID>
+      <ID>${taskUid}</ID>
+      <Name>${escapeXml(act.name)}</Name>
+      <Type>0</Type>
+      <CreateDate>${creationDate}</CreateDate>
+      <Start>${act.startDateStr}T08:00:00</Start>
+      <Finish>${act.endDateStr}T17:00:00</Finish>
+      <Duration>PT${durationHours}H0M0S</Duration>
+      <Work>PT${durationHours}H0M0S</Work>
+      <OutlineLevel>3</OutlineLevel>
+      <Summary>0</Summary>
+      <Milestone>${isMilestone ? '1' : '0'}</Milestone>
+      <Active>1</Active>
+    </Task>`;
+        });
+      });
+
+      // Calendar Exceptions: Public Holidays + Contractor Breaks
+      let exceptionsXml = '';
+      
+      const contractorBreaks = [
+        { name: "Contractor Break 2026-2027", from: "2026-12-18T00:00:00", to: "2027-01-11T23:59:00" },
+        { name: "Contractor Break 2027-2028", from: "2027-12-18T00:00:00", to: "2028-01-11T23:59:00" },
+        { name: "Contractor Break 2028-2029", from: "2028-12-18T00:00:00", to: "2029-01-11T23:59:00" },
+        { name: "Contractor Break 2029-2030", from: "2029-12-18T00:00:00", to: "2030-01-11T23:59:00" }
+      ];
+
+      contractorBreaks.forEach(cb => {
+        exceptionsXml += `
+        <Exception>
+          <EnteredByOccurrences>0</EnteredByOccurrences>
+          <TimePeriod>
+            <FromDate>${cb.from}</FromDate>
+            <ToDate>${cb.to}</ToDate>
+          </TimePeriod>
+          <Occurrences>1</Occurrences>
+          <Name>${escapeXml(cb.name)}</Name>
+          <Type>1</Type>
+          <DayWorking>0</DayWorking>
+        </Exception>`;
+      });
+
+      for (const dStr in allHolidays) {
+        const hList = allHolidays[dStr];
+        hList.forEach(h => {
+          exceptionsXml += `
+        <Exception>
+          <EnteredByOccurrences>0</EnteredByOccurrences>
+          <TimePeriod>
+            <FromDate>${dStr}T00:00:00</FromDate>
+            <ToDate>${dStr}T23:59:00</ToDate>
+          </TimePeriod>
+          <Occurrences>1</Occurrences>
+          <Name>${escapeXml(h.name)}</Name>
+          <Type>1</Type>
+          <DayWorking>0</DayWorking>
+        </Exception>`;
+        });
+      }
+
+      return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Project xmlns="http://schemas.microsoft.com/project">
+  <SaveVersion>14</SaveVersion>
+  <Name>${escapeXml(masterProjectData.name)}</Name>
+  <Title>${escapeXml(masterProjectData.name)}</Title>
+  <CreationDate>${creationDate}</CreationDate>
+  <LastSaved>${creationDate}</LastSaved>
+  <ScheduleFromStart>1</ScheduleFromStart>
+  <StartDate>${projectStart}</StartDate>
+  <FinishDate>${projectFinish}</FinishDate>
+  <FYStartDate>1</FYStartDate>
+  <CriticalSlackLimit>0</CriticalSlackLimit>
+  <CurrencyDigits>2</CurrencyDigits>
+  <CurrencySymbol>R</CurrencySymbol>
+  <CurrencyCode>ZAR</CurrencyCode>
+  <DefaultStartTime>08:00:00</DefaultStartTime>
+  <DefaultFinishTime>17:00:00</DefaultFinishTime>
+  <MinutesPerDay>480</MinutesPerDay>
+  <MinutesPerWeek>2400</MinutesPerWeek>
+  <DaysPerMonth>20</DaysPerMonth>
+  <DefaultTaskType>0</DefaultTaskType>
+  <DefaultFixedCostAccrual>3</DefaultFixedCostAccrual>
+  <DefaultStandardRate>0</DefaultStandardRate>
+  <DefaultOvertimeRate>0</DefaultOvertimeRate>
+  <CalendarUID>1</CalendarUID>
+  <Calendars>
+    <Calendar>
+      <UID>1</UID>
+      <Name>South Africa Standard Working Calendar</Name>
+      <IsBaseCalendar>1</IsBaseCalendar>
+      <IsBaselineCalendar>0</IsBaselineCalendar>
+      <BaseCalendarUID>-1</BaseCalendarUID>
+      <WeekDays>
+        <WeekDay>
+          <DayType>1</DayType>
+          <DayWorking>0</DayWorking>
+        </WeekDay>
+        <WeekDay>
+          <DayType>2</DayType>
+          <DayWorking>1</DayWorking>
+          <WorkingTimes>
+            <WorkingTime><FromTime>08:00:00</FromTime><ToTime>12:00:00</ToTime></WorkingTime>
+            <WorkingTime><FromTime>13:00:00</FromTime><ToTime>17:00:00</ToTime></WorkingTime>
+          </WorkingTimes>
+        </WeekDay>
+        <WeekDay>
+          <DayType>3</DayType>
+          <DayWorking>1</DayWorking>
+          <WorkingTimes>
+            <WorkingTime><FromTime>08:00:00</FromTime><ToTime>12:00:00</ToTime></WorkingTime>
+            <WorkingTime><FromTime>13:00:00</FromTime><ToTime>17:00:00</ToTime></WorkingTime>
+          </WorkingTimes>
+        </WeekDay>
+        <WeekDay>
+          <DayType>4</DayType>
+          <DayWorking>1</DayWorking>
+          <WorkingTimes>
+            <WorkingTime><FromTime>08:00:00</FromTime><ToTime>12:00:00</ToTime></WorkingTime>
+            <WorkingTime><FromTime>13:00:00</FromTime><ToTime>17:00:00</ToTime></WorkingTime>
+          </WorkingTimes>
+        </WeekDay>
+        <WeekDay>
+          <DayType>5</DayType>
+          <DayWorking>1</DayWorking>
+          <WorkingTimes>
+            <WorkingTime><FromTime>08:00:00</FromTime><ToTime>12:00:00</ToTime></WorkingTime>
+            <WorkingTime><FromTime>13:00:00</FromTime><ToTime>17:00:00</ToTime></WorkingTime>
+          </WorkingTimes>
+        </WeekDay>
+        <WeekDay>
+          <DayType>6</DayType>
+          <DayWorking>1</DayWorking>
+          <WorkingTimes>
+            <WorkingTime><FromTime>08:00:00</FromTime><ToTime>12:00:00</ToTime></WorkingTime>
+            <WorkingTime><FromTime>13:00:00</FromTime><ToTime>17:00:00</ToTime></WorkingTime>
+          </WorkingTimes>
+        </WeekDay>
+        <WeekDay>
+          <DayType>7</DayType>
+          <DayWorking>0</DayWorking>
+        </WeekDay>
+      </WeekDays>
+      <Exceptions>
+        ${exceptionsXml}
+      </Exceptions>
+    </Calendar>
+  </Calendars>
+  <Tasks>
+    ${tasksXml}
+  </Tasks>
+</Project>`;
+    }
+
+    // --- JSON OBJECT BUILDERS ---
+    function buildMonthJsonObject(mObj) {
+      const daysInMonth = new Date(mObj.year, mObj.month, 0).getDate();
+      const selectedSet = workingDaysSelections[mObj.key];
+      
+      const daysList = [];
+      const workingDaysList = [];
+      const nonWorkingWeekendDaysList = [];
+      const contractorBreakDaysList = [];
+      const publicHolidaysList = [];
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const d = new Date(mObj.year, mObj.month - 1, day);
+        const dStr = formatDateISO(d);
+        const dayOfWeekIndex = d.getDay();
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayOfWeek = dayNames[dayOfWeekIndex];
+        const isWk = isWeekend(d);
+        const isCb = isContractorBreakDate(d);
+        const hols = allHolidays[dStr] || [];
+        const isActual = hols.some(h => h.type === 'actual');
+        const isObserved = hols.some(h => h.type === 'observed');
+        const isSelected = selectedSet.has(dStr);
+        const phaseObj = dateToPhaseMap[dStr];
+        const acts = dateToActivityMap[dStr] || [];
+
+        if (isSelected) workingDaysList.push(dStr);
+        if (isWk) nonWorkingWeekendDaysList.push(dStr);
+        if (isCb) contractorBreakDaysList.push(dStr);
+        if (hols.length > 0) {
+          hols.forEach(h => {
+            publicHolidaysList.push({ date: dStr, name: h.name, type: h.type });
+          });
+        }
+
+        daysList.push({
+          date: dStr,
+          day: day,
+          dayOfWeek: dayOfWeek,
+          phase: phaseObj ? phaseObj.id : null,
+          activities: acts,
+          isWeekend: isWk,
+          legendStatus: isCb ? "Contractor's Break (Non-working)" : isWk ? "Non-working day" : "Weekday",
+          isContractorBreak: isCb,
+          isActualPublicHoliday: isActual,
+          isObservedPublicHoliday: isObserved,
+          holidays: hols.map(h => ({ name: h.name, type: h.type })),
+          isSelectedWorkingDay: isSelected
+        });
+      }
+
+      return {
+        monthKey: mObj.key,
+        year: mObj.year,
+        month: mObj.month,
+        monthName: mObj.name,
+        country: "South Africa (ZA)",
+        daysInMonth: daysInMonth,
+        totalWorkingDaysSelected: selectedSet.size,
+        totalWeekendNonWorkingDays: nonWorkingWeekendDaysList.length,
+        totalContractorBreakDays: contractorBreakDaysList.length,
+        totalPublicHolidays: publicHolidaysList.length,
+        dailyRateZAR: dailyRate,
+        totalAmountZAR: selectedSet.size * dailyRate,
+        workingDays: workingDaysList,
+        nonWorkingWeekendDays: nonWorkingWeekendDaysList,
+        contractorBreakDays: contractorBreakDaysList,
+        publicHolidays: publicHolidaysList,
+        days: daysList
+      };
+    }
+
+    function buildAllMonthsJsonObject() {
+      const result = {
+        meta: {
+          title: masterProjectData.name,
+          row1MasterSummary: {
+            name: masterProjectData.name,
+            totalWorkingDays: masterProjectData.totalWorkingDays,
+            totalCalendarDays: masterProjectData.totalCalendarDays,
+            startDate: masterProjectData.startDateStr,
+            startFormatted: formatUserCustomDate(masterProjectData.startDateStr),
+            endDate: masterProjectData.endDateStr,
+            endFormatted: formatUserCustomDate(masterProjectData.endDateStr)
+          },
+          jurisdiction: "Republic of South Africa (Act 36 of 1994)",
+          contractorBreakRule: "18 December to 11 January inclusive",
+          wbsStructure: projectPhases.map(p => ({
+            id: p.id,
+            name: p.name,
+            startDate: p.startDateStr,
+            startFormatted: formatUserCustomDate(p.startDateStr),
+            endDate: p.endDateStr,
+            endFormatted: formatUserCustomDate(p.endDateStr),
+            totalWorkingDays: p.totalWorkingDays,
+            activities: p.activities.map(a => ({
+              ...a,
+              startFormatted: formatUserCustomDate(a.startDateStr),
+              endFormatted: formatUserCustomDate(a.endDateStr)
+            }))
+          })),
+          startMonth: "2026-11",
+          endMonth: "2029-01",
+          totalMonths: monthList.length,
+          generatedAt: new Date().toISOString()
+        },
+        months: {}
+      };
+
+      let grandTotalWorkingDays = 0;
+      let grandTotalAmount = 0;
+
+      monthList.forEach(mObj => {
+        const mData = buildMonthJsonObject(mObj);
+        result.months[mObj.key] = mData;
+        grandTotalWorkingDays += mData.totalWorkingDaysSelected;
+        grandTotalAmount += mData.totalAmountZAR;
+      });
+
+      result.meta.grandTotalWorkingDays = grandTotalWorkingDays;
+      result.meta.grandTotalAmountZAR = grandTotalAmount;
+      return result;
+    }
+
+    function triggerCopiedFeedback(msg = "Copied!") {
+      copyFeedback.textContent = msg;
+      copyFeedback.style.opacity = '1';
+      setTimeout(() => {
+        copyFeedback.style.opacity = '0';
+      }, 2500);
+    }
+
+    function downloadFile(content, fileName, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // MS Project XML Export
+    document.getElementById('btnDownloadMsProjectXml').addEventListener('click', () => {
+      const xmlContent = generateMsProjectXml();
+      downloadFile(xmlContent, 'Joel_Gold_Plant_Demolition_Schedule.xml', 'application/xml');
+      triggerCopiedFeedback("Downloaded MS Project XML!");
+    });
+
+    document.getElementById('btnQuickExportXml').addEventListener('click', () => {
+      const xmlContent = generateMsProjectXml();
+      downloadFile(xmlContent, 'Joel_Gold_Plant_Demolition_Schedule.xml', 'application/xml');
+      triggerCopiedFeedback("Downloaded MS Project XML!");
+    });
+
+    // JSON Exports
+    document.getElementById('btnCopyMonthJson').addEventListener('click', () => {
+      const mObj = monthList[currentMonthIndex];
+      const data = buildMonthJsonObject(mObj);
+      navigator.clipboard.writeText(JSON.stringify(data, null, 2)).then(() => {
+        triggerCopiedFeedback();
+      });
+    });
+
+    document.getElementById('btnDownloadMonthJson').addEventListener('click', () => {
+      const mObj = monthList[currentMonthIndex];
+      const data = buildMonthJsonObject(mObj);
+      downloadFile(JSON.stringify(data, null, 2), `SA_work_calendar_${mObj.key}.json`, 'application/json');
+    });
+
+    document.getElementById('btnDownloadAllJson').addEventListener('click', () => {
+      const allData = buildAllMonthsJsonObject();
+      downloadFile(JSON.stringify(allData, null, 2), `SA_work_calendar_Nov2026_Jan2029_schedule.json`, 'application/json');
+    });
+
+    // Toggle Preview Buttons
+    document.getElementById('btnToggleXmlPreview').addEventListener('click', () => {
+      currentPreviewMode = (currentPreviewMode === 'xml') ? 'json' : 'xml';
+      document.getElementById('btnToggleXmlPreview').textContent = (currentPreviewMode === 'xml') ? 'View JSON Preview' : 'View MS Project XML Preview';
+      renderCodePreview();
+    });
+
+    document.getElementById('btnToggleFullJsonExport').addEventListener('click', () => {
+      currentPreviewMode = (currentPreviewMode === 'allJson') ? 'json' : 'allJson';
+      renderCodePreview();
+    });
+
+    // --- INITIAL BOOTSTRAP ---
+    recalculateSchedule();
+    renderCalendar();
+  </script>
+</body>
+</html>
