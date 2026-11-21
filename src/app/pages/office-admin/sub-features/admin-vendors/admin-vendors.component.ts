@@ -23,6 +23,7 @@ export class AdminVendorsComponent {
     vendorId: string;
     orderNumber: string;
     invoiceNumber: string;
+    supplierOrderNumber: string;
     itemsPurchased: string;
     total: number;
     responsiblePerson: string;
@@ -31,6 +32,7 @@ export class AdminVendorsComponent {
     vendorId: '',
     orderNumber: '',
     invoiceNumber: '',
+        supplierOrderNumber: '',
     itemsPurchased: '',
     total: 0,
     responsiblePerson: '',
@@ -62,8 +64,14 @@ export class AdminVendorsComponent {
   }
 
   async submitInvoice(): Promise<void> {
+    if (this.busy()) return;
     if (!this.invoiceForm.vendorId || !this.invoiceForm.orderNumber || !this.invoiceForm.total) {
       this.feedback.set('Vendor, order number, and total amount are required.');
+      return;
+    }
+
+    if (!(this.invoiceForm.invoiceNumber.trim() || this.invoiceForm.supplierOrderNumber.trim())) {
+      this.feedback.set('A supplier invoice or supplier order reference is required.');
       return;
     }
 
@@ -72,6 +80,8 @@ export class AdminVendorsComponent {
       await this.service.submitVendorInvoice({
         vendorId: this.invoiceForm.vendorId,
         orderNumber: this.invoiceForm.orderNumber,
+        internalOrderNumber: this.invoiceForm.orderNumber,
+        supplierOrderNumber: this.invoiceForm.supplierOrderNumber,
         invoiceNumber: this.invoiceForm.invoiceNumber,
         itemsPurchased: this.invoiceForm.itemsPurchased,
         total: Number(this.invoiceForm.total),
@@ -83,6 +93,7 @@ export class AdminVendorsComponent {
         vendorId: '',
         orderNumber: '',
         invoiceNumber: '',
+        supplierOrderNumber: '',
         itemsPurchased: '',
         total: 0,
         responsiblePerson: '',

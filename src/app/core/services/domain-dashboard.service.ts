@@ -1592,7 +1592,12 @@ export class DomainDashboardService {
   }
 
   generateJobCardFromCommercialPackage(packageId: string, customSupervisor?: string): EngineeringOrderRecord {
-    const pkg = this.commercialPackages().find((p) => p.id === packageId) || this.commercialPackages()[0];
+    const pkg = this.commercialPackages().find((p) => p.id === packageId);
+    if (!pkg) throw new Error('Commercial package not found.');
+    const existing = this.engineeringOrders().find((order) =>
+      order.id === pkg.linkedJobCardId || order.poNumber === pkg.purchaseOrder.poNumber
+    );
+    if (existing) return existing;
     const jobCardNum = pkg.linkedJobCardNumber || 'JC-TGT-224';
     const supervisor = customSupervisor || 'S. Van Pletzen (AMF Foreman)';
 

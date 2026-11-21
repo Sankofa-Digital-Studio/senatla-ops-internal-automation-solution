@@ -4,6 +4,15 @@ All notable Senatla Ops changes are recorded here. Versions follow semantic vers
 
 ## [Unreleased]
 
+## [0.5.9] - Release candidate
+
+- Preserve the merged v0.5.8 OCR release, role workspace improvements, and main documentation refresh.
+- Paginate Office Admin assets in groups of six, with result counts and resets after filtering or data changes.
+- Align timesheet date, site filter, and export controls at 44px height.
+- Balance the text and chevron edge spacing on the identified dropdowns.
+- Company letterhead awaits approved artwork.
+- See `docs/release-notes-0.5.9.md` for validation and promotion gates.
+
 ## [0.5.8] - 2026-11-14
 
 Device-first OCR capture and browser fallback release.
