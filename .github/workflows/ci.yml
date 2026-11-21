@@ -14,111 +14,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  application:
-    runs-on: ubuntu-26.04
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24.15.0
-          cache: npm
-      - run: npm ci
-      - run: npm run verify
-        env:
-          SENATLA_API_MODE: local
-          SENATLA_AUTH_REVIEW_BYPASS: "false"
-      - uses: actions/upload-artifact@v7
-        with:
-          name: senatla-ops-web
-          path: www
-          if-no-files-found: error
-
-  supabase:
-    runs-on: ubuntu-26.04
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24.15.0
-          cache: npm
-      - name: Start Supabase with bounded retries
-        run: |
-          for attempt in 1 2 3; do
-            if npx --yes supabase@2.114.0 start -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor; then
-              exit 0
-            fi
-
-            npx --yes supabase@2.114.0 stop --no-backup || true
-
-            if [ "$attempt" -eq 3 ]; then
-              echo "Unable to start Supabase after $attempt attempts." >&2
-              exit 1
-            fi
-
-            sleep $((attempt * 30))
-          done
-      - run: npx --yes supabase@2.114.0 db reset --local
-      - name: Run pgTAP contracts in the local database container
-        shell: bash
-        run: |
-          db_container="$(docker ps --format '{{.Names}}' | grep '^supabase_db_' | head -n 1)"
-          if [ -z "$db_container" ]; then
-            echo "The local Supabase database container was not found." >&2
-            exit 1
-          fi
-
-          failed=0
-          for test_file in supabase/tests/*.sql; do
-            echo "Running $test_file"
-            set +e
-            output="$(docker exec -i "$db_container" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < "$test_file" 2>&1)"
-            result=$?
-            set -e
-            printf '%s\n' "$output"
-            if [ "$result" -ne 0 ] || grep -Eq '(^|[[:space:]])not ok [0-9]+' <<< "$output"; then
-              failed=1
-            fi
-          done
-          exit "$failed"
-      - name: Report test status
-        if: success()
-        run: echo "✓ Database tests and migrations passed"
-      - if: always()
-        run: npx --yes supabase@2.114.0 stop --no-backup
-
-
-
-  responsive-layout:
-    runs-on: ubuntu-26.04
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24.15.0
-          cache: npm
-      - run: npm ci
-      - name: Start isolated Supabase browser database
-        run: npx --yes supabase@2.114.0 start -x realtime,storage-api,imgproxy,studio
-      - run: npx --yes supabase@2.114.0 db reset --local
-      - name: Export local browser-test connection
-        shell: bash
-        run: |
-          npx --yes supabase@2.114.0 status -o env > /tmp/supabase.env
-          source /tmp/supabase.env
-          echo "SENATLA_API_MODE=supabase" >> "$GITHUB_ENV"
-          echo "SENATLA_SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
-          echo "SENATLA_SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
-          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:responsive
-        env:
-          CI: true
-      - if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: responsive-layout-evidence
-          path: output/playwright
-          if-no-files-found: error
-          retention-days: 14
-      - if: always()
-        run: npx --yes supabase@2.114.0 stop --no-backup
+  quality-gate:
+    uses: ./.github/workflows/reusable-quality-gate.yml
+    with:
+      node-version: "24.15.0"
+      supabase-version: "2.114.0"
+      enable-application: true
+      enable-supabase: true
+      enable-responsive: true
+      enable-security-audit: true
+      verify-command: "npm run verify"
+      api-mode: "local"
+      artifact-name: "senatla-ops-web"
+      artifact-retention-days: 14

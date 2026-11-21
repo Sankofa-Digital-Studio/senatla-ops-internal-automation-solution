@@ -1,0 +1,196 @@
+name: Reusable Sankofa ERP Quality Gate
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: Node.js version to set up
+        required: false
+        type: string
+        default: "24.15.0"
+      supabase-version:
+        description: Pinned Supabase CLI version
+        required: false
+        type: string
+        default: "2.114.0"
+      enable-application:
+        description: Whether to execute application verify and build
+        required: false
+        type: boolean
+        default: true
+      enable-supabase:
+        description: Whether to execute Supabase database reset and pgTAP contract tests
+        required: false
+        type: boolean
+        default: true
+      enable-responsive:
+        description: Whether to execute browser responsive layout tests
+        required: false
+        type: boolean
+        default: true
+      enable-security-audit:
+        description: Whether to execute dependency security audits and secret sanity checks
+        required: false
+        type: boolean
+        default: true
+      verify-command:
+        description: Primary verification script command
+        required: false
+        type: string
+        default: "npm run verify"
+      api-mode:
+        description: API mode environment variable for verification
+        required: false
+        type: string
+        default: "local"
+      artifact-name:
+        description: Build artifact upload name
+        required: false
+        type: string
+        default: "senatla-ops-web"
+      artifact-retention-days:
+        description: Retention duration in days for evidence artifacts
+        required: false
+        type: number
+        default: 14
+
+permissions:
+  contents: read
+
+jobs:
+  application:
+    if: inputs.enable-application
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+      - run: npm ci
+      - name: Run application deterministic gate
+        run: ${{ inputs.verify-command }}
+        env:
+          SENATLA_API_MODE: ${{ inputs.api-mode }}
+          SENATLA_AUTH_REVIEW_BYPASS: "false"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: www
+          if-no-files-found: error
+          retention-days: ${{ inputs.artifact-retention-days }}
+
+  security-audit:
+    if: inputs.enable-security-audit
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+      - run: npm ci
+      - name: Validate zero critical or high package vulnerabilities
+        run: |
+          npm audit --audit-level=high || {
+            echo "Critical or high severity vulnerabilities detected in dependencies." >&2
+            exit 1
+          }
+      - name: Sanity check client bundle against service key leakage
+        run: |
+          if [ -d "www" ]; then
+            if grep -rn "SUPABASE_SERVICE_ROLE_KEY" www/; then
+              echo "CRITICAL: Service role key string found in client distribution directory." >&2
+              exit 1
+            fi
+          fi
+
+  supabase:
+    if: inputs.enable-supabase
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+      - name: Start Supabase with bounded retries
+        run: |
+          for attempt in 1 2 3; do
+            if npx --yes supabase@${{ inputs.supabase-version }} start -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor; then
+              exit 0
+            fi
+
+            npx --yes supabase@${{ inputs.supabase-version }} stop --no-backup || true
+
+            if [ "$attempt" -eq 3 ]; then
+              echo "Unable to start Supabase after $attempt attempts." >&2
+              exit 1
+            fi
+
+            sleep $((attempt * 30))
+          done
+      - run: npx --yes supabase@${{ inputs.supabase-version }} db reset --local
+      - name: Run pgTAP contracts in the local database container
+        shell: bash
+        run: |
+          db_container="$(docker ps --format '{{.Names}}' | grep '^supabase_db_' | head -n 1)"
+          if [ -z "$db_container" ]; then
+            echo "The local Supabase database container was not found." >&2
+            exit 1
+          fi
+
+          failed=0
+          for test_file in supabase/tests/*.sql; do
+            echo "Running $test_file"
+            set +e
+            output="$(docker exec -i "$db_container" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < "$test_file" 2>&1)"
+            result=$?
+            set -e
+            printf '%s\n' "$output"
+            if [ "$result" -ne 0 ] || grep -Eq '(^|[[:space:]])not ok [0-9]+' <<< "$output"; then
+              failed=1
+            fi
+          done
+          exit "$failed"
+      - name: Report test status
+        if: success()
+        run: echo "✓ Database tests and migrations passed"
+      - if: always()
+        run: npx --yes supabase@${{ inputs.supabase-version }} stop --no-backup
+
+  responsive-layout:
+    if: inputs.enable-responsive
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+      - run: npm ci
+      - name: Start isolated Supabase browser database
+        run: npx --yes supabase@${{ inputs.supabase-version }} start -x realtime,storage-api,imgproxy,studio
+      - run: npx --yes supabase@${{ inputs.supabase-version }} db reset --local
+      - name: Export local browser-test connection
+        shell: bash
+        run: |
+          npx --yes supabase@${{ inputs.supabase-version }} status -o env > /tmp/supabase.env
+          source /tmp/supabase.env
+          echo "SENATLA_API_MODE=supabase" >> "$GITHUB_ENV"
+          echo "SENATLA_SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "SENATLA_SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:responsive
+        env:
+          CI: true
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: responsive-layout-evidence
+          path: output/playwright
+          if-no-files-found: error
+          retention-days: ${{ inputs.artifact-retention-days }}
+      - if: always()
+        run: npx --yes supabase@${{ inputs.supabase-version }} stop --no-backup
