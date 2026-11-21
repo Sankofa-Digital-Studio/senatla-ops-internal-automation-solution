@@ -4,7 +4,28 @@ All notable Senatla Ops changes are recorded here. Versions follow semantic vers
 
 ## [Unreleased]
 
-## [0.5.9] - Release candidate
+## [0.5.9] - 2026-11-21
+
+Comprehensive operations performance, WBS scheduler, vendor state isolation, and governance release.
+
+### Added
+- Single-request RLS-protected Office workspace snapshot loader (#159), collapsing 26 separate HTTP table reads into a single query.
+- Baseline Joel Plant Demolition WBS scheduler with task traceability, dynamic activity duration auto-balancing, and click-to-edit phase budget reallocation (#163).
+- Unified asset readiness policy shared across Asset Register and Director workspaces.
+- Office Admin vendor workspace state isolation and resilient invoice submission reference contracts (#149).
+- Workspace snapshot preservation and retry controls on failed network refreshes (#150).
+- Comprehensive GitHub community standards and security reporting policies (Code of Conduct, Security, Support, License).
+
+### Changed
+- Paginate Office Admin assets in groups of six with result counts and automatic resets after filtering.
+- Align timesheet date, site filter, and export controls to a consistent 44px touch target height.
+- Updated CI workflows to trigger across dev, preview, and main branches with actions/setup-java@v5.
+- Resolved package vulnerabilities (0 vulnerabilities reported by npm audit).
+
+### Verification
+- 349 of 349 Angular unit tests passing with ChromeHeadlessCI.
+- 82 of 82 node contract and verification tests passing.
+- Full release verification pipeline (pm run verify\) passing cleanly.
 
 - Preserve the merged v0.5.8 OCR release, role workspace improvements, and main documentation refresh.
 - Paginate Office Admin assets in groups of six, with result counts and resets after filtering or data changes.

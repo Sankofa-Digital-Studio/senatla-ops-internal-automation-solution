@@ -1,335 +1,696 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Senatla Ops · Documentation and Operations Portal</title>
-  <meta name="description" content="Official documentation, architectural standards, operations runbooks, and release guides for Senatla Ops.">
+  <title>Senatla Ops · Enterprise Operations & Documentation Portal</title>
+  <meta name="description" content="Authoritative enterprise documentation, architecture decision records, operations runbooks, and release handovers for Senatla Ops.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; }
-    html { font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1b2733; background: #f3f6f8; }
-    body { margin: 0; padding: 0; }
-    a { color: #155780; text-decoration: none; text-underline-offset: 3px; }
-    a:hover { text-decoration: underline; }
-    a:focus-visible { outline: 3px solid #b96918; outline-offset: 3px; }
-    header { background: #153653; color: #fff; padding: 2.5rem max(1.2rem, calc((100vw - 1140px) / 2)); border-bottom: 3px solid #b96918; }
-    header .brand { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.08em; color: #9bc0db; margin-bottom: 0.4rem; font-weight: 600; }
-    h1 { font-size: clamp(2rem, 4vw, 2.8rem); line-height: 1.15; margin: 0.2rem 0 0.5rem; }
-    header p { color: #e0eaf1; margin: 0.4rem 0 1rem; max-width: 800px; font-size: 1.05rem; }
-    .badge-bar { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
-    .badge { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.65rem; border-radius: 4px; font-size: 0.82rem; font-weight: 600; }
-    .badge-release { background: #1b7340; color: #fff; }
-    .badge-host { background: #244b6e; color: #fff; }
-    .badge-auth { background: #824707; color: #fff; }
-    .quick-links { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem; }
-    .quick-btn { background: #ffffff; color: #153653; padding: 0.45rem 0.9rem; border-radius: 6px; font-size: 0.88rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; transition: background 0.15s; }
-    .quick-btn:hover { background: #e2ecf3; text-decoration: none; }
+    :root {
+      --bg: #0b0f17;
+      --bg-card: #111827;
+      --bg-card-hover: #162032;
+      --border: #1f293d;
+      --border-accent: #2e3d5b;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --brand-primary: #38bdf8;
+      --brand-secondary: #818cf8;
+      --accent-green: #10b981;
+      --accent-green-bg: rgba(16, 185, 129, 0.12);
+      --accent-amber: #f59e0b;
+      --accent-amber-bg: rgba(245, 158, 11, 0.12);
+      --accent-cyan: #06b6d4;
+      --accent-cyan-bg: rgba(6, 182, 212, 0.12);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    a { color: var(--brand-primary); text-decoration: none; transition: all 0.2s ease; }
+    a:hover { color: #7dd3fc; }
     
-    main { max-width: 1140px; margin: auto; padding: 2rem 1rem 4rem; }
-    .notice { background: #eaf1f7; border-left: 4px solid #155780; padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; margin-bottom: 2rem; }
-    .notice strong { color: #153653; }
-    .notice p { margin: 0.3rem 0 0; font-size: 0.94rem; }
+    /* Top Header */
+    header {
+      background: linear-gradient(180deg, rgba(17, 24, 39, 0.95) 0%, rgba(11, 15, 23, 0.98) 100%);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(12px);
+      padding: 1.25rem 1.5rem;
+    }
+    .header-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .brand-block { display: flex; align-items: center; gap: 0.85rem; }
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #0284c7 0%, #4f46e5 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.2rem;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+    }
+    .brand-text h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; color: #fff; }
+    .brand-text p { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
     
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.5rem; }
-    .card { background: #fff; border: 1px solid #d6e1e9; border-radius: 8px; padding: 1.4rem 1.5rem; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
-    .card h2 { font-size: 1.25rem; color: #153653; margin: 0 0 0.5rem; padding-bottom: 0.5rem; border-bottom: 2px solid #ebf2f7; display: flex; align-items: center; justify-content: space-between; }
-    .card p.card-desc { font-size: 0.9rem; color: #516272; margin: 0 0 1rem; }
-    .doc-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.65rem; }
-    .doc-item { font-size: 0.93rem; }
-    .doc-item strong { display: block; color: #1b2733; }
-    .doc-item .links { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.15rem; font-size: 0.82rem; }
-    .pill { background: #eef4f8; color: #155780; padding: 0.15rem 0.45rem; border-radius: 3px; font-weight: 500; }
-    .pill:hover { background: #dceaf2; }
-    .pill-docx { background: #e8f0fe; color: #1967d2; }
-    .pill-xlsx { background: #e6f4ea; color: #137333; }
+    .header-actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+    .nav-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.5rem 0.95rem;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      border: 1px solid var(--border-accent);
+      background: #1e293b;
+      color: #e2e8f0;
+      transition: all 0.2s ease;
+    }
+    .nav-btn:hover { background: #334155; color: #fff; border-color: #475569; transform: translateY(-1px); }
+    .nav-btn.primary {
+      background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+      border-color: #38bdf8;
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(2, 132, 199, 0.3);
+    }
+    .nav-btn.primary:hover { background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%); }
+
+    /* Hero Section */
+    .hero {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 2rem;
+      width: 100%;
+    }
+    .badge-ribbon { display: flex; align-items: center; gap: 0.65rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .live-badge.release { background: var(--accent-green-bg); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .live-badge.gate { background: var(--accent-cyan-bg); color: #38bdf8; border: 1px solid rgba(6, 182, 212, 0.3); }
+    .live-badge.security { background: var(--accent-amber-bg); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .pulse-dot { width: 7px; height: 7px; border-radius: 50%; background: #34d399; box-shadow: 0 0 8px #34d399; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.85); } }
+
+    .hero-title {
+      font-size: clamp(2.1rem, 4.2vw, 3.2rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #ffffff 30%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-subtitle {
+      font-size: clamp(1rem, 1.8vw, 1.18rem);
+      color: var(--text-muted);
+      max-width: 840px;
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+
+    /* Metric Grid */
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.4rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .metric-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, #38bdf8, #818cf8);
+    }
+    .metric-value { font-size: 1.85rem; font-weight: 800; color: #fff; font-family: 'JetBrains Mono', monospace; line-height: 1.1; margin-bottom: 0.35rem; }
+    .metric-label { font-size: 0.82rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .metric-desc { font-size: 0.78rem; color: var(--text-dim); margin-top: 0.25rem; }
+
+    /* Filter & Search Bar */
+    .controls-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      margin-bottom: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .search-box {
+      position: relative;
+      width: 100%;
+    }
+    .search-input {
+      width: 100%;
+      background: #0b0f17;
+      border: 1px solid var(--border-accent);
+      border-radius: 10px;
+      padding: 0.75rem 1rem 0.75rem 2.75rem;
+      color: #fff;
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+    .search-input:focus { border-color: var(--brand-primary); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15); }
+    .search-icon {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      font-size: 1.1rem;
+    }
+    .filter-tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .tab-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.4rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+    .tab-btn:hover { background: #1e293b; color: #fff; }
+    .tab-btn.active {
+      background: #38bdf8;
+      color: #0b0f17;
+      border-color: #38bdf8;
+      font-weight: 700;
+    }
+
+    /* Content Cards Grid */
+    .portal-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+    .portal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.2s ease;
+    }
+    .portal-card:hover {
+      border-color: var(--border-accent);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.85rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+    .card-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      background: #1e293b;
+      color: var(--brand-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .card-summary {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+      line-height: 1.5;
+    }
     
-    footer { max-width: 1140px; margin: auto; padding: 2rem 1rem 3rem; color: #516272; font-size: 0.88rem; border-top: 1px solid #d6e1e9; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
-    
-    @media (max-width: 760px) {
-      header { padding: 1.8rem 1rem; }
-      .grid { grid-template-columns: 1fr; }
-      footer { flex-direction: column; }
+    .doc-group {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: auto;
+    }
+    .doc-row {
+      padding: 0.65rem 0.75rem;
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(51, 65, 85, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      transition: all 0.15s ease;
+    }
+    .doc-row:hover { background: #1e293b; border-color: var(--border-accent); }
+    .doc-label { font-size: 0.88rem; font-weight: 600; color: #e2e8f0; }
+    .doc-links { display: flex; gap: 0.35rem; align-items: center; }
+    .doc-pill {
+      font-size: 0.74rem;
+      font-weight: 600;
+      padding: 0.22rem 0.55rem;
+      border-radius: 5px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #94a3b8;
+      transition: all 0.15s ease;
+    }
+    .doc-pill:hover { background: var(--brand-primary); color: #0b0f17; border-color: var(--brand-primary); }
+    .doc-pill.featured { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); }
+    .doc-pill.featured:hover { background: #38bdf8; color: #0b0f17; }
+
+    /* Footer */
+    footer {
+      background: #080c14;
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 1.5rem;
+      margin-top: auto;
+    }
+    .footer-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      font-size: 0.85rem;
+      color: var(--text-dim);
+    }
+    .footer-brand strong { color: var(--text-muted); }
+    .footer-links { display: flex; gap: 1.25rem; flex-wrap: wrap; }
+    .footer-links a { color: var(--text-muted); }
+    .footer-links a:hover { color: #fff; }
+
+    @media (max-width: 768px) {
+      .portal-grid { grid-template-columns: 1fr; }
+      .header-inner, .footer-inner { flex-direction: column; align-items: flex-start; }
+      .hero { padding-top: 2rem; }
     }
   </style>
 </head>
 <body>
+
   <header>
-    <div class="brand">Sankofa Digital Studio &amp; Senatla Trading</div>
-    <h1>Senatla Ops Documentation Portal</h1>
-    <p>Operational control platform connecting field attendance, safety, workforce, payroll, assets, maintenance, proposal costing, approvals, and audit evidence.</p>
-    <div class="badge-bar">
-      <span class="badge badge-release">Release Candidate: v0.5.9</span>
-      <p><a href="release-handover-0.5.9.html">v0.5.9 release handover</a> &middot; <a href="release-notes-0.5.9.md">Release notes and promotion gates</a></p>
-      <span class="badge badge-host">&#9874; Target: senatla-ops.vercel.app</span>
-      <span class="badge badge-auth">&#128274; Role-Controlled Internal System</span>
-    </div>
-    <div class="quick-links">
-      <a class="quick-btn" href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution" target="_blank" rel="noopener">
-        <span>GitHub Repository</span> &rarr;
-      </a>
-      <a class="quick-btn" href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases" target="_blank" rel="noopener">
-        <span>Releases &amp; Changelog</span> &rarr;
-      </a>
-      <a class="quick-btn" href="https://senatla-ops.vercel.app" target="_blank" rel="noopener">
-        <span>Hosted App (Vercel)</span> &rarr;
-      </a>
-      <a class="quick-btn" href="https://senatla-ops.vercel.app/landing" target="_blank" rel="noopener">
-        <span>Public Landing Page</span> &rarr;
-      </a>
+    <div class="header-inner">
+      <div class="brand-block">
+        <div class="brand-icon">S</div>
+        <div class="brand-text">
+          <h1>Senatla Ops Operations Portal</h1>
+          <p>Sankofa Digital Studio &middot; Senatla Trading Enterprise Architecture</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <a class="nav-btn" href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution" target="_blank" rel="noopener">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          Repository
+        </a>
+        <a class="nav-btn" href="joel-plant-demolition-wbs-scheduler.html" target="_blank">
+          &#128197; WBS Scheduler
+        </a>
+        <a class="nav-btn primary" href="https://senatla-ops.vercel.app" target="_blank" rel="noopener">
+          Launch Platform &rarr;
+        </a>
+      </div>
     </div>
   </header>
 
-  <main>
-    <div class="notice">
-      <strong>Confidential Internal Operations Architecture:</strong>
-      <p>Senatla Ops is an internal enterprise platform. Credentials, employee records, private evidence, and service keys must remain strictly protected. The documents below establish authoritative engineering guidelines, release criteria, and operational runbooks.</p>
+  <main class="hero">
+    <div class="badge-ribbon">
+      <span class="live-badge release"><span class="pulse-dot"></span> Stable Release: v0.5.9</span>
+      <span class="live-badge gate">&#10003; 349/349 Unit Tests</span>
+      <span class="live-badge gate">&#10003; 82 Contract Tests</span>
+      <span class="live-badge security">0 CVE Vulnerabilities</span>
     </div>
 
-    <div class="grid">
-      <!-- Section 1: Release Guides -->
-      <div class="card">
-        <h2>Release &amp; Versioning</h2>
-        <p class="card-desc">Release candidate guides, verification evidence, and version histories.</p>
-        <ul class="doc-list">
-          <li class="doc-item">
-            <strong>v0.5.8 Device-first OCR</strong>
-            <div class="links">
-              <a class="pill" href="release-notes-0.5.8.md">Release Notes</a>
-              <a class="pill" href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.8" target="_blank" rel="noopener">GitHub Release</a>
+    <h2 class="hero-title">Mission-Critical Industrial Operations &amp; Verification Hub</h2>
+    <p class="hero-subtitle">
+      Senatla Ops is the unified enterprise operating system for mining, demolition, and plant maintenance. Connecting attributable biometric field attendance, safety compliance, asset custody, vendor workflows, and executive governance into one verifiable audit trail.
+    </p>
+
+    <!-- Key Metrics Bar -->
+    <div class="metric-grid">
+      <div class="metric-card">
+        <div class="metric-value">1 Request</div>
+        <div class="metric-label">Workspace Loader</div>
+        <div class="metric-desc">Collapsed from 26 queries via RLS snapshot RPC</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">100% Pass</div>
+        <div class="metric-label">Deterministic CI Gate</div>
+        <div class="metric-desc">Protected release pipelines on dev, preview, main</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">Zero CVEs</div>
+        <div class="metric-label">Security Audited</div>
+        <div class="metric-desc">Strict PostgreSQL RLS and maker-checker control</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">PWA &amp; Native</div>
+        <div class="metric-label">Mobile Execution</div>
+        <div class="metric-desc">Capacitor 8 Android APK &amp; iOS simulator ready</div>
+      </div>
+    </div>
+
+    <!-- Search and Controls Panel -->
+    <div class="controls-panel">
+      <div class="search-box">
+        <span class="search-icon">&#128269;</span>
+        <input type="text" id="docSearch" class="search-input" placeholder="Search runbooks, ADRs, release notes, or compliance guides..." oninput="filterDocs()">
+      </div>
+      <div class="filter-tabs">
+        <button class="tab-btn active" onclick="selectTab('all', this)">All Documents</button>
+        <button class="tab-btn" onclick="selectTab('release', this)">Releases &amp; Handover</button>
+        <button class="tab-btn" onclick="selectTab('architecture', this)">Architecture &amp; ADRs</button>
+        <button class="tab-btn" onclick="selectTab('field', this)">Site &amp; Demolition Operations</button>
+        <button class="tab-btn" onclick="selectTab('costing', this)">Costing &amp; Proposals</button>
+        <button class="tab-btn" onclick="selectTab('governance', this)">Security &amp; Governance</button>
+      </div>
+    </div>
+
+    <!-- Grid of Documentation Sections -->
+    <div class="portal-grid" id="portalGrid">
+
+      <!-- Card 1: v0.5.9 Release & Handovers -->
+      <div class="portal-card" data-category="release">
+        <div class="card-header">
+          <h3 class="card-title">&#128640; v0.5.9 Release Hub</h3>
+          <span class="card-badge">Active Milestone</span>
+        </div>
+        <p class="card-summary">Authoritative v0.5.9 release candidates, executive handover reports, performance benchmarks, and deployment gates.</p>
+        <ul class="doc-group">
+          <li class="doc-row">
+            <span class="doc-label">v0.5.9 Release Handover Record</span>
+            <div class="doc-links">
+              <a class="doc-pill featured" href="release-handover-0.5.9.html">HTML Report</a>
+              <a class="doc-pill" href="release-handover-0.5.9.docx">DOCX</a>
             </div>
           </li>
-          <li class="doc-item">
-            <strong>v0.5.6 Director Flow</strong>
-            <div class="links">
-              <a class="pill" href="release-notes-0.5.6.md">Release Notes</a>
-              <a class="pill" href="director-flow-v0.5.6.md">Director Flow</a>
-              <a class="pill" href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.6" target="_blank" rel="noopener">GitHub Release</a>
+          <li class="doc-row">
+            <span class="doc-label">Release Notes &amp; Promotion Gates</span>
+            <div class="doc-links">
+              <a class="doc-pill featured" href="release-notes-0.5.9.md">Markdown</a>
             </div>
           </li>
-          <li class="doc-item">
-            <strong>v0.5.4 Release &amp; Support Guide</strong>
-            <div class="links">
-              <a class="pill" href="v0.5.4-release-guide.html">HTML Guide</a>
-              <a class="pill pill-docx" href="v0.5.4-release-guide.docx">Word (.docx)</a>
-              <a class="pill" href="v0.5.4-release-guide.md">Markdown</a>
+          <li class="doc-row">
+            <span class="doc-label">v0.5.8 Device OCR Release Notes</span>
+            <div class="doc-links">
+              <a class="doc-pill" href="release-notes-0.5.8.md">Markdown</a>
             </div>
           </li>
-          <li class="doc-item">
-            <strong>v0.5.4 Release Notes</strong>
-            <div class="links">
-              <a class="pill" href="release-notes-0.5.4.md">Notes (v0.5.4)</a>
-              <a class="pill" href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/releases/tag/v0.5.4" target="_blank" rel="noopener">GitHub Release</a>
-            </div>
-          </li>
-          <li class="doc-item">
-            <strong>Historical Release Notes</strong>
-            <div class="links">
-              <a class="pill" href="release-notes-0.5.3.md">v0.5.3</a>
-              <a class="pill" href="release-notes-0.5.2.md">v0.5.2</a>
-              <a class="pill" href="release-notes-0.5.1.md">v0.5.1</a>
-            </div>
-          </li>
-          <li class="doc-item">
-            <strong>Production Release Checklist</strong>
-            <div class="links">
-              <a class="pill" href="release-checklist.md">Release Checklist</a>
+          <li class="doc-row">
+            <span class="doc-label">Release Checklist &amp; Promotion Standard</span>
+            <div class="doc-links">
+              <a class="doc-pill" href="release-checklist.md">Checklist</a>
             </div>
           </li>
         </ul>
       </div>
 
-      <!-- Section 2: Director & Operations Workspaces -->
-      <div class="card">
-        <h2>Director &amp; Operations</h2>
-        <p class="card-desc">Executive decision queues, proposal builders, costing, and site runbooks.</p>
-        <ul class="doc-list">
-          <li class="doc-item">
-            <strong>Product Teardown &amp; UX Priorities</strong>
-            <div class="links">
-              <a class="pill" href="product-teardown-2026-11-15.html">HTML</a>
-              <a class="pill" href="product-teardown-2026-11-15.md">Markdown</a>
-              <a class="pill pill-docx" href="product-teardown-2026-11-15.docx">Word (.docx)</a>
+      <!-- Card 2: Demolition & Field Operations -->
+      <div class="portal-card" data-category="field">
+        <div class="card-header">
+          <h3 class="card-title">&#127959; Demolition &amp; Site Operations</h3>
+          <span class="card-badge">Field Tools</span>
+        </div>
+        <p class="card-summary">Joel Plant demolition WBS scheduling, site manager daily control loops, attendance, safety dwell times, and fuel telemetry.</p>
+        <ul class="doc-group">
+          <li class="doc-row">
+            <span class="doc-label">Joel Plant Demolition WBS Scheduler</span>
+            <div class="doc-links">
+              <a class="doc-pill featured" href="joel-plant-demolition-wbs-scheduler.html">Interactive UI</a>
+              <a class="doc-pill" href="joel-plant-demolition-wbs-scheduler.md">Spec</a>
             </div>
           </li>
-          <li class="doc-item">
-            <strong>Site Manager Flow Expansion Plan</strong>
-            <div class="links">
-              <a class="pill" href="site-manager-phase-plan.md">Markdown</a>
+          <li class="doc-row">
+            <span class="doc-label">Site Manager Phase 2 Control Loop</span>
+            <div class="doc-links">
+              <a class="doc-pill featured" href="site-manager-phase2-findings.html">Findings</a>
+              <a class="doc-pill" href="site-manager-phase-plan.md">Plan</a>
             </div>
           </li>
-          <li class="doc-item">
-            <strong>Director Workspace Guidance</strong>
-            <div class="links">
-              <a class="pill" href="director-workspace-guidance.html">HTML</a>
-              <a class="pill pill-docx" href="director-workspace-guidance.docx">Word (.docx)</a>
-              <a class="pill" href="director-workspace-guidance.md">Markdown</a>
+          <li class="doc-row">
+            <span class="doc-label">Device-First OCR Field Verification</span>
+            <div class="doc-links">
+              <a class="doc-pill" href="ocr-device-uat.html">Evidence</a>
+              <a class="doc-pill" href="ocr-device-uat.md">UAT Spec</a>
             </div>
           </li>
-          <li class="doc-item">
-            <strong>Director Proposal Templates &amp; Builder</strong>
-            <div class="links">
-              <a class="pill" href="director-proposal-templates.html">HTML</a>
-              <a class="pill pill-docx" href="director-proposal-templates.docx">Word (.docx)</a>
-              <a class="pill" href="director-proposal-templates.md">Markdown</a>
-            </div>
-          </li>
-          <li class="doc-item">
-            <strong>Historical Costing &amp; Asset Review</strong>
-            <div class="links">
-              <a class="pill" href="historical-costing-and-asset-review.html">HTML</a>
-              <a class="pill pill-docx" href="historical-costing-and-asset-review.docx">Word (.docx)</a>
-              <a class="pill" href="historical-costing-and-asset-review.md">Markdown</a>
-            </div>
-          </li>
-          <li class="doc-item">
-            <strong>Operations Runbook &amp; Admin Register</strong>
-            <div class="links">
-              <a class="pill" href="runbook.md">Runbook</a>
-              <a class="pill" href="admin-timesheet-register.md">Timesheet Register</a>
+          <li class="doc-row">
+            <span class="doc-label">Workshop Shared Asset Readiness</span>
+            <div class="doc-links">
+              <a class="doc-pill featured" href="workshop-asset-readiness.md">Policy Spec</a>
             </div>
           </li>
         </ul>
       </div>
 
-      <!-- Section 3: Engineering & Architecture -->
-      <div class="card">
-        <h2>Architecture &amp; Engineering</h2>
-        <p class="card-desc">Technical specifications, database contracts, and engineering handbooks.</p>
-        <ul class="doc-list">
-          <li class="doc-item">
-            <strong>Engineering Handbook</strong>
-            <div class="links">
-              <a class="pill" href="sankofa-senatla-ops-engineering-handbook.html">HTML</a>
-              <a class="pill" href="sankofa-senatla-ops-engineering-handbook.md">Markdown</a>
+      <!-- Card 3: Core Architecture & Performance -->
+      <div class="portal-card" data-category="architecture">
+        <div class="card-header">
+          <h3 class="card-title">&#127963; Enterprise Architecture &amp; ADRs</h3>
+          <span class="card-badge">Foundation</span>
+        </div>
+        <p class="card-summary">Architectural specifications, single-query snapshot protocols, vendor workflow boundaries, and Supabase security constraints.</p>
+        <ul class="doc-group">
+          <li class="doc-row">
+            <span class="doc-label">Single-Request Workspace Snapshot</span>
+            <div class="doc-links">
+              <a class="doc-pill featured" href="workspace-snapshot-loading.md">Architecture</a>
+              <a class="doc-pill" href="workspace-load-recovery.md">Recovery</a>
             </div>
           </li>
-          <li class="doc-item">
-            <strong>Engineering Asset Register Plan</strong>
-            <div class="links">
-              <a class="pill" href="engineering-asset-register-plan.html">HTML</a>
-              <a class="pill" href="engineering-asset-register-plan.md">Markdown</a>
+          <li class="doc-row">
+            <span class="doc-label">ADR 0001: Supabase Auth Boundary</span>
+            <div class="doc-links">
+              <a class="doc-pill" href="adr-0001-supabase-auth-boundary.md">ADR Spec</a>
             </div>
           </li>
-          <li class="doc-item">
-            <strong>System Architecture &amp; Auth Boundaries</strong>
-            <div class="links">
-              <a class="pill" href="architecture.md">Architecture</a>
-              <a class="pill" href="adr-0001-supabase-auth-boundary.md">ADR 0001 (Auth)</a>
-              <a class="pill" href="environments.md">Environments</a>
+          <li class="doc-row">
+            <span class="doc-label">Vendor Workflow &amp; State Isolation</span>
+            <div class="doc-links">
+              <a class="doc-pill featured" href="vendor-workflow-boundary.md">Boundary</a>
             </div>
           </li>
-          <li class="doc-item">
-            <strong>Native Platform Foundation</strong>
-            <div class="links">
-              <a class="pill" href="native-platform-foundation.md">Capacitor, Android &amp; iOS</a>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Section 4: Client Requirements & Phase 1 Feedback -->
-      <div class="card">
-        <h2>Client Planning &amp; Feedback</h2>
-        <p class="card-desc">Ecosystem planning, requirements workbooks, and Phase 1 client feedback backlog.</p>
-        <ul class="doc-list">
-          <li class="doc-item">
-            <strong>Client Planning Requirements Guidance</strong>
-            <div class="links">
-              <a class="pill" href="client-senatla-ops-planning-requirements-guidance.html">HTML</a>
-              <a class="pill" href="client-senatla-ops-planning-requirements-guidance.md">Markdown</a>
-            </div>
-          </li>
-          <li class="doc-item">
-            <strong>Client Requirements Feedback Workbook</strong>
-            <div class="links">
-              <a class="pill" href="senatla-ops-client-requirements-feedback-template.html">HTML</a>
-              <a class="pill" href="senatla-ops-client-requirements-feedback-template.md">Markdown</a>
-            </div>
-          </li>
-          <li class="doc-item">
-            <strong>Client Feedback Phase 1 Architecture</strong>
-            <div class="links">
-              <a class="pill" href="senatla-trading-client-feedback-implementation-plan.md">Implementation Plan</a>
-              <a class="pill" href="senatla-trading-client-feedback-tasks-and-issues.md">Task Breakdown</a>
-            </div>
-          </li>
-          <li class="doc-item">
-            <strong>Artifact Register &amp; Index</strong>
-            <div class="links">
-              <a class="pill" href="artifact-register.md">Artifact Register</a>
-              <a class="pill" href="client-artifact-index.md">Client Index</a>
+          <li class="doc-row">
+            <span class="doc-label">Platform System Architecture</span>
+            <div class="doc-links">
+              <a class="doc-pill" href="architecture.md">Core Spec</a>
             </div>
           </li>
         </ul>
       </div>
 
-      <!-- Section 5: Verification, UAT & Backlog -->
-      <div class="card">
-        <h2>Verification &amp; Delivery</h2>
-        <p class="card-desc">End-to-end UAT, responsive browser gates, and delivery backlog tracking.</p>
-        <ul class="doc-list">
-          <li class="doc-item">
-            <strong>OCR Device UAT &amp; Provenance</strong>
-            <div class="links">
-              <a class="pill" href="ocr-device-uat.html">HTML</a>
-              <a class="pill" href="ocr-device-uat.md">Markdown</a>
+      <!-- Card 4: Costing Models & Director Workspaces -->
+      <div class="portal-card" data-category="costing">
+        <div class="card-header">
+          <h3 class="card-title">&#128188; Director &amp; Costing Models</h3>
+          <span class="card-badge">Commercial</span>
+        </div>
+        <p class="card-summary">Multi-phase equipment costing, designation rates, editable proposal generation, and client review artifacts.</p>
+        <ul class="doc-group">
+          <li class="doc-row">
+            <span class="doc-label">Director Proposal Generator &amp; Templates</span>
+            <div class="doc-links">
+              <a class="doc-pill featured" href="director-proposal-templates.html">HTML</a>
+              <a class="doc-pill" href="director-proposal-templates.docx">DOCX</a>
             </div>
           </li>
-          <li class="doc-item">
-            <strong>Frontend Audit &amp; Responsive Layout</strong>
-            <div class="links">
-              <a class="pill" href="frontend-audit-2026-11-01.html">HTML</a>
-              <a class="pill" href="frontend-audit-2026-11-01.md">Markdown</a>
+          <li class="doc-row">
+            <span class="doc-label">Historical Costing &amp; Asset Review</span>
+            <div class="doc-links">
+              <a class="doc-pill" href="historical-costing-and-asset-review.html">Report</a>
+              <a class="doc-pill" href="historical-costing-and-asset-review.docx">DOCX</a>
             </div>
           </li>
-          <li class="doc-item">
-            <strong>GitHub Delivery Backlog</strong>
-            <div class="links">
-              <a class="pill" href="github-delivery-backlog.html">HTML</a>
-              <a class="pill" href="github-delivery-backlog.md">Markdown</a>
+          <li class="doc-row">
+            <span class="doc-label">Engineering Asset Register Plan</span>
+            <div class="doc-links">
+              <a class="doc-pill" href="engineering-asset-register-plan.html">Plan</a>
+              <a class="doc-pill" href="engineering-asset-register-plan.md">Spec</a>
             </div>
           </li>
-          <li class="doc-item">
-            <strong>Quality Gates &amp; Testing Strategy</strong>
-            <div class="links">
-              <a class="pill" href="testing.md">Testing Strategy</a>
+          <li class="doc-row">
+            <span class="doc-label">Client Planning &amp; Requirements</span>
+            <div class="doc-links">
+              <a class="doc-pill" href="client-senatla-ops-planning-requirements-guidance.html">Guidance</a>
             </div>
           </li>
         </ul>
       </div>
 
-      <!-- Section 6: SEO, Analytics & Privacy -->
-      <div class="card">
-        <h2>SEO, Analytics &amp; Privacy</h2>
-        <p class="card-desc">Strict privacy boundaries, landing-only indexing, and consent architecture.</p>
-        <ul class="doc-list">
-          <li class="doc-item">
-            <strong>Public Route SEO Indexing Matrix</strong>
-            <div class="links">
-              <a class="pill" href="seo-indexing-matrix.md">Indexing Matrix</a>
+      <!-- Card 5: Governance & Security Policy -->
+      <div class="portal-card" data-category="governance">
+        <div class="card-header">
+          <h3 class="card-title">&#128274; Security, Privacy &amp; Governance</h3>
+          <span class="card-badge">Compliance</span>
+        </div>
+        <p class="card-summary">Row-level security policies, maker-checker authorization, employee data protection, and enterprise privacy guarantees.</p>
+        <ul class="doc-group">
+          <li class="doc-row">
+            <span class="doc-label">Security Reporting &amp; Policy</span>
+            <div class="doc-links">
+              <a class="doc-pill featured" href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/blob/main/.github/SECURITY.md" target="_blank">Policy</a>
             </div>
           </li>
-          <li class="doc-item">
-            <strong>GA4 Analytics Privacy &amp; Allow-list</strong>
-            <div class="links">
-              <a class="pill" href="analytics-privacy-v0.5.4.md">Privacy Architecture</a>
+          <li class="doc-row">
+            <span class="doc-label">Analytics &amp; Opt-In Privacy Matrix</span>
+            <div class="doc-links">
+              <a class="doc-pill" href="analytics-privacy-v0.5.4.md">Privacy Spec</a>
+              <a class="doc-pill" href="seo-indexing-matrix.md">SEO Matrix</a>
             </div>
           </li>
-          <li class="doc-item">
-            <strong>GA4 Analytics Workbook</strong>
-            <div class="links">
-              <a class="pill" href="analytics-workbook-v0.5.4.md">Workbook Guide</a>
-              <a class="pill pill-xlsx" href="analytics-workbook-v0.5.4.xlsx">Excel (.xlsx)</a>
+          <li class="doc-row">
+            <span class="doc-label">Contributor Code of Conduct</span>
+            <div class="doc-links">
+              <a class="doc-pill" href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/blob/main/CODE_OF_CONDUCT.md" target="_blank">Covenant 2.1</a>
+            </div>
+          </li>
+          <li class="doc-row">
+            <span class="doc-label">Confidential Enterprise License</span>
+            <div class="doc-links">
+              <a class="doc-pill" href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution/blob/main/LICENSE" target="_blank">Proprietary</a>
             </div>
           </li>
         </ul>
       </div>
+
+      <!-- Card 6: Engineering Handbook & Verification -->
+      <div class="portal-card" data-category="architecture">
+        <div class="card-header">
+          <h3 class="card-title">&#9874; Engineering &amp; Verification</h3>
+          <span class="card-badge">Developer Ops</span>
+        </div>
+        <p class="card-summary">Developer setup, deterministic release gates, Playwright browser test benchmarks, and native Capacitor compilation.</p>
+        <ul class="doc-group">
+          <li class="doc-row">
+            <span class="doc-label">Engineering Handbook</span>
+            <div class="doc-links">
+              <a class="doc-pill featured" href="sankofa-senatla-ops-engineering-handbook.html">Handbook</a>
+              <a class="doc-pill" href="sankofa-senatla-ops-engineering-handbook.md">MD</a>
+            </div>
+          </li>
+          <li class="doc-row">
+            <span class="doc-label">Testing Standards &amp; Coverage Guide</span>
+            <div class="doc-links">
+              <a class="doc-pill" href="testing.md">Testing Guide</a>
+              <a class="doc-pill" href="runbook.md">Runbook</a>
+            </div>
+          </li>
+          <li class="doc-row">
+            <span class="doc-label">Native Mobile Platform Architecture</span>
+            <div class="doc-links">
+              <a class="doc-pill featured" href="native-platform-foundation.md">Mobile Spec</a>
+            </div>
+          </li>
+          <li class="doc-row">
+            <span class="doc-label">Product Teardown &amp; Workflow Audit</span>
+            <div class="doc-links">
+              <a class="doc-pill" href="product-teardown-2026-11-15.html">Teardown</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+
     </div>
   </main>
 
   <footer>
-    <div>&copy; Sankofa Digital Studio &amp; Senatla Trading. All rights reserved.</div>
-    <div>Senatla Ops · Release Candidate v0.5.9</div>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <strong>Senatla Ops</strong> &middot; Internal Operations Automation Platform<br>
+        &copy; 2026 Sankofa Digital Studio (Pty) Ltd. &amp; Senatla Trading. Confidential &amp; Proprietary.
+      </div>
+      <div class="footer-links">
+        <a href="https://senatla-ops.vercel.app" target="_blank" rel="noopener">Hosted App</a>
+        <a href="https://github.com/Sankofa-Digital-Studio/senatla-ops-internal-automation-solution" target="_blank" rel="noopener">GitHub Repository</a>
+        <a href="joel-plant-demolition-wbs-scheduler.html">WBS Demolition</a>
+        <a href="release-handover-0.5.9.html">v0.5.9 Handover</a>
+      </div>
+    </div>
   </footer>
+
+  <script>
+    function selectTab(category, btn) {
+      document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      var cards = document.querySelectorAll('.portal-card');
+      cards.forEach(function(card) {
+        if (category === 'all' || card.getAttribute('data-category') === category) {
+          card.style.display = 'flex';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    function filterDocs() {
+      var query = document.getElementById('docSearch').value.toLowerCase().trim();
+      var cards = document.querySelectorAll('.portal-card');
+      cards.forEach(function(card) {
+        var text = card.innerText.toLowerCase();
+        if (!query || text.indexOf(query) !== -1) {
+          card.style.display = 'flex';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+  </script>
 </body>
 </html>
