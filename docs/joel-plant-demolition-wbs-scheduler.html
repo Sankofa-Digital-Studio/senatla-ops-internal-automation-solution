@@ -113,8 +113,11 @@
         <button id="btnJumpToTimeline" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5">
           <span>📈 View Timeline</span>
         </button>
-        <button id="btnQuickExportXml" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5">
+        <button id="btnQuickExportXml" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5" title="Download MS Project XML file">
           <span>📊 Export MS Project (.xml)</span>
+        </button>
+        <button id="btnQuickCopyXml" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 text-emerald-300 font-bold text-xs shadow-sm transition-all flex items-center gap-1 border border-emerald-500/30" title="Copy MS Project XML to clipboard">
+          <span>📋 Copy XML</span>
         </button>
       </div>
     </div>
@@ -484,8 +487,11 @@
             Export the updated WBS schedule directly into Microsoft Project (.xml) or structured JSON.
           </p>
           <div class="flex flex-wrap items-center gap-2">
-            <button id="btnDownloadMsProjectXml" class="py-2 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5">
+            <button id="btnDownloadMsProjectXml" class="py-2 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5" title="Download MS Project XML file">
               <span>📊 Download MS Project XML (.xml)</span>
+            </button>
+            <button id="btnCopyMsProjectXml" class="py-2 px-3 bg-slate-800 hover:bg-slate-700 active:scale-95 text-emerald-300 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1 border border-emerald-500/30" title="Copy MS Project XML to clipboard">
+              <span>📋 Copy MS Project XML</span>
             </button>
             <button id="btnCopyMonthJson" class="py-1.5 px-3 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-lg text-xs font-semibold transition-all shadow-xs flex items-center gap-1">
               📋 Copy Month JSON
@@ -1997,6 +2003,18 @@
     }
 
     // --- MICROSOFT PROJECT XML (MSPDI) EXPORTER ---
+
+    // XML Character Escaping for MSPDI Schema
+    function escapeXml(unsafe) {
+      if (unsafe === null || unsafe === undefined) return '';
+      return String(unsafe)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+    }
+
     function generateMsProjectXml() {
       const projectStart = masterProjectData.startDateStr + "T08:00:00";
       const projectFinish = masterProjectData.endDateStr + "T17:00:00";
@@ -2339,27 +2357,95 @@
     }
 
     function downloadFile(content, fileName, mimeType) {
-      const blob = new Blob([content], { type: mimeType });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      a.click();
-      URL.revokeObjectURL(url);
+      try {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        
+        setTimeout(() => {
+          if (a.parentNode) a.parentNode.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 2000);
+      } catch (err) {
+        console.warn('Standard Blob download failed, attempting data URI fallback:', err);
+        try {
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = 'data:' + mimeType + ';charset=utf-8,' + encodeURIComponent(content);
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            if (a.parentNode) a.parentNode.removeChild(a);
+          }, 2000);
+        } catch (fallbackErr) {
+          console.error('All download mechanisms failed:', fallbackErr);
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(content).then(() => {
+              alert(`Direct file download was blocked by your browser environment. The complete content of "${fileName}" has been copied to your clipboard so you can paste it directly!`);
+            });
+          }
+        }
+      }
     }
 
-    // MS Project XML Export
+    // MS Project XML Export & Copy Handlers
     document.getElementById('btnDownloadMsProjectXml').addEventListener('click', () => {
-      const xmlContent = generateMsProjectXml();
-      downloadFile(xmlContent, 'Joel_Gold_Plant_Demolition_Schedule.xml', 'application/xml');
-      triggerCopiedFeedback("Downloaded MS Project XML!");
+      try {
+        const xmlContent = generateMsProjectXml();
+        downloadFile(xmlContent, 'Joel_Gold_Plant_Demolition_Schedule.xml', 'application/xml');
+        triggerCopiedFeedback("Downloaded MS Project XML!");
+      } catch (err) {
+        console.error("XML Export Error:", err);
+        alert("Error exporting XML: " + err.message);
+      }
     });
 
     document.getElementById('btnQuickExportXml').addEventListener('click', () => {
-      const xmlContent = generateMsProjectXml();
-      downloadFile(xmlContent, 'Joel_Gold_Plant_Demolition_Schedule.xml', 'application/xml');
-      triggerCopiedFeedback("Downloaded MS Project XML!");
+      try {
+        const xmlContent = generateMsProjectXml();
+        downloadFile(xmlContent, 'Joel_Gold_Plant_Demolition_Schedule.xml', 'application/xml');
+        triggerCopiedFeedback("Downloaded MS Project XML!");
+      } catch (err) {
+        console.error("XML Export Error:", err);
+        alert("Error exporting XML: " + err.message);
+      }
     });
+
+    const btnQuickCopyXml = document.getElementById('btnQuickCopyXml');
+    if (btnQuickCopyXml) {
+      btnQuickCopyXml.addEventListener('click', () => {
+        try {
+          const xmlContent = generateMsProjectXml();
+          navigator.clipboard.writeText(xmlContent).then(() => {
+            triggerCopiedFeedback("MS Project XML copied to clipboard!");
+          });
+        } catch (err) {
+          console.error("XML Copy Error:", err);
+          alert("Error copying XML: " + err.message);
+        }
+      });
+    }
+
+    const btnCopyMsProjectXml = document.getElementById('btnCopyMsProjectXml');
+    if (btnCopyMsProjectXml) {
+      btnCopyMsProjectXml.addEventListener('click', () => {
+        try {
+          const xmlContent = generateMsProjectXml();
+          navigator.clipboard.writeText(xmlContent).then(() => {
+            triggerCopiedFeedback("MS Project XML copied to clipboard!");
+          });
+        } catch (err) {
+          console.error("XML Copy Error:", err);
+          alert("Error copying XML: " + err.message);
+        }
+      });
+    }
 
     // JSON Exports
     document.getElementById('btnCopyMonthJson').addEventListener('click', () => {
