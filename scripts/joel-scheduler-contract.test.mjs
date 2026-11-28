@@ -4,8 +4,9 @@ import test from 'node:test';
 import { createContext, runInContext } from 'node:vm';
 
 const html = readFileSync(new URL('../docs/joel-plant-demolition-wbs-scheduler.html', import.meta.url), 'utf8');
-const script = html.match(/<script>\s*([\s\S]*?)<\/script>/)?.[1];
-assert.ok(script, 'The scheduler inline script exists');
+const inlineScripts = [...html.matchAll(/<script\s*>\s*([\s\S]*?)<\/script\s*>/gi)];
+assert.equal(inlineScripts.length, 1, 'The scheduler has one standalone inline script');
+const script = inlineScripts[0][1];
 
 const domStart = script.indexOf('const masterStartDateInput =');
 assert.ok(domStart > 0, 'The calendar runs before DOM setup');
