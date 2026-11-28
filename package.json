@@ -20,6 +20,7 @@
     "lint": "ng lint",
     "test:runtime-config": "node --test scripts/write-runtime-config.test.mjs",
     "test:ocr-device-uat-contract": "node --test scripts/ocr-device-uat-contract.test.mjs",
+    "test:joel-scheduler-contract": "node --test scripts/joel-scheduler-contract.test.mjs",
     "test:admin-users-reset-contract": "node --test scripts/admin-users-reset-contract.test.mjs",
     "provision:users": "node scripts/provision-users.mjs",
     "test:provision-users": "node --test scripts/provision-users.test.mjs",
