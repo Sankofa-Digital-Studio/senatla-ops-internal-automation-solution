@@ -4,16 +4,15 @@
 
 1. Confirm `dev` is green and contains only the approved release scope.
 2. Confirm every included issue and pull request contains acceptance evidence.
-3. Back up the production database and record the recovery point and rollback commit.
-4. Apply migrations in preview and run role-negative tests.
-5. Open a `dev` to `main` release pull request; do not create a direct production commit.
-6. Obtain approval from an eligible CODEOWNER who is not the author or last pusher.
-7. Confirm `application`, `supabase`, `responsive-layout`, and `native-required` are green for the exact release commit.
-8. Merge with a merge commit so `dev` ancestry is retained.
-9. Verify the immutable production artifact with review bypass disabled.
-10. Smoke-test each role, asset lookup, protected-route behavior, and one read-only dashboard path.
-11. Record the release pull request, commit, migration identifiers, deployment URL, approver, owner, and rollback point.
-12. Merge `main` back into `dev` and confirm the branches are no longer diverged.
+3. Open a pull request from `dev` to `preview`. For each promotion pull request, obtain independent approval from an eligible CODEOWNER who did not author the pull request or push its last change.
+4. Confirm `application`, `supabase`, `responsive-layout`, and `native-required` are green for the exact candidate commit. Merge using a merge commit.
+5. Verify the Vercel preview deployment. Apply migrations in preview, run role-negative tests, and attach hosted smoke evidence to the release record.
+6. Back up the production database and record the recovery point and rollback commit.
+7. Open a pull request from `preview` to `main`. Confirm the reviewed preview contents, required checks, and independent approval before merging with a merge commit.
+8. Verify the immutable production artifact with review bypass disabled. Smoke-test each role, asset lookup, protected-route behavior, and one read-only dashboard path.
+9. Verify the GitHub Pages build from `main:/docs` and open the live portal and current release links.
+10. Record both promotion pull requests, candidate and deployed commits, migration identifiers, deployment URLs, approvers, release owner, and rollback point in the release record.
+11. Reconcile any production-only changes back into `preview` and `dev` through pull requests. Confirm the branches contain the expected changes.
 
 ### Dev APK publication
 

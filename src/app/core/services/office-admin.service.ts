@@ -1726,13 +1726,10 @@ export class OfficeAdminService {
   }
 
   private loadFromLocal(): OfficeAdminWorkspace {
-    const raw = sessionStorage.getItem(LOCAL_STORAGE_KEY);
-    if (!raw) return this.createDefaultWorkspace();
-    let jsonStr = raw;
-    if (!raw.startsWith('{')) {
-      jsonStr = decryptSensitiveWorkspaceData(raw);
-    }
     try {
+      const raw = sessionStorage.getItem(LOCAL_STORAGE_KEY);
+      if (!raw) return this.createDefaultWorkspace();
+      const jsonStr = raw.startsWith('{') ? raw : decryptSensitiveWorkspaceData(raw);
       const parsed = JSON.parse(jsonStr) as OfficeAdminWorkspace;
       if (parsed && Array.isArray(parsed.assets)) {
         const existingIds = new Set(parsed.assets.map((a) => a.id));

@@ -6,6 +6,7 @@ import { CommercialDocumentPackage, EngineeringOrderRecord, JobCardDetail, JobCa
 import { ErpStatusBadgeComponent } from '../../../components/erp/erp-status-badge.component';
 import { ErpModalComponent } from '../../../components/erp/erp-modal.component';
 import { DashboardScopeId } from '../../../core/models/dashboard-scope.models';
+import { filterEngineeringOrders } from './engineering-order-table';
 
 export type ProfitMetricType = 'senatla' | 'shareholder' | 'revenue' | 'materials' | 'labour' | 'overheads';
 export type JobCardTabType = 'materials' | 'labour' | 'commercial';
@@ -1390,24 +1391,12 @@ export class EngineeringDashboardComponent {
   readonly tablePage = signal(1);
   readonly pageSize = signal(5);
 
-  readonly filteredOrders = computed(() => {
-    const term = this.tableSearch().trim().toLowerCase();
-    const scope = this.scopeFilter();
-    const statuses = this.statusFilters();
-    const filtered = this.service.engineeringOrders().filter((order) => {
-      const haystack = [order.poNumber, order.jobCardNumber, order.client, order.scopeDescription, order.workshop].join(' ').toLowerCase();
-      return (!term || haystack.includes(term)) && (!scope || scope === 'engineering') && (!statuses.length || statuses.includes(order.status));
-    });
-    return [...filtered].sort((left, right) => {
-      switch (this.sortKey()) {
-        case 'value_desc': return right.value - left.value;
-        case 'value_asc': return left.value - right.value;
-        case 'job_card': return left.jobCardNumber.localeCompare(right.jobCardNumber);
-        case 'status': return left.status.localeCompare(right.status);
-        default: return right.id.localeCompare(left.id);
-      }
-    });
-  });
+  readonly filteredOrders = computed(() => filterEngineeringOrders(this.service.engineeringOrders(), {
+    search: this.tableSearch(),
+    scope: this.scopeFilter(),
+    statuses: this.statusFilters(),
+    sortKey: this.sortKey(),
+  }));
   readonly totalPages = computed(() => Math.max(1, Math.ceil(this.filteredOrders().length / this.pageSize())));
   readonly paginatedOrders = computed(() => {
     const page = Math.min(this.tablePage(), this.totalPages());

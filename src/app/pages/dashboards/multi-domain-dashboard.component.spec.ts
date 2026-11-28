@@ -30,7 +30,7 @@ describe('MultiDomainDashboardComponent', () => {
     expect(switcher).not.toBeNull();
   });
 
-  it('should switch between domain views dynamically', () => {
+  it('should switch between domain views dynamically', async () => {
     // Default is overall_macro
     expect(fixture.nativeElement.querySelector('app-overall-macro-dashboard')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('app-engineering-dashboard')).toBeNull();
@@ -38,17 +38,30 @@ describe('MultiDomainDashboardComponent', () => {
     // Switch to engineering
     service.selectDomain('engineering');
     fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('app-overall-macro-dashboard')).toBeNull();
     expect(fixture.nativeElement.querySelector('app-engineering-dashboard')).not.toBeNull();
 
     // Switch to demolition
     service.selectDomain('demolition_rehabilitation');
     fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-engineering-dashboard')).toBeNull();
     expect(fixture.nativeElement.querySelector('app-demolition-rehab-dashboard')).not.toBeNull();
 
     // Switch to underground
     service.selectDomain('underground_works');
     fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-demolition-rehab-dashboard')).toBeNull();
     expect(fixture.nativeElement.querySelector('app-underground-works-dashboard')).not.toBeNull();
+
+    service.selectDomain('overall_macro');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-underground-works-dashboard')).toBeNull();
+    expect(fixture.nativeElement.querySelector('app-overall-macro-dashboard')).not.toBeNull();
   });
 });

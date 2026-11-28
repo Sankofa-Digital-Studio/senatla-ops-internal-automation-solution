@@ -10,6 +10,8 @@
 - [ ] Rollback procedure is executable
 - [ ] Engineering, Operations and Finance acceptance is signed
 - [ ] Handbook version and release notes are updated
+- [ ] Both promotion pull requests have independent eligible CODEOWNER approval and passing required checks for the reviewed commits
+- [ ] Vercel preview and production smoke evidence and the GitHub Pages build are recorded
 - [ ] Email/password-only sign-in and the `@senatlatrading.com` provisioning boundary are verified
 - [ ] The exact developer override is verified and a Gmail plus alias is denied override elevation
 - [ ] Temporary-password replacement is verified before workspace navigation

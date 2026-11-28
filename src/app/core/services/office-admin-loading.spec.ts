@@ -29,6 +29,21 @@ describe('Office workspace load recovery', () => {
     loader = spyOn(service as any, 'loadFromSupabase').and.resolveTo(snapshot);
   });
 
+  it('restores an existing plaintext workspace', () => {
+    spyOn(Storage.prototype, 'getItem').and.returnValue(JSON.stringify(snapshot));
+    expect((service as any).loadFromLocal().sites).toEqual(snapshot.sites);
+  });
+
+  it('recovers from a malformed workspace cache', () => {
+    spyOn(Storage.prototype, 'getItem').and.returnValue('{invalid');
+    expect((service as any).loadFromLocal().sites).toEqual((service as any).createDefaultWorkspace().sites);
+  });
+
+  it('recovers when browser storage denies reads', () => {
+    spyOn(Storage.prototype, 'getItem').and.throwError('Storage unavailable');
+    expect((service as any).loadFromLocal().sites).toEqual((service as any).createDefaultWorkspace().sites);
+  });
+
   it('shows an unavailable state instead of demo records when the first load fails', async () => {
     loader.and.rejectWith(new Error('Network unavailable'));
     await load('user-a');

@@ -5,6 +5,7 @@ const isWindows = process.platform === 'win32';
 const steps = [
   { name: 'runtime-config', script: 'npm run test:runtime-config', timeoutMs: 120_000 },
   { name: 'ocr-device-uat-contract', script: 'npm run test:ocr-device-uat-contract', timeoutMs: 120_000 },
+  { name: 'joel-scheduler-contract', script: 'npm run test:joel-scheduler-contract', timeoutMs: 120_000 },
   { name: 'lint', script: 'npm run lint', timeoutMs: 360_000 },
   { name: 'typecheck', script: 'npm run typecheck', timeoutMs: 360_000 },
   {
@@ -172,4 +173,4 @@ for (const step of steps) {
   }
 }
 
-console.log(`[verify] ${now()} PASS release gate: runtime-config, ocr-device-uat-contract, lint, typecheck, build, tests`);
+console.log(`[verify] ${now()} PASS release gate: ${steps.map(({ name }) => name).join(', ')}`);
