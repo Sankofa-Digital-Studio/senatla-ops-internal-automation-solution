@@ -6,8 +6,8 @@
 2. Confirm every included issue and pull request contains acceptance evidence.
 3. Open a pull request from `dev` to `preview`. For each promotion pull request, obtain independent approval from an eligible CODEOWNER who did not author the pull request or push its last change.
 4. Confirm `application`, `supabase`, `responsive-layout`, and `native-required` are green for the exact candidate commit. Merge using a merge commit.
-5. Verify the Vercel preview deployment. Apply migrations in preview, run role-negative tests, and attach hosted smoke evidence to the release record.
-6. Back up the production database and record the recovery point and rollback commit.
+5. Verify the Vercel preview deployment and compare its Supabase project ref with production. Rehearse migrations and run role-negative tests against an isolated database. Treat a shared Preview and Production Supabase project as production for all writes.
+6. Back up the production database and verify the recovery point and rollback commit before any migration on production or a shared project. Apply production migrations only in the approved release window. Attach hosted preview smoke evidence for the exact candidate to the release record.
 7. Open a pull request from `preview` to `main`. Confirm the reviewed preview contents, required checks, and independent approval before merging with a merge commit.
 8. Verify the immutable production artifact with review bypass disabled. Smoke-test each role, asset lookup, protected-route behavior, and one read-only dashboard path.
 9. Verify the GitHub Pages build from `main:/docs` and open the live portal and current release links.
