@@ -9,9 +9,9 @@ Senatla Ops is an internal Senatla Trading product. The public company website i
 3. Use `type(scope): description` commits.
 4. Submit a focused pull request and complete the evidence checklist.
 5. Feature and fix pull requests target `dev` and normally use squash merge after CI and review.
-6. Release pull requests promote `dev` to `main` with a merge commit so long-lived branch ancestry is preserved.
+6. Release pull requests promote `dev` to `preview`, then `preview` to `main`. Use merge commits to preserve long-lived branch ancestry.
 7. Authors do not approve or merge their own release pull requests. A different eligible CODEOWNER must approve.
-8. After release, merge `main` back into `dev`; never rewrite either protected branch.
+8. After release, reconcile any production-only changes back into `preview` and `dev` through pull requests. Preserve all protected branch history.
 
 ## Definition of done
 

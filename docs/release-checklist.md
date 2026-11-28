@@ -6,10 +6,13 @@
 - [ ] Desktop and 390 px browser evidence is attached
 - [ ] All displayed executive metrics reconcile to records
 - [ ] Review bypass is disabled and no service-role key is client-visible
-- [ ] Backup and restore rehearsal is recorded
+- [ ] Preview and Production Supabase project refs are recorded, and a verified production recovery point and rollback commit precede any production or shared-project migration
+- [ ] Restore rehearsal is recorded against an isolated database
 - [ ] Rollback procedure is executable
 - [ ] Engineering, Operations and Finance acceptance is signed
 - [ ] Handbook version and release notes are updated
+- [ ] Both promotion pull requests have independent eligible CODEOWNER approval and passing required checks for the reviewed commits
+- [ ] Vercel preview and production smoke evidence and the GitHub Pages build are recorded
 - [ ] Email/password-only sign-in and the `@senatlatrading.com` provisioning boundary are verified
 - [ ] The exact developer override is verified and a Gmail plus alias is denied override elevation
 - [ ] Temporary-password replacement is verified before workspace navigation

@@ -1,6 +1,0 @@
-- Runtime-config route before SPA fallback
-- Routing regression tests
-- Payroll/wage-derived Director metrics hidden
-- Attendance/timesheets preserved
-- No production/Gmail/account provisioning/invoice changes
-- Merge blocked until checks and preview pass

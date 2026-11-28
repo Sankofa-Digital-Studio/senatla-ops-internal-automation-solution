@@ -1,1 +1,0 @@
-Foundation-only UAT v1 changes. Merge blocked pending CI and Vercel preview verification.

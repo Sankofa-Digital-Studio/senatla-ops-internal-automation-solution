@@ -163,7 +163,7 @@ Compilation alone does not prove that browser flows, database policies, native b
 - GitHub Issues authorize work and define acceptance criteria.
 - Integration pull requests target `dev`; reviewed releases promote through `preview` to `main`.
 - The [Senatla Ops project board](https://github.com/orgs/Sankofa-Digital-Studio/projects/2) records the actual delivery state.
-- A merged pull request is not release evidence by itself. Required application, database, responsive, native, deployment, rollback, and UAT checks must be recorded. The current v0.5.8 release notes record the device-first OCR verification; hosted, native-platform, and production promotion gates remain authoritative for final approval.
+- Record application, database, responsive, native, deployment, rollback, and UAT evidence for the reviewed release candidate. The [release checklist](docs/release-checklist.md) covers the evidence required for production approval.
 - Durable documents must reference a commit and the current deployment record, not an old immutable preview URL.
 
 See [Contributing](CONTRIBUTING.md), [Changelog](CHANGELOG.md), and the [GitHub delivery backlog](docs/github-delivery-backlog.md).
@@ -180,6 +180,7 @@ See [Contributing](CONTRIBUTING.md), [Changelog](CHANGELOG.md), and the [GitHub 
 Access the live [Senatla Ops Documentation Portal on GitHub Pages](https://sankofa-digital-studio.github.io/senatla-ops-internal-automation-solution/).
 
 ### Release management & guides
+- [v0.5.9 Release Notes](docs/release-notes-0.5.9.md)
 - [v0.5.8 Release Notes](docs/release-notes-0.5.8.md)
 - [v0.5.7 Release Notes](docs/release-notes-0.5.7.md)
 - [v0.5.5 Release Notes](docs/release-notes-0.5.5.md)
